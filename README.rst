@@ -14,7 +14,7 @@ Assuming your project follows a layout like the suggested `sample project`_::
 
 .. _`sample project`: https://packaging.python.org/en/latest/tutorial.html#creating-your-own-project
 
-Basic usage, running in your project directory:
+Basic usage, running in your project directory::
 
     <activate virtualenv for your project>
     pip-missing-reqs --ignore-files=sample/tests sample
@@ -26,7 +26,7 @@ packages those modules belong to are in the requirements.txt file.
 Sample tox.ini configuration
 ----------------------------
 
-To make your life easier, copy something like this into your tox.ini:
+To make your life easier, copy something like this into your tox.ini::
 
     [pip-missing-reqs]
     deps=-rrequirements.txt
