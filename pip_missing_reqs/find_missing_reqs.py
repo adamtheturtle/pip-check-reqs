@@ -106,7 +106,7 @@ def find_imported_modules(options):
     for path in options.paths:
         for filename in pyfiles(path):
             if options.ignore_files(filename):
-                log.info('ignoring: %s', filename)
+                log.info('ignoring: %s', os.path.relpath(filename))
                 continue
             with open(filename) as f:
                 content = f.read()
@@ -195,8 +195,8 @@ def main():
     for name, uses in find_missing_reqs(options):
         for use in uses:
             for filename, lineno in use.locations:
-                log.warning('%s:%s dist=%s module=%s', filename, lineno,
-                    name, use.modname)
+                log.warning('%s:%s dist=%s module=%s',
+                    os.path.relpath(filename), lineno, name, use.modname)
 
 if __name__ == '__main__':  # pragma: no cover
     main()
