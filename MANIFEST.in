@@ -1,0 +1,7 @@
+recursive-include pip_missing_reqs
+include *.rst
+include LICENSE
+include setup.*
+include tox.ini
+include requirements.txt
+include MANIFEST
