@@ -203,9 +203,8 @@ def find_missing_reqs(options):
             session=PipSession()):
         explicit.add(normalize_name(requirement.name))
 
-    for name in used:
-        if name not in explicit:
-            yield name, used[name]
+    return [(name, used[name]) for name in used
+        if name not in explicit]
 
 
 def ignorer(ignore_cfg):
@@ -238,7 +237,7 @@ def main():
 
     if not args:
         parser.error("no source files or directories specified")
-        sys.exit(-1)
+        sys.exit(2)
 
     options.ignore_files = ignorer(options.ignore_files)
     options.ignore_mods = ignorer(options.ignore_mods)
@@ -248,11 +247,17 @@ def main():
     logging.basicConfig(format='%(message)s')
     log.setLevel(logging.INFO if options.verbose else logging.WARN)
 
-    for name, uses in find_missing_reqs(options):
+    missing = find_missing_reqs(options)
+    for name, uses in missing:
         for use in uses:
             for filename, lineno in use.locations:
+                print(os.path.relpath(filename), lineno, name, use.modname)
                 log.warning('%s:%s dist=%s module=%s',
                     os.path.relpath(filename), lineno, name, use.modname)
+
+    if missing:
+        sys.exit(1)
+
 
 if __name__ == '__main__':  # pragma: no cover
     main()

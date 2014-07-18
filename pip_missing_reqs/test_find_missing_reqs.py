@@ -182,7 +182,7 @@ def test_find_missing_reqs(monkeypatch):
     assert result == [('shrub', [imported_modules['shrub']])]
 
 
-def test_main(monkeypatch, caplog):
+def test_main_failure(monkeypatch, caplog):
     class options:
         paths = ['dummy']
         verbose = True
@@ -209,7 +209,9 @@ def test_main(monkeypatch, caplog):
             [('location.py', 1)])])
     ])
 
-    find_missing_reqs.main()
+    with pytest.raises(SystemExit) as excinfo:
+        find_missing_reqs.main()
+        assert excinfo.value == 1
 
     assert caplog.records()[0].message == \
         'location.py:1 dist=missing module=missing'
@@ -232,8 +234,9 @@ def test_main_no_spec(monkeypatch, caplog):
     monkeypatch.setattr(find_missing_reqs, 'ignorer',
         pretend.call_recorder(lambda a: None))
 
-    with pytest.raises(SystemExit):
+    with pytest.raises(SystemExit) as excinfo:
         find_missing_reqs.main()
+        assert excinfo.value == 2
 
     assert FakeOptParse.error.calls
     assert not find_missing_reqs.ignorer.calls
