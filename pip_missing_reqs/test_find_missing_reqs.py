@@ -104,7 +104,8 @@ def test_find_imported_modules(monkeypatch, caplog, ignore_ham, ignore_hashlib,
     class FakeFile():
         contents = [
             'from os import path\nimport ast, hashlib',
-            'from __future__ import braces\nimport ast, sys',
+            'from __future__ import braces\nimport ast, sys\n'
+            'from . import friend',
         ]
 
         def __init__(self, filename):

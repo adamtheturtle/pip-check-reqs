@@ -1,6 +1,10 @@
 Release History
 ---------------
 
+1.1.2
+- corrected version of vendored search_packages_info() from pip
+- handle relative imports
+
 1.1.1
 - fixed handling of import from __future__
 - self-tested and added own requirements.txt
