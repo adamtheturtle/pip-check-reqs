@@ -1,6 +1,9 @@
 Release History
 ---------------
 
+1.1.4
+- add --version
+
 1.1.3
 - fix program to generate exit code useful for testing
 

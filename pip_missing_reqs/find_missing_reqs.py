@@ -232,8 +232,14 @@ def main():
         help="used module names (globs are ok) to ignore")
     parser.add_option("-v", "--verbose", dest="verbose",
         action="store_true", default=False, help="be more verbose")
+    parser.add_option("--version", dest="version",
+        action="store_true", default=False, help="display version information")
 
     (options, args) = parser.parse_args()
+
+    if options.version:
+        from pip_missing_reqs import __version__
+        sys.exit(__version__)
 
     if not args:
         parser.error("no source files or directories specified")
@@ -251,7 +257,6 @@ def main():
     for name, uses in missing:
         for use in uses:
             for filename, lineno in use.locations:
-                print(os.path.relpath(filename), lineno, name, use.modname)
                 log.warning('%s:%s dist=%s module=%s',
                     os.path.relpath(filename), lineno, name, use.modname)
 
