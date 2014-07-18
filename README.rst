@@ -62,3 +62,4 @@ check by name (or glob pattern) using --ignore-mods::
     pip-missing-reqs --ignore-mods=spam sample
     # ignore the whole package spam as well
     pip-missing-reqs --ignore-mods=spam --ignore-mods=spam.* sample
+
