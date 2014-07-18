@@ -23,7 +23,7 @@ Assuming your project follows a layout like the suggested `sample project`_::
 Basic usage, running in your project directory::
 
     <activate virtualenv for your project>
-    pip-missing-reqs --ignore-files=sample/tests/* sample
+    pip-missing-reqs --ignore-file=sample/tests/* sample
 
 This will find all imports in the code in "sample" and check that the
 packages those modules belong to are in the requirements.txt file.
@@ -36,7 +36,7 @@ To make your life easier, copy something like this into your tox.ini::
 
     [pip-missing-reqs]
     deps=-rrequirements.txt
-    commands=pip-missing-reqs --ignore-files=sample/tests/* sample
+    commands=pip-missing-reqs --ignore-file=sample/tests/* sample
 
 
 Excluding test files (or others) from this check
@@ -47,8 +47,8 @@ application source ("sample" in the above examples). The requirements for
 those tests generally should not be in the requirements.txt file, and you
 don't want this tool to generate false hits for those.
 
-You may exclude those test files from your check using the --ignore-files
-option.
+You may exclude those test files from your check using the `--ignore-file`
+option (shorthand is `-f`). Multiple instances of the option are allowed.
 
 
 Excluding modules from the check
@@ -56,10 +56,10 @@ Excluding modules from the check
 
 If your project has modules which are conditionally imported, or requirements
 which are conditionally included, you may exclude certain modules from the
-check by name (or glob pattern) using --ignore-mods::
+check by name (or glob pattern) using `--ignore-module` (shorthand is `-m`)::
 
     # ignore the module spam
-    pip-missing-reqs --ignore-mods=spam sample
+    pip-missing-reqs --ignore-module=spam sample
     # ignore the whole package spam as well
-    pip-missing-reqs --ignore-mods=spam --ignore-mods=spam.* sample
+    pip-missing-reqs --ignore-module=spam --ignore-module=spam.* sample
 
