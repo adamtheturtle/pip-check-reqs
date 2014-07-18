@@ -45,7 +45,10 @@ def test_FoundModule():
     ('import spam', []),    # don't break because bad programmer
 ])
 def test_ImportVisitor(stmt, result):
-    vis = find_missing_reqs.ImportVisitor()
+    class options:
+        def ignore_mods(self, modname):
+            return False
+    vis = find_missing_reqs.ImportVisitor(options())
     vis.set_location('spam.py')
     vis.visit(ast.parse(stmt))
     result = vis.finalise()
@@ -83,22 +86,24 @@ def test_pyfiles_package(monkeypatch):
         ['spam/__init__.py', 'spam/ham.py', 'spam/dub/bass.py']
 
 
-@pytest.mark.parametrize(["ignore_ham", "result_keys", "locs"], [
-    (False, ['ast', 'os'], [('spam.py', 1), ('ham.py', 2)]),
-    (True, ['ast'], [('spam.py', 1)]),
+@pytest.mark.parametrize(["ignore_ham", "ignore_hashlib", "expect", "locs"], [
+    (False, False, ['ast', 'os', 'hashlib'], [('spam.py', 1), ('ham.py', 2)]),
+    (False, True, ['ast', 'os'], [('spam.py', 1), ('ham.py', 2)]),
+    (True, False, ['ast'], [('spam.py', 1)]),
+    (True, True, ['ast'], [('spam.py', 1)]),
 ])
-def test_find_imported_modules(monkeypatch, caplog, ignore_ham, result_keys,
-        locs):
+def test_find_imported_modules(monkeypatch, caplog, ignore_ham, ignore_hashlib,
+        expect, locs):
     monkeypatch.setattr(find_missing_reqs, 'pyfiles',
         pretend.call_recorder(lambda x: ['spam.py', 'ham.py']))
 
     if sys.version_info[0] == 2:
         # py2 will find sys module but py3k won't
-        result_keys.append('sys')
+        expect.append('sys')
 
     class FakeFile():
         contents = [
-            'from os import path\nimport ast',
+            'from os import path\nimport ast, hashlib',
             'import ast, sys',
         ]
 
@@ -127,8 +132,14 @@ def test_find_imported_modules(monkeypatch, caplog, ignore_ham, result_keys,
                 return True
             return False
 
+        @staticmethod
+        def ignore_mods(module):
+            if module == 'hashlib' and ignore_hashlib:
+                return True
+            return False
+
     result = find_missing_reqs.find_imported_modules(options)
-    assert set(result) == set(result_keys)
+    assert set(result) == set(expect)
     assert result['ast'].locations == locs
 
     if ignore_ham:
@@ -200,33 +211,19 @@ def test_main(monkeypatch, caplog):
         'location.py:1 dist=missing module=missing'
 
 
-@pytest.mark.parametrize(["ignore_cfg", "file_candidates"], [
-    ([], [('spam', False), ('ham', False)]),
-    (['spam'], [('spam', True), ('ham', False), ('eggs', False)]),
-    (['*am'], [('spam', True), ('ham', True), ('eggs', False)]),
+@pytest.mark.parametrize(["ignore_cfg", "candidate", "result"], [
+    ([], 'spam', False),
+    ([], 'ham', False),
+    (['spam'], 'spam', True),
+    (['spam'], 'spam.ham', False),
+    (['spam'], 'eggs', False),
+    (['spam*'], 'spam', True),
+    (['spam*'], 'spam.ham', True),
+    (['spam*'], 'eggs', False),
 ])
-def test_ignore_files(monkeypatch, ignore_cfg, file_candidates):
-    class options:
-        paths = ['dummy']
-        verbose = True
-        ignore_files = ignore_cfg
-        ignore_mods = []
-    options = options()
-
-    class FakeOptParse:
-        def add_option(*args, **kw):
-            pass
-
-        def parse_args(self):
-            return [options, 'ham.py']
-
-    monkeypatch.setattr(optparse, 'OptionParser', FakeOptParse)
-
-    monkeypatch.setattr(find_missing_reqs, 'find_missing_reqs', lambda x: [])
-    find_missing_reqs.main()
-
-    for fn, matched in file_candidates:
-        assert options.ignore_files(fn) == matched
+def test_ignorer(monkeypatch, ignore_cfg, candidate, result):
+    ignorer = find_missing_reqs.ignorer(ignore_cfg)
+    assert ignorer(candidate) == result
 
 
 @pytest.mark.parametrize(["verbose_cfg", "events", "result"], [

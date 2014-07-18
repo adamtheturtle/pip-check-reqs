@@ -9,7 +9,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='pip_missing_reqs',
-    version='1.0.0',
+    version='1.1.0',
     description='Find packages that should be in requirements for a project',
     long_description=long_description,
     url='https://github.com/r1chardj0n3s/pip-missing-reqs',

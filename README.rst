@@ -1,7 +1,13 @@
 pip-missing-reqs
 ================
 
-Find packages that should be in requirements for a project.
+It happens: you start using a module in your project and it works and you
+don't realise that it's only being included in your `virtualenv`_ because
+it's a dependency of a package you're using. This tool finds those modules so
+you can include them in the `requirements.txt`_ for the project.
+
+.. _`virtualenv`: https://virtualenv.pypa.io/en/latest/
+.. _`requirements.txt`: https://pip.pypa.io/en/latest/user_guide.html#requirements-files
 
 Assuming your project follows a layout like the suggested `sample project`_::
 
@@ -17,7 +23,7 @@ Assuming your project follows a layout like the suggested `sample project`_::
 Basic usage, running in your project directory::
 
     <activate virtualenv for your project>
-    pip-missing-reqs --ignore-files=sample/tests sample
+    pip-missing-reqs --ignore-files=sample/tests/* sample
 
 This will find all imports in the code in "sample" and check that the
 packages those modules belong to are in the requirements.txt file.
@@ -30,7 +36,7 @@ To make your life easier, copy something like this into your tox.ini::
 
     [pip-missing-reqs]
     deps=-rrequirements.txt
-    commands=pip-missing-reqs --ignore-files=sample/tests sample
+    commands=pip-missing-reqs --ignore-files=sample/tests/* sample
 
 
 Excluding test files (or others) from this check
@@ -43,3 +49,16 @@ don't want this tool to generate false hits for those.
 
 You may exclude those test files from your check using the --ignore-files
 option.
+
+
+Excluding modules from the check
+--------------------------------
+
+If your project has modules which are conditionally imported, or requirements
+which are conditionally included, you may exclude certain modules from the
+check by name (or glob pattern) using --ignore-mods::
+
+    # ignore the module spam
+    pip-missing-reqs --ignore-mods=spam sample
+    # ignore the whole package spam as well
+    pip-missing-reqs --ignore-mods=spam --ignore-mods=spam.* sample

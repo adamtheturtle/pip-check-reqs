@@ -27,8 +27,9 @@ class FoundModule:
 
 
 class ImportVisitor(ast.NodeVisitor):
-    def __init__(self):
+    def __init__(self, options):
         super(ImportVisitor, self).__init__()
+        self.__options = options
         self.__modules = {}
         self.__location = None
 
@@ -44,6 +45,8 @@ class ImportVisitor(ast.NodeVisitor):
             self.__addModule(node.module + '.' + alias.name, node.lineno)
 
     def __addModule(self, modname, lineno):
+        if self.__options.ignore_mods(modname):
+            return
         path = None
         progress = []
         modpath = last_modpath = None
@@ -102,7 +105,7 @@ def pyfiles(root):
 
 
 def find_imported_modules(options):
-    vis = ImportVisitor()
+    vis = ImportVisitor(options)
     for path in options.paths:
         for filename in pyfiles(path):
             if options.ignore_files(filename):
@@ -162,30 +165,34 @@ def find_missing_reqs(options):
             yield name, used[name]
 
 
+def ignorer(ignore_cfg):
+    if not ignore_cfg:
+        return lambda candidate: False
+
+    def f(candidate, ignore_cfg=ignore_cfg):
+        for ignore in ignore_cfg:
+            if fnmatch.fnmatch(candidate, ignore):
+                return True
+            elif fnmatch.fnmatch(os.path.relpath(candidate), ignore):
+                return True
+        return False
+    return f
+
+
 def main():
     parser = optparse.OptionParser()
     parser.add_option("-f", "--ignore-file", dest="ignore_files",
         action="append", default=[],
-        help="file paths (globs or fragments) to ignore")
+        help="file paths globs to ignore")
     parser.add_option("-m", "--ignore-module", dest="ignore_mods",
         action="append", default=[],
-        help="used modules (by name) to ignore")
+        help="used module names (globs are ok) to ignore")
     parser.add_option("-v", "--verbose", dest="verbose",
         action="store_true", default=False, help="be more verbose")
 
     (options, args) = parser.parse_args()
-    if options.ignore_files:
-        def ignore_files(filename, ignore_files=options.ignore_files):
-            for ignore in ignore_files:
-                if '*' in ignore:
-                    if fnmatch.fnmatch(filename, ignore):
-                        return True
-                elif ignore in filename:
-                    return True
-            return False
-        options.ignore_files = ignore_files
-    else:
-        options.ignore_files = lambda x: False
+    options.ignore_files = ignorer(options.ignore_files)
+    options.ignore_mods = ignorer(options.ignore_mods)
 
     options.paths = args or ['.']
 
