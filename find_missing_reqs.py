@@ -36,17 +36,19 @@ class ImportVisitor(ast.NodeVisitor):
         self.__location = location
 
     def visit_Import(self, node):
+        print('visit_Import', node)
         for alias in node.names:
             self.__addModule(alias.name, node.lineno)
 
     def visit_ImportFrom(self, node):
+        print('visit_ImportFrom', node)
         for alias in node.names:
             self.__addModule(node.module + '.' + alias.name, node.lineno)
 
     def __addModule(self, modname, lineno):
         path = None
         progress = []
-        modpath = None
+        modpath = last_modpath = None
         for p in modname.split('.'):
             try:
                 file, modpath, description = imp.find_module(p, path)
@@ -59,14 +61,22 @@ class ImportVisitor(ast.NodeVisitor):
             # success! we found *something*
             progress.append(p)
 
+            # we might have previously seen a useful path though...
+            if modpath is None:   # pragma: no cover
+                # the sys module will hit this code path on py3k - possibly
+                # others will, but I've not discovered them
+                modpath = last_modpath
+                break
+
             # ... though it might not be a file, so not interesting to us
             if not os.path.isdir(modpath):
                 break
 
             path = [modpath]
+            last_modpath = modpath
 
         if modpath is None:
-            # the module doesn't actually appear to exist
+            # the module doesn't actually appear to exist on disk
             return
 
         modname = '.'.join(progress)
@@ -101,8 +111,9 @@ def find_imported_modules(options):
                 log.info('ignoring: %s', filename)
                 continue
             with open(filename) as f:
-                vis.set_location(filename)
-                vis.visit(ast.parse(f.read()))
+                content = f.read()
+            vis.set_location(filename)
+            vis.visit(ast.parse(content))
     return vis.finalise()
 
 

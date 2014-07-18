@@ -1,12 +1,13 @@
 import ast
-import pytest
-import pretend
+import collections
+import logging
+import optparse
 import os
 import os.path
-import StringIO
-import collections
-import optparse
-import logging
+import sys
+
+import pytest
+import pretend
 
 import find_missing_reqs
 
@@ -81,7 +82,7 @@ def test_pyfiles_package(monkeypatch):
 
 
 @pytest.mark.parametrize(["ignore_ham", "result_keys", "locs"], [
-    (False, ['ast', 'sys'], [('spam.py', 1), ('ham.py', 2)]),
+    (False, ['ast', 'os'], [('spam.py', 1), ('ham.py', 2)]),
     (True, ['ast'], [('spam.py', 1)]),
 ])
 def test_find_imported_modules(monkeypatch, caplog, ignore_ham, result_keys,
@@ -89,14 +90,21 @@ def test_find_imported_modules(monkeypatch, caplog, ignore_ham, result_keys,
     monkeypatch.setattr(find_missing_reqs, 'pyfiles',
         pretend.call_recorder(lambda x: ['spam.py', 'ham.py']))
 
-    contents = [
-        'from sys import version\nimport ast',
-        'import ast',
-    ]
+    if sys.version_info[0] == 2:
+        # py2 will find sys module but py3k won't
+        result_keys.append('sys')
 
-    class FakeFile(StringIO.StringIO):
+    class FakeFile():
+        contents = [
+            'from os import path\nimport ast',
+            'import ast, sys',
+        ]
+
         def __init__(self, filename):
-            StringIO.StringIO.__init__(self, contents.pop())
+            pass
+
+        def read(self):
+            return self.contents.pop()
 
         def __enter__(self):
             return self
