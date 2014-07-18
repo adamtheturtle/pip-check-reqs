@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import ast
 import collections
 import logging
@@ -9,7 +11,7 @@ import sys
 import pytest
 import pretend
 
-import find_missing_reqs
+from . import find_missing_reqs
 
 
 @pytest.mark.parametrize(["path", "result"], [
