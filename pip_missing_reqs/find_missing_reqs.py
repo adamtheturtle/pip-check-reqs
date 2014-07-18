@@ -36,12 +36,10 @@ class ImportVisitor(ast.NodeVisitor):
         self.__location = location
 
     def visit_Import(self, node):
-        print('visit_Import', node)
         for alias in node.names:
             self.__addModule(alias.name, node.lineno)
 
     def visit_ImportFrom(self, node):
-        print('visit_ImportFrom', node)
         for alias in node.names:
             self.__addModule(node.module + '.' + alias.name, node.lineno)
 
@@ -191,8 +189,8 @@ def main():
 
     options.paths = args or ['.']
 
-    logging.basicConfig(level=logging.INFO if options.verbose
-        else logging.WARN)
+    logging.basicConfig(format='%(message)s')
+    log.setLevel(logging.INFO if options.verbose else logging.WARN)
 
     for name, uses in find_missing_reqs(options):
         for use in uses:

@@ -227,3 +227,34 @@ def test_ignore_files(monkeypatch, ignore_cfg, file_candidates):
 
     for fn, matched in file_candidates:
         assert options.ignore_files(fn) == matched
+
+
+@pytest.mark.parametrize(["verbose_cfg", "events", "result"], [
+    (False, [(logging.INFO, 'info'), (logging.WARN, 'warn')], ['warn']),
+    (True, [(logging.INFO, 'info'), (logging.WARN, 'warn')], ['info', 'warn']),
+])
+def test_logging_config(monkeypatch, caplog, verbose_cfg, events, result):
+    class options:
+        paths = ['dummy']
+        verbose = verbose_cfg
+        ignore_files = []
+        ignore_mods = []
+    options = options()
+
+    class FakeOptParse:
+        def add_option(*args, **kw):
+            pass
+
+        def parse_args(self):
+            return [options, 'ham.py']
+
+    monkeypatch.setattr(optparse, 'OptionParser', FakeOptParse)
+
+    monkeypatch.setattr(find_missing_reqs, 'find_missing_reqs', lambda x: [])
+    find_missing_reqs.main()
+
+    for event in events:
+        find_missing_reqs.log.log(*event)
+
+    messages = [r.message for r in caplog.records()]
+    assert messages == result
