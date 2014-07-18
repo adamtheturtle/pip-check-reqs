@@ -87,10 +87,10 @@ def test_pyfiles_package(monkeypatch):
 
 
 @pytest.mark.parametrize(["ignore_ham", "ignore_hashlib", "expect", "locs"], [
-    (False, False, ['ast', 'os', 'hashlib'], [('spam.py', 1), ('ham.py', 2)]),
-    (False, True, ['ast', 'os'], [('spam.py', 1), ('ham.py', 2)]),
-    (True, False, ['ast'], [('spam.py', 1)]),
-    (True, True, ['ast'], [('spam.py', 1)]),
+    (False, False, ['ast', 'os', 'hashlib'], [('spam.py', 2), ('ham.py', 2)]),
+    (False, True, ['ast', 'os'], [('spam.py', 2), ('ham.py', 2)]),
+    (True, False, ['ast'], [('spam.py', 2)]),
+    (True, True, ['ast'], [('spam.py', 2)]),
 ])
 def test_find_imported_modules(monkeypatch, caplog, ignore_ham, ignore_hashlib,
         expect, locs):
@@ -104,7 +104,7 @@ def test_find_imported_modules(monkeypatch, caplog, ignore_ham, ignore_hashlib,
     class FakeFile():
         contents = [
             'from os import path\nimport ast, hashlib',
-            'import ast, sys',
+            'from __future__ import braces\nimport ast, sys',
         ]
 
         def __init__(self, filename):
@@ -190,11 +190,14 @@ def test_main(monkeypatch, caplog):
     options = options()
 
     class FakeOptParse:
+        def __init__(self, usage):
+            pass
+
         def add_option(*args, **kw):
             pass
 
         def parse_args(self):
-            return [options, 'ham.py']
+            return (options, ['ham.py'])
 
     monkeypatch.setattr(optparse, 'OptionParser', FakeOptParse)
 
@@ -211,6 +214,30 @@ def test_main(monkeypatch, caplog):
         'location.py:1 dist=missing module=missing'
 
 
+def test_main_no_spec(monkeypatch, caplog):
+    class FakeOptParse:
+        def __init__(self, usage):
+            pass
+
+        def add_option(*args, **kw):
+            pass
+
+        def parse_args(self):
+            return (None, [])
+
+        error = pretend.call_recorder(lambda *a: None)
+
+    monkeypatch.setattr(optparse, 'OptionParser', FakeOptParse)
+    monkeypatch.setattr(find_missing_reqs, 'ignorer',
+        pretend.call_recorder(lambda a: None))
+
+    with pytest.raises(SystemExit):
+        find_missing_reqs.main()
+
+    assert FakeOptParse.error.calls
+    assert not find_missing_reqs.ignorer.calls
+
+
 @pytest.mark.parametrize(["ignore_cfg", "candidate", "result"], [
     ([], 'spam', False),
     ([], 'ham', False),
@@ -220,8 +247,10 @@ def test_main(monkeypatch, caplog):
     (['spam*'], 'spam', True),
     (['spam*'], 'spam.ham', True),
     (['spam*'], 'eggs', False),
+    (['spam'], '/spam', True),
 ])
 def test_ignorer(monkeypatch, ignore_cfg, candidate, result):
+    monkeypatch.setattr(os.path, 'relpath', lambda s: s.lstrip('/'))
     ignorer = find_missing_reqs.ignorer(ignore_cfg)
     assert ignorer(candidate) == result
 
@@ -239,11 +268,14 @@ def test_logging_config(monkeypatch, caplog, verbose_cfg, events, result):
     options = options()
 
     class FakeOptParse:
+        def __init__(self, usage):
+            pass
+
         def add_option(*args, **kw):
             pass
 
         def parse_args(self):
-            return [options, 'ham.py']
+            return (options, ['ham.py'])
 
     monkeypatch.setattr(optparse, 'OptionParser', FakeOptParse)
 

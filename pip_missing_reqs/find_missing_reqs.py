@@ -2,18 +2,54 @@ import ast
 import collections
 import fnmatch
 import imp
+import logging
 import optparse
 import os
 import re
-import logging
+import sys
 
+import pkg_resources
 from pip.req import parse_requirements
 from pip.download import PipSession
-from pip.commands.show import search_packages_info
 from pip.util import get_installed_distributions, normalize_name
 
-
 log = logging.getLogger(__name__)
+
+
+# TODO: remove me when pip 1.6 is released (vendored from pypa/pip git)
+def search_packages_info(query):  # pragma: no cover
+    """
+    Gather details from installed distributions. Print distribution name,
+    version, location, and installed files. Installed files requires a
+    pip generated 'installed-files.txt' in the distributions '.egg-info'
+    directory.
+    """
+    installed = dict(
+        [(p.project_name.lower(), p) for p in pkg_resources.working_set])
+    query_names = [name.lower() for name in query]
+    for dist in [installed[pkg] for pkg in query_names if pkg in installed]:
+        package = {
+            'name': dist.project_name,
+            'version': dist.version,
+            'location': dist.location,
+            'requires': [dep.project_name for dep in dist.requires()],
+        }
+        file_list = None
+        if isinstance(dist, pkg_resources.DistInfoDistribution):
+            # RECORDs should be part of .dist-info metadatas
+            if dist.has_metadata('RECORD'):
+                lines = dist.get_metadata_lines('RECORD')
+                paths = [l.split(',')[0] for l in lines]
+                paths = [os.path.join(dist.location, p) for p in paths]
+                file_list = [os.path.relpath(p, dist.egg_info)
+                             for p in paths]
+        else:
+            # Otherwise use pip's log for .egg-info's
+            if dist.has_metadata('installed-files.txt'):
+                file_list = dist.get_metadata_lines('installed-files.txt')
+        # use and short-circuit to check for None
+        package['files'] = file_list and sorted(file_list)
+        yield package
 
 
 class FoundModule:
@@ -41,6 +77,9 @@ class ImportVisitor(ast.NodeVisitor):
             self.__addModule(alias.name, node.lineno)
 
     def visit_ImportFrom(self, node):
+        if node.module == '__future__':
+            # not an actual module
+            return
         for alias in node.names:
             self.__addModule(node.module + '.' + alias.name, node.lineno)
 
@@ -180,7 +219,8 @@ def ignorer(ignore_cfg):
 
 
 def main():
-    parser = optparse.OptionParser()
+    usage = 'usage: %prog [options] files or directories'
+    parser = optparse.OptionParser(usage)
     parser.add_option("-f", "--ignore-file", dest="ignore_files",
         action="append", default=[],
         help="file paths globs to ignore")
@@ -191,6 +231,11 @@ def main():
         action="store_true", default=False, help="be more verbose")
 
     (options, args) = parser.parse_args()
+
+    if not args:
+        parser.error("no source files or directories specified")
+        sys.exit(-1)
+
     options.ignore_files = ignorer(options.ignore_files)
     options.ignore_mods = ignorer(options.ignore_mods)
 
