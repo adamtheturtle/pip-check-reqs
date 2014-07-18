@@ -12,7 +12,7 @@ setup(
     version='1.0.0',
     description='Find packages that should be in requirements for a project',
     long_description=long_description,
-    url='https://github.com/r1chardj0n3s/pip_missing_reqs',
+    url='https://github.com/r1chardj0n3s/pip-missing-reqs',
     author='Richard Jonees',
     author_email='r1chardj0n3s@gmail.com',
     license='MIT',
