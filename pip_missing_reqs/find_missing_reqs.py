@@ -248,12 +248,15 @@ def main():
     options.ignore_files = ignorer(options.ignore_files)
     options.ignore_mods = ignorer(options.ignore_mods)
 
-    options.paths = args or ['.']
+    options.paths = args
 
     logging.basicConfig(format='%(message)s')
     log.setLevel(logging.INFO if options.verbose else logging.WARN)
 
     missing = find_missing_reqs(options)
+
+    if missing:
+        log.warning('Missing requirements:')
     for name, uses in missing:
         for use in uses:
             for filename, lineno in use.locations:

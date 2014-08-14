@@ -14,6 +14,31 @@ import pretend
 from . import find_missing_reqs
 
 
+@pytest.fixture
+def fake_opts():
+
+    class FakeOptParse:
+        class options:
+            paths = ['dummy']
+            verbose = True
+            version = False
+            ignore_files = []
+            ignore_mods = []
+        options = options()
+        args = ['ham.py']
+
+        def __init__(self, usage):
+            pass
+
+        def add_option(*args, **kw):
+            pass
+
+        def parse_args(self):
+            return (self.options, self.args)
+
+    return FakeOptParse
+
+
 @pytest.mark.parametrize(["path", "result"], [
     ('/', ''),
     ('__init__.py', ''),    # a top-level file like this has no package name
@@ -182,25 +207,8 @@ def test_find_missing_reqs(monkeypatch):
     assert result == [('shrub', [imported_modules['shrub']])]
 
 
-def test_main_failure(monkeypatch, caplog):
-    class options:
-        paths = ['dummy']
-        verbose = True
-        ignore_files = []
-        ignore_mods = []
-    options = options()
-
-    class FakeOptParse:
-        def __init__(self, usage):
-            pass
-
-        def add_option(*args, **kw):
-            pass
-
-        def parse_args(self):
-            return (options, ['ham.py'])
-
-    monkeypatch.setattr(optparse, 'OptionParser', FakeOptParse)
+def test_main_failure(monkeypatch, caplog, fake_opts):
+    monkeypatch.setattr(optparse, 'OptionParser', fake_opts)
 
     caplog.setLevel(logging.WARN)
 
@@ -214,32 +222,22 @@ def test_main_failure(monkeypatch, caplog):
         assert excinfo.value == 1
 
     assert caplog.records()[0].message == \
+        'Missing requirements:'
+    assert caplog.records()[1].message == \
         'location.py:1 dist=missing module=missing'
 
 
-def test_main_no_spec(monkeypatch, caplog):
-    class FakeOptParse:
-        def __init__(self, usage):
-            pass
-
-        def add_option(*args, **kw):
-            pass
-
-        def parse_args(self):
-            return (None, [])
-
-        error = pretend.call_recorder(lambda *a: None)
-
-    monkeypatch.setattr(optparse, 'OptionParser', FakeOptParse)
-    monkeypatch.setattr(find_missing_reqs, 'ignorer',
-        pretend.call_recorder(lambda a: None))
+def test_main_no_spec(monkeypatch, caplog, fake_opts):
+    fake_opts.args = []
+    monkeypatch.setattr(optparse, 'OptionParser', fake_opts)
+    monkeypatch.setattr(fake_opts, 'error',
+        pretend.call_recorder(lambda s, e: None), raising=False)
 
     with pytest.raises(SystemExit) as excinfo:
         find_missing_reqs.main()
         assert excinfo.value == 2
 
-    assert FakeOptParse.error.calls
-    assert not find_missing_reqs.ignorer.calls
+    assert fake_opts.error.calls
 
 
 @pytest.mark.parametrize(["ignore_cfg", "candidate", "result"], [
@@ -267,6 +265,7 @@ def test_logging_config(monkeypatch, caplog, verbose_cfg, events, result):
     class options:
         paths = ['dummy']
         verbose = verbose_cfg
+        version = False
         ignore_files = []
         ignore_mods = []
     options = options()
@@ -291,3 +290,12 @@ def test_logging_config(monkeypatch, caplog, verbose_cfg, events, result):
 
     messages = [r.message for r in caplog.records()]
     assert messages == result
+
+
+def test_main_version(monkeypatch, caplog, fake_opts):
+    fake_opts.options.version = True
+    monkeypatch.setattr(optparse, 'OptionParser', fake_opts)
+
+    with pytest.raises(SystemExit) as excinfo:
+        find_missing_reqs.main()
+        assert excinfo.value == 'version'
