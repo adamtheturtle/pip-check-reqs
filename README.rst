@@ -34,7 +34,7 @@ Sample tox.ini configuration
 
 To make your life easier, copy something like this into your tox.ini::
 
-    [pip-missing-reqs]
+    [testenv:pip-missing-reqs]
     deps=-rrequirements.txt
     commands=pip-missing-reqs --ignore-file=sample/tests/* sample
 
