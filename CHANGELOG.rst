@@ -2,6 +2,11 @@
 Release History
 ---------------
 
+1.1.5
+
+- add header to output to make it clearer when in a larger test run
+- fix tests and self-test
+
 1.1.4
 
 - add --version
