@@ -56,7 +56,7 @@ def search_packages_info(query):  # pragma: no cover
 class FoundModule:
     def __init__(self, modname, filename, locations=None):
         self.modname = modname
-        self.filename = filename
+        self.filename = os.path.realpath(filename)
         self.locations = locations or []         # filename, lineno
 
     def __repr__(self):
@@ -154,6 +154,7 @@ def find_imported_modules(options):
             if options.ignore_files(filename):
                 log.info('ignoring: %s', os.path.relpath(filename))
                 continue
+            log.debug('scanning: %s', os.path.relpath(filename))
             with open(filename) as f:
                 content = f.read()
             vis.set_location(filename)
@@ -180,8 +181,10 @@ def find_missing_reqs(options):
     installed_files = {}
     all_pkgs = (pkg.project_name for pkg in get_installed_distributions())
     for package in search_packages_info(all_pkgs):
+        log.debug('installed package: %s (at %s)', package['name'],
+            package['location'])
         for file in package['files'] or []:
-            path = os.path.normpath(os.path.join(package['location'], file))
+            path = os.path.realpath(os.path.join(package['location'], file))
             installed_files[path] = package['name']
             package_path = is_package_file(path)
             if package_path:
@@ -190,17 +193,25 @@ def find_missing_reqs(options):
                 # a package by its directory path later
                 installed_files[package_path] = package['name']
 
+    # 3. match imported modules against those packages
     used = collections.defaultdict(list)
     for modname, info in used_modules.items():
         # probably standard library if it's not in the files list
         if info.filename in installed_files:
             used_name = normalize_name(installed_files[info.filename])
+            log.debug('used module: %s (from package %s)', modname,
+                installed_files[info.filename])
             used[used_name].append(info)
+        else:
+            log.debug(
+                'used module: %s (from file %s, assuming stdlib or local)',
+                modname, info.filename)
 
-    # 3. compare with requirements.txt
+    # 4. compare with requirements.txt
     explicit = set()
     for requirement in parse_requirements('requirements.txt',
             session=PipSession()):
+        log.debug('found requirement: %s', requirement.name)
         explicit.add(normalize_name(requirement.name))
 
     return [(name, used[name]) for name in used
@@ -222,6 +233,8 @@ def ignorer(ignore_cfg):
 
 
 def main():
+    from pip_missing_reqs import __version__
+
     usage = 'usage: %prog [options] files or directories'
     parser = optparse.OptionParser(usage)
     parser.add_option("-f", "--ignore-file", dest="ignore_files",
@@ -232,13 +245,14 @@ def main():
         help="used module names (globs are ok) to ignore")
     parser.add_option("-v", "--verbose", dest="verbose",
         action="store_true", default=False, help="be more verbose")
+    parser.add_option("-d", "--debug", dest="debug",
+        action="store_true", default=False, help="be *really* verbose")
     parser.add_option("--version", dest="version",
         action="store_true", default=False, help="display version information")
 
     (options, args) = parser.parse_args()
 
     if options.version:
-        from pip_missing_reqs import __version__
         sys.exit(__version__)
 
     if not args:
@@ -251,7 +265,14 @@ def main():
     options.paths = args
 
     logging.basicConfig(format='%(message)s')
-    log.setLevel(logging.INFO if options.verbose else logging.WARN)
+    if options.debug:
+        log.setLevel(logging.DEBUG)
+    elif options.verbose:
+        log.setLevel(logging.INFO)
+    else:
+        log.setLevel(logging.WARN)
+
+    log.info('using pip_missing_reqs-%s from %s', __version__, __file__)
 
     missing = find_missing_reqs(options)
 

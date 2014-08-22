@@ -2,6 +2,23 @@
 Release History
 ---------------
 
+1.1.9
+
+- test fixes and cleanup
+- remove hard-coded simplejson debugging behaviour
+
+1.1.8
+
+- use os.path.realpath to avoid symlink craziness on debian/ubuntu
+
+1.1.7
+
+- tweak to debug output
+
+1.1.6
+
+- add debug (very verbose) run output
+
 1.1.5
 
 - add header to output to make it clearer when in a larger test run

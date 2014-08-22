@@ -20,7 +20,8 @@ def fake_opts():
     class FakeOptParse:
         class options:
             paths = ['dummy']
-            verbose = True
+            verbose = False
+            debug = False
             version = False
             ignore_files = []
             ignore_mods = []
@@ -56,7 +57,7 @@ def test_is_package_file(path, result):
 def test_FoundModule():
     fm = find_missing_reqs.FoundModule('spam', 'ham')
     assert fm.modname == 'spam'
-    assert fm.filename == 'ham'
+    assert fm.filename == os.path.realpath('ham')
     assert fm.locations == []
     assert str(fm) == 'FoundModule("spam")'
 
@@ -257,14 +258,17 @@ def test_ignorer(monkeypatch, ignore_cfg, candidate, result):
     assert ignorer(candidate) == result
 
 
-@pytest.mark.parametrize(["verbose_cfg", "events", "result"], [
-    (False, [(logging.INFO, 'info'), (logging.WARN, 'warn')], ['warn']),
-    (True, [(logging.INFO, 'info'), (logging.WARN, 'warn')], ['info', 'warn']),
+@pytest.mark.parametrize(["verbose_cfg", "debug_cfg", "result"], [
+    (False, False, ['warn']),
+    (True, False, ['info', 'warn']),
+    (False, True, ['debug', 'info', 'warn']),
+    (True, True, ['debug', 'info', 'warn']),
 ])
-def test_logging_config(monkeypatch, caplog, verbose_cfg, events, result):
+def test_logging_config(monkeypatch, caplog, verbose_cfg, debug_cfg, result):
     class options:
         paths = ['dummy']
         verbose = verbose_cfg
+        debug = debug_cfg
         version = False
         ignore_files = []
         ignore_mods = []
@@ -285,11 +289,16 @@ def test_logging_config(monkeypatch, caplog, verbose_cfg, events, result):
     monkeypatch.setattr(find_missing_reqs, 'find_missing_reqs', lambda x: [])
     find_missing_reqs.main()
 
-    for event in events:
+    for event in [(logging.DEBUG, 'debug'), (logging.INFO, 'info'),
+            (logging.WARN, 'warn')]:
         find_missing_reqs.log.log(*event)
 
     messages = [r.message for r in caplog.records()]
-    assert messages == result
+    # first message is always the usage message
+    if verbose_cfg or debug_cfg:
+        assert messages[1:] == result
+    else:
+        assert messages == result
 
 
 def test_main_version(monkeypatch, caplog, fake_opts):
