@@ -2,6 +2,11 @@
 Release History
 ---------------
 
+1.2.0
+
+- bumped pip requirement to 6.0.8+
+- updated use of pip internals to match that version
+
 1.1.9
 
 - test fixes and cleanup
