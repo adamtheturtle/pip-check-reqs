@@ -2,6 +2,10 @@
 Release History
 ---------------
 
+1.2.1
+
+- relax requirement to 6.0+
+
 1.2.0
 
 - bumped pip requirement to 6.0.8+
