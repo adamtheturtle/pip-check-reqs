@@ -8,49 +8,12 @@ import os
 import re
 import sys
 
-import pkg_resources
-from pip.req import parse_requirements
+from pip.commands.show import search_packages_info
 from pip.download import PipSession
-from pip.util import get_installed_distributions, normalize_name
+from pip.req import parse_requirements
+from pip.utils import get_installed_distributions, normalize_name
 
 log = logging.getLogger(__name__)
-
-
-# TODO: remove me when pip 1.6 is released (vendored from pypa/pip git)
-def search_packages_info(query):  # pragma: no cover
-    """
-    Gather details from installed distributions. Print distribution name,
-    version, location, and installed files. Installed files requires a
-    pip generated 'installed-files.txt' in the distributions '.egg-info'
-    directory.
-    """
-    installed = dict(
-        [(p.project_name.lower(), p) for p in pkg_resources.working_set])
-    query_names = [name.lower() for name in query]
-    for dist in [installed[pkg] for pkg in query_names if pkg in installed]:
-        package = {
-            'name': dist.project_name,
-            'version': dist.version,
-            'location': dist.location,
-            'requires': [dep.project_name for dep in dist.requires()],
-        }
-        file_list = None
-        if isinstance(dist, pkg_resources.DistInfoDistribution):
-            # RECORDs should be part of .dist-info metadatas
-            if dist.has_metadata('RECORD'):
-                lines = dist.get_metadata_lines('RECORD')
-                paths = [l.split(',')[0] for l in lines]
-                paths = [os.path.join(dist.location, p) for p in paths]
-                file_list = [os.path.relpath(p, dist.location) for p in paths]
-        else:
-            # Otherwise use pip's log for .egg-info's
-            if dist.has_metadata('installed-files.txt'):
-                paths = dist.get_metadata_lines('installed-files.txt')
-                paths = [os.path.join(dist.egg_info, p) for p in paths]
-                file_list = [os.path.relpath(p, dist.location) for p in paths]
-        # use and short-circuit to check for None
-        package['files'] = file_list and sorted(file_list)
-        yield package
 
 
 class FoundModule:
