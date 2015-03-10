@@ -1,5 +1,5 @@
-pip-missing-reqs
-================
+pip-check-reqs
+==============
 
 It happens: you start using a module in your project and it works and you
 don't realise that it's only being included in your `virtualenv`_ because

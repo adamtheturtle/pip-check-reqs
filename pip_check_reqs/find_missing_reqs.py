@@ -196,7 +196,7 @@ def ignorer(ignore_cfg):
 
 
 def main():
-    from pip_missing_reqs import __version__
+    from pip_check_reqs import __version__
 
     usage = 'usage: %prog [options] files or directories'
     parser = optparse.OptionParser(usage)
@@ -235,7 +235,7 @@ def main():
     else:
         log.setLevel(logging.WARN)
 
-    log.info('using pip_missing_reqs-%s from %s', __version__, __file__)
+    log.info('using pip_check_reqs-%s from %s', __version__, __file__)
 
     missing = find_missing_reqs(options)
 
