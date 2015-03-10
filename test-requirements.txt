@@ -1,0 +1,4 @@
+coverage
+pretend
+pytest
+pytest-capturelog
