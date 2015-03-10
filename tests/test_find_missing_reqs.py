@@ -11,7 +11,7 @@ import sys
 import pytest
 import pretend
 
-from . import find_missing_reqs
+from pip_check_reqs import find_missing_reqs
 
 
 @pytest.fixture
