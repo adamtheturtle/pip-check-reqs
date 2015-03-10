@@ -28,15 +28,24 @@ Basic usage, running in your project directory::
 This will find all imports in the code in "sample" and check that the
 packages those modules belong to are in the requirements.txt file.
 
+Additionally it is possible to check that there are no dependencies in
+requirements.txt that are then unused in the project::
+    <activate virtualenv for your project>
+    pip-extra-reqs --ignore-file=sample/tests/* sample
+
+This would find anything that is listed in requirements.txt but that is not
+imported by sample.
 
 Sample tox.ini configuration
 ----------------------------
 
 To make your life easier, copy something like this into your tox.ini::
 
-    [testenv:pip-missing-reqs]
+    [testenv:pip-check-reqs]
     deps=-rrequirements.txt
-    commands=pip-missing-reqs --ignore-file=sample/tests/* sample
+    commands=
+        pip-missing-reqs --ignore-file=sample/tests/* sample
+        pip-extra-reqs --ignore-file=sample/tests/* sample
 
 
 Excluding test files (or others) from this check
