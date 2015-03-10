@@ -11,7 +11,7 @@ import sys
 import pytest
 import pretend
 
-from pip_check_reqs import find_missing_reqs
+from pip_check_reqs import find_missing_reqs, common
 
 
 @pytest.fixture
@@ -51,11 +51,11 @@ def fake_opts():
     ('/ham/spam/__init__.py', '/ham/spam'),
 ])
 def test_is_package_file(path, result):
-    assert find_missing_reqs.is_package_file(path) == result
+    assert common.is_package_file(path) == result
 
 
 def test_FoundModule():
-    fm = find_missing_reqs.FoundModule('spam', 'ham')
+    fm = common.FoundModule('spam', 'ham')
     assert fm.modname == 'spam'
     assert fm.filename == os.path.realpath('ham')
     assert fm.locations == []
@@ -74,7 +74,7 @@ def test_ImportVisitor(stmt, result):
     class options:
         def ignore_mods(self, modname):
             return False
-    vis = find_missing_reqs.ImportVisitor(options())
+    vis = common.ImportVisitor(options())
     vis.set_location('spam.py')
     vis.visit(ast.parse(stmt))
     result = vis.finalise()
@@ -85,7 +85,7 @@ def test_pyfiles_file(monkeypatch):
     monkeypatch.setattr(os.path, 'abspath',
         pretend.call_recorder(lambda x: '/spam/ham.py'))
 
-    assert list(find_missing_reqs.pyfiles('spam')) == ['/spam/ham.py']
+    assert list(common.pyfiles('spam')) == ['/spam/ham.py']
 
 
 def test_pyfiles_file_no_dice(monkeypatch):
@@ -93,7 +93,7 @@ def test_pyfiles_file_no_dice(monkeypatch):
         pretend.call_recorder(lambda x: '/spam/ham'))
 
     with pytest.raises(ValueError):
-        list(find_missing_reqs.pyfiles('spam'))
+        list(common.pyfiles('spam'))
 
 
 def test_pyfiles_package(monkeypatch):
@@ -108,7 +108,7 @@ def test_pyfiles_package(monkeypatch):
     monkeypatch.setattr(os, 'walk',
         pretend.call_recorder(lambda x: walk_results))
 
-    assert list(find_missing_reqs.pyfiles('spam')) == \
+    assert list(common.pyfiles('spam')) == \
         ['spam/__init__.py', 'spam/ham.py', 'spam/dub/bass.py']
 
 
@@ -120,7 +120,7 @@ def test_pyfiles_package(monkeypatch):
 ])
 def test_find_imported_modules(monkeypatch, caplog, ignore_ham, ignore_hashlib,
         expect, locs):
-    monkeypatch.setattr(find_missing_reqs, 'pyfiles',
+    monkeypatch.setattr(common, 'pyfiles',
         pretend.call_recorder(lambda x: ['spam.py', 'ham.py']))
 
     if sys.version_info[0] == 2:
@@ -145,7 +145,7 @@ def test_find_imported_modules(monkeypatch, caplog, ignore_ham, ignore_hashlib,
 
         def __exit__(self, *args):
             pass
-    monkeypatch.setattr(find_missing_reqs, 'open', FakeFile, raising=False)
+    monkeypatch.setattr(common, 'open', FakeFile, raising=False)
 
     caplog.setLevel(logging.INFO)
 
@@ -165,7 +165,7 @@ def test_find_imported_modules(monkeypatch, caplog, ignore_ham, ignore_hashlib,
                 return True
             return False
 
-    result = find_missing_reqs.find_imported_modules(options)
+    result = common.find_imported_modules(options)
     assert set(result) == set(expect)
     assert result['ast'].locations == locs
 
@@ -175,14 +175,14 @@ def test_find_imported_modules(monkeypatch, caplog, ignore_ham, ignore_hashlib,
 
 def test_find_missing_reqs(monkeypatch):
     imported_modules = dict(
-        spam=find_missing_reqs.FoundModule('spam', 'site-spam/spam.py',
+        spam=common.FoundModule('spam', 'site-spam/spam.py',
             [('ham.py', 1)]),
-        shrub=find_missing_reqs.FoundModule('shrub', 'site-spam/shrub.py',
+        shrub=common.FoundModule('shrub', 'site-spam/shrub.py',
             [('ham.py', 3)]),
-        ignore=find_missing_reqs.FoundModule('ignore', 'ignore.py',
+        ignore=common.FoundModule('ignore', 'ignore.py',
             [('ham.py', 2)])
     )
-    monkeypatch.setattr(find_missing_reqs, 'find_imported_modules',
+    monkeypatch.setattr(common, 'find_imported_modules',
         pretend.call_recorder(lambda a: imported_modules))
 
     FakeDist = collections.namedtuple('FakeDist', ['project_name'])
@@ -214,7 +214,7 @@ def test_main_failure(monkeypatch, caplog, fake_opts):
     caplog.setLevel(logging.WARN)
 
     monkeypatch.setattr(find_missing_reqs, 'find_missing_reqs', lambda x: [
-        ('missing', [find_missing_reqs.FoundModule('missing', 'missing.py',
+        ('missing', [common.FoundModule('missing', 'missing.py',
             [('location.py', 1)])])
     ])
 
@@ -254,7 +254,7 @@ def test_main_no_spec(monkeypatch, caplog, fake_opts):
 ])
 def test_ignorer(monkeypatch, ignore_cfg, candidate, result):
     monkeypatch.setattr(os.path, 'relpath', lambda s: s.lstrip('/'))
-    ignorer = find_missing_reqs.ignorer(ignore_cfg)
+    ignorer = common.ignorer(ignore_cfg)
     assert ignorer(candidate) == result
 
 
