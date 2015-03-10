@@ -3,8 +3,12 @@ pip-check-reqs
 
 It happens: you start using a module in your project and it works and you
 don't realise that it's only being included in your `virtualenv`_ because
-it's a dependency of a package you're using. This tool finds those modules so
-you can include them in the `requirements.txt`_ for the project.
+it's a dependency of a package you're using. pip-missing-reqs finds those
+modules so you can include them in the `requirements.txt`_ for the project.
+
+Alternatively, you have a long-running project that has some packages in
+requirements.txt that are no longer actively used in the codebase. The
+pip-extra-reqs tool will find those modules so you can remove them.
 
 .. _`virtualenv`: https://virtualenv.pypa.io/en/latest/
 .. _`requirements.txt`: https://pip.pypa.io/en/latest/user_guide.html#requirements-files
@@ -24,12 +28,14 @@ Basic usage, running in your project directory::
 
     <activate virtualenv for your project>
     pip-missing-reqs --ignore-file=sample/tests/* sample
+    pip-extra-reqs --ignore-file=sample/tests/* sample
 
 This will find all imports in the code in "sample" and check that the
 packages those modules belong to are in the requirements.txt file.
 
 Additionally it is possible to check that there are no dependencies in
 requirements.txt that are then unused in the project::
+
     <activate virtualenv for your project>
     pip-extra-reqs --ignore-file=sample/tests/* sample
 
@@ -72,3 +78,8 @@ check by name (or glob pattern) using `--ignore-module` (shorthand is `-m`)::
     # ignore the whole package spam as well
     pip-missing-reqs --ignore-module=spam --ignore-module=spam.* sample
 
+
+With Thanks To
+--------------
+
+Josh Hesketh -- who refactored code and contributed the pip-extra-reqs tool.

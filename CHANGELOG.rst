@@ -2,6 +2,11 @@
 Release History
 ---------------
 
+2.0 **renamed package to pip_check_reqs**
+
+- added tool pip-extra-reqs to find packages installed but not used
+  (contributed by Josh Hesketh)
+
 1.2.1
 
 - relax requirement to 6.0+
