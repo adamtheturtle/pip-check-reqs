@@ -35,8 +35,6 @@ setup(
     entry_points={
         'console_scripts': [
             'pip-missing-reqs=pip_check_reqs.find_missing_reqs:main',
-        ],
-        'console_scripts': [
             'pip-extra-reqs=pip_check_reqs.find_extra_reqs:main',
         ],
     },
