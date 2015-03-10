@@ -1,4 +1,4 @@
-recursive-include pip_missing_reqs
+recursive-include pip_check_reqs
 include *.rst
 include LICENSE
 include setup.*
