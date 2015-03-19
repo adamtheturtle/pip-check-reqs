@@ -5,6 +5,10 @@ import logging
 import os
 import re
 
+from pip.download import PipSession
+from pip.req import parse_requirements
+from pip.utils import normalize_name
+
 log = logging.getLogger(__name__)
 
 
@@ -115,6 +119,18 @@ def find_imported_modules(options):
             vis.set_location(filename)
             vis.visit(ast.parse(content))
     return vis.finalise()
+
+
+def find_required_modules(options):
+    explicit = set()
+    for requirement in parse_requirements('requirements.txt',
+            session=PipSession()):
+        if options.ignore_reqs(requirement):
+            log.debug('ignoring requirement: %s', requirement.name)
+        else:
+            log.debug('found requirement: %s', requirement.name)
+            explicit.add(normalize_name(requirement.name))
+    return explicit
 
 
 def is_package_file(path):
