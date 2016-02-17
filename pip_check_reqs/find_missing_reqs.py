@@ -2,17 +2,17 @@ import collections
 import logging
 import optparse
 import os
+import re
 import sys
 
 from pip.commands.show import search_packages_info
 from pip.download import PipSession
 from pip.req import parse_requirements
-from pip.utils import get_installed_distributions, normalize_name
+from pip.utils import get_installed_distributions
 
 from pip_check_reqs import common
 
 log = logging.getLogger(__name__)
-
 
 def find_missing_reqs(options):
     # 1. find files used by imports in the code (as best we can without
@@ -40,7 +40,7 @@ def find_missing_reqs(options):
     for modname, info in used_modules.items():
         # probably standard library if it's not in the files list
         if info.filename in installed_files:
-            used_name = normalize_name(installed_files[info.filename])
+            used_name = common.normalize_name(installed_files[info.filename])
             log.debug('used module: %s (from package %s)', modname,
                 installed_files[info.filename])
             used[used_name].append(info)
@@ -54,7 +54,7 @@ def find_missing_reqs(options):
     for requirement in parse_requirements('requirements.txt',
             session=PipSession()):
         log.debug('found requirement: %s', requirement.name)
-        explicit.add(normalize_name(requirement.name))
+        explicit.add(common.normalize_name(requirement.name))
 
     return [(name, used[name]) for name in used
         if name not in explicit]
