@@ -7,7 +7,6 @@ import re
 
 from pip.download import PipSession
 from pip.req import parse_requirements
-from pip.utils import normalize_name
 
 log = logging.getLogger(__name__)
 
@@ -155,3 +154,10 @@ def ignorer(ignore_cfg):
                 return True
         return False
     return f
+
+
+_normalize_re = re.compile(r'[^a-z]', re.I)
+
+
+def normalize_name(name):
+    return _normalize_re.sub('-', name.lower())
