@@ -4,8 +4,9 @@ import optparse
 import os
 import sys
 
+from packaging.utils import canonicalize_name
 from pip.commands.show import search_packages_info
-from pip.utils import get_installed_distributions, normalize_name
+from pip.utils import get_installed_distributions
 
 from pip_check_reqs import common
 
@@ -38,7 +39,7 @@ def find_extra_reqs(options):
     for modname, info in used_modules.items():
         # probably standard library if it's not in the files list
         if info.filename in installed_files:
-            used_name = normalize_name(installed_files[info.filename])
+            used_name = canonicalize_name(installed_files[info.filename])
             log.debug('used module: %s (from package %s)', modname,
                 installed_files[info.filename])
             used[used_name].append(info)
