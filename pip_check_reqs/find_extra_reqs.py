@@ -24,7 +24,7 @@ def find_extra_reqs(options):
     for package in search_packages_info(all_pkgs):
         log.debug('installed package: %s (at %s)', package['name'],
             package['location'])
-        for f in package['files'] or []:
+        for f in package.get('files', []) or []:
             path = os.path.realpath(os.path.join(package['location'], f))
             installed_files[path] = package['name']
             package_path = common.is_package_file(path)
