@@ -5,9 +5,9 @@ import logging
 import os
 import re
 
+from packaging.utils import canonicalize_name
 from pip.download import PipSession
 from pip.req import parse_requirements
-from pip.utils import normalize_name
 
 log = logging.getLogger(__name__)
 
@@ -129,7 +129,7 @@ def find_required_modules(options):
             log.debug('ignoring requirement: %s', requirement.name)
         else:
             log.debug('found requirement: %s', requirement.name)
-            explicit.add(normalize_name(requirement.name))
+            explicit.add(canonicalize_name(requirement.name))
     return explicit
 
 
