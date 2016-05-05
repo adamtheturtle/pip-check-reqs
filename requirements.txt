@@ -1,1 +1,2 @@
 pip>=6.0
+packaging

@@ -4,10 +4,9 @@ import optparse
 import os
 import sys
 
+from packaging.utils import canonicalize_name
 from pip.commands.show import search_packages_info
-from pip.download import PipSession
-from pip.req import parse_requirements
-from pip.utils import get_installed_distributions, normalize_name
+from pip.utils import get_installed_distributions
 
 from pip_check_reqs import common
 
@@ -25,7 +24,7 @@ def find_extra_reqs(options):
     for package in search_packages_info(all_pkgs):
         log.debug('installed package: %s (at %s)', package['name'],
             package['location'])
-        for f in package['files'] or []:
+        for f in package.get('files', []) or []:
             path = os.path.realpath(os.path.join(package['location'], f))
             installed_files[path] = package['name']
             package_path = common.is_package_file(path)
@@ -40,7 +39,7 @@ def find_extra_reqs(options):
     for modname, info in used_modules.items():
         # probably standard library if it's not in the files list
         if info.filename in installed_files:
-            used_name = normalize_name(installed_files[info.filename])
+            used_name = canonicalize_name(installed_files[info.filename])
             log.debug('used module: %s (from package %s)', modname,
                 installed_files[info.filename])
             used[used_name].append(info)
@@ -50,11 +49,7 @@ def find_extra_reqs(options):
                 modname, info.filename)
 
     # 4. compare with requirements.txt
-    explicit = set()
-    for requirement in parse_requirements('requirements.txt',
-            session=PipSession()):
-        log.debug('found requirement: %s', requirement.name)
-        explicit.add(normalize_name(requirement.name))
+    explicit = common.find_required_modules(options)
 
     return [name for name in explicit if name not in used]
 
@@ -70,6 +65,9 @@ def main():
     parser.add_option("-m", "--ignore-module", dest="ignore_mods",
         action="append", default=[],
         help="used module names (globs are ok) to ignore")
+    parser.add_option("-r", "--ignore-requirement", dest="ignore_reqs",
+        action="append", default=[],
+        help="reqs in requirements.txt to ignore")
     parser.add_option("-v", "--verbose", dest="verbose",
         action="store_true", default=False, help="be more verbose")
     parser.add_option("-d", "--debug", dest="debug",
@@ -88,6 +86,7 @@ def main():
 
     options.ignore_files = common.ignorer(options.ignore_files)
     options.ignore_mods = common.ignorer(options.ignore_mods)
+    options.ignore_reqs = common.ignorer(options.ignore_reqs)
 
     options.paths = args
 

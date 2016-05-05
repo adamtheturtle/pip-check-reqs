@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import ast
+import collections
 import logging
 import os.path
 import sys
@@ -159,3 +160,20 @@ def test_ignorer(monkeypatch, ignore_cfg, candidate, result):
     monkeypatch.setattr(os.path, 'relpath', lambda s: s.lstrip('/'))
     ignorer = common.ignorer(ignore_cfg)
     assert ignorer(candidate) == result
+
+
+def test_find_required_modules(monkeypatch):
+    class options:
+        @staticmethod
+        def ignore_reqs(req):
+            if req.name == 'barfoo':
+                return True
+            return False
+
+    FakeReq = collections.namedtuple('FakeReq', ['name'])
+    requirements = [FakeReq('foobar'), FakeReq('barfoo')]
+    monkeypatch.setattr(common, 'parse_requirements',
+        pretend.call_recorder(lambda a, session=None: requirements))
+
+    reqs = common.find_required_modules(options)
+    assert reqs == set(['foobar'])

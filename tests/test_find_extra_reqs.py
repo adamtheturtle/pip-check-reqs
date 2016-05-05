@@ -21,6 +21,7 @@ def fake_opts():
             version = False
             ignore_files = []
             ignore_mods = []
+            ignore_reqs = []
         options = options()
         args = ['ham.py']
 
@@ -64,10 +65,14 @@ def test_find_extra_reqs(monkeypatch):
 
     FakeReq = collections.namedtuple('FakeReq', ['name'])
     requirements = [FakeReq('foobar')]
-    monkeypatch.setattr(find_extra_reqs, 'parse_requirements',
+    monkeypatch.setattr(common, 'parse_requirements',
         pretend.call_recorder(lambda a, session=None: requirements))
 
-    result = find_extra_reqs.find_extra_reqs(None)
+    class options:
+        ignore_reqs = lambda x, y: False
+    options = options()
+
+    result = find_extra_reqs.find_extra_reqs(options)
     assert result == ['foobar']
 
 
@@ -117,6 +122,7 @@ def test_logging_config(monkeypatch, caplog, verbose_cfg, debug_cfg, result):
         version = False
         ignore_files = []
         ignore_mods = []
+        ignore_reqs = []
     options = options()
 
     class FakeOptParse:
