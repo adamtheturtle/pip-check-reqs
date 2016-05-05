@@ -83,3 +83,5 @@ With Thanks To
 --------------
 
 Josh Hesketh -- who refactored code and contributed the pip-extra-reqs tool.
+
+Wil Cooley -- who handled the removal of normalize_name and fixed some bugs.

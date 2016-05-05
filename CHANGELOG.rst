@@ -2,6 +2,11 @@
 Release History
 ---------------
 
+2.0.1
+
+- handled removal of normalize_name from pip.utils
+- handle packages with no files
+
 2.0 **renamed package to pip_check_reqs**
 
 - added tool pip-extra-reqs to find packages installed but not used
