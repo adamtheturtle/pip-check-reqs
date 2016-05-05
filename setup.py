@@ -10,6 +10,11 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 with open(path.join(here, 'CHANGELOG.rst'), encoding='utf-8') as f:
     long_description += f.read()
 
+# This is not usual, but this project needs both install_requires
+# and requirements.txt and we'd like to not duplicate them
+with open(path.join(here, 'requirements.txt'), encoding='utf-8') as f:
+    requirements = [s.strip() for s in f.readlines()]
+
 from pip_check_reqs import __version__
 
 setup(
@@ -38,8 +43,5 @@ setup(
             'pip-extra-reqs=pip_check_reqs.find_extra_reqs:main',
         ],
     },
-    install_requires=[
-        'packaging',
-        'pip',
-    ],
+    install_requires=requirements
 )

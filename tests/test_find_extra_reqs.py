@@ -69,7 +69,8 @@ def test_find_extra_reqs(monkeypatch):
         pretend.call_recorder(lambda a, session=None: requirements))
 
     class options:
-        ignore_reqs = lambda x, y: False
+        def ignore_reqs(x, y):
+            return False
     options = options()
 
     result = find_extra_reqs.find_extra_reqs(options)
