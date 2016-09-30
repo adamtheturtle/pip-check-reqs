@@ -109,7 +109,7 @@ def main():
 
     if extras:
         log.warning('Extra requirements:')
-    for name in extras:
+    for name in sorted(extras):
         log.warning('%s in requirements.txt' % name)
 
     if extras:

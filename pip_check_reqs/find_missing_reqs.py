@@ -112,7 +112,7 @@ def main():
 
     if missing:
         log.warning('Missing requirements:')
-    for name, uses in missing:
+    for name, uses in sorted(missing):
         for use in uses:
             for filename, lineno in use.locations:
                 log.warning('%s:%s dist=%s module=%s',
