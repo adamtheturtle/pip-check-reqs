@@ -25,7 +25,7 @@ def find_missing_reqs(options):
     all_pkgs = (pkg.project_name for pkg in get_installed_distributions())
     for package in search_packages_info(all_pkgs):
         log.debug('installed package: %s (at %s)', package['name'],
-            package['location'])
+                  package['location'])
         for file in package.get('files', []) or []:
             path = os.path.realpath(os.path.join(package['location'], file))
             installed_files[path] = package['name']
@@ -43,7 +43,7 @@ def find_missing_reqs(options):
         if info.filename in installed_files:
             used_name = canonicalize_name(installed_files[info.filename])
             log.debug('used module: %s (from package %s)', modname,
-                installed_files[info.filename])
+                      installed_files[info.filename])
             used[used_name].append(info)
         else:
             log.debug(
@@ -53,12 +53,12 @@ def find_missing_reqs(options):
     # 4. compare with requirements.txt
     explicit = set()
     for requirement in parse_requirements('requirements.txt',
-            session=PipSession()):
+                                          session=PipSession()):
         log.debug('found requirement: %s', requirement.name)
         explicit.add(canonicalize_name(requirement.name))
 
     return [(name, used[name]) for name in used
-        if name not in explicit]
+            if name not in explicit]
 
 
 def main():
@@ -67,17 +67,17 @@ def main():
     usage = 'usage: %prog [options] files or directories'
     parser = optparse.OptionParser(usage)
     parser.add_option("-f", "--ignore-file", dest="ignore_files",
-        action="append", default=[],
-        help="file paths globs to ignore")
+                      action="append", default=[],
+                      help="file paths globs to ignore")
     parser.add_option("-m", "--ignore-module", dest="ignore_mods",
-        action="append", default=[],
-        help="used module names (globs are ok) to ignore")
+                      action="append", default=[],
+                      help="used module names (globs are ok) to ignore")
     parser.add_option("-v", "--verbose", dest="verbose",
-        action="store_true", default=False, help="be more verbose")
+                      action="store_true", default=False, help="be more verbose")
     parser.add_option("-d", "--debug", dest="debug",
-        action="store_true", default=False, help="be *really* verbose")
+                      action="store_true", default=False, help="be *really* verbose")
     parser.add_option("--version", dest="version",
-        action="store_true", default=False, help="display version information")
+                      action="store_true", default=False, help="display version information")
 
     (options, args) = parser.parse_args()
 
@@ -111,7 +111,7 @@ def main():
         for use in uses:
             for filename, lineno in use.locations:
                 log.warning('%s:%s dist=%s module=%s',
-                    os.path.relpath(filename), lineno, name, use.modname)
+                            os.path.relpath(filename), lineno, name, use.modname)
 
     if missing:
         sys.exit(1)

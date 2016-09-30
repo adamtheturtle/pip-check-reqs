@@ -16,7 +16,7 @@ class FoundModule:
     def __init__(self, modname, filename, locations=None):
         self.modname = modname
         self.filename = os.path.realpath(filename)
-        self.locations = locations or []         # filename, lineno
+        self.locations = locations or []  # filename, lineno
 
     def __repr__(self):
         return 'FoundModule("%s")' % self.modname
@@ -32,10 +32,12 @@ class ImportVisitor(ast.NodeVisitor):
     def set_location(self, location):
         self.__location = location
 
+    # noinspection PyPep8Naming
     def visit_Import(self, node):
         for alias in node.names:
-            self.__addModule(alias.name, node.lineno)
+            self.__add_module(alias.name, node.lineno)
 
+    # noinspection PyPep8Naming
     def visit_ImportFrom(self, node):
         if node.module == '__future__':
             # not an actual module
@@ -44,9 +46,9 @@ class ImportVisitor(ast.NodeVisitor):
             if node.module is None:
                 # relative import
                 continue
-            self.__addModule(node.module + '.' + alias.name, node.lineno)
+            self.__add_module(node.module + '.' + alias.name, node.lineno)
 
-    def __addModule(self, modname, lineno):
+    def __add_module(self, modname, lineno):
         if self.__options.ignore_mods(modname):
             return
         path = None
@@ -65,7 +67,7 @@ class ImportVisitor(ast.NodeVisitor):
             progress.append(p)
 
             # we might have previously seen a useful path though...
-            if modpath is None:   # pragma: no cover
+            if modpath is None:  # pragma: no cover
                 # the sys module will hit this code path on py3k - possibly
                 # others will, but I've not discovered them
                 modpath = last_modpath
@@ -124,7 +126,7 @@ def find_imported_modules(options):
 def find_required_modules(options):
     explicit = set()
     for requirement in parse_requirements('requirements.txt',
-            session=PipSession()):
+                                          session=PipSession()):
         if options.ignore_reqs(requirement):
             log.debug('ignoring requirement: %s', requirement.name)
         else:
@@ -134,9 +136,9 @@ def find_required_modules(options):
 
 
 def is_package_file(path):
-    '''Determines whether the path points to a Python package sentinel
+    """Determines whether the path points to a Python package sentinel
     file - the __init__.py or its compiled variants.
-    '''
+    """
     m = re.search('(.+)/__init__\.py[co]?$', path)
     if m is not None:
         return m.group(1)
@@ -147,11 +149,12 @@ def ignorer(ignore_cfg):
     if not ignore_cfg:
         return lambda candidate: False
 
-    def f(candidate, ignore_cfg=ignore_cfg):
-        for ignore in ignore_cfg:
+    def f(candidate, ignore_cfg_=ignore_cfg):
+        for ignore in ignore_cfg_:
             if fnmatch.fnmatch(candidate, ignore):
                 return True
             elif fnmatch.fnmatch(os.path.relpath(candidate), ignore):
                 return True
         return False
+
     return f
