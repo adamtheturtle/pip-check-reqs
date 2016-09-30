@@ -72,6 +72,8 @@ def main():
     parser.add_option("-m", "--ignore-module", dest="ignore_mods",
                       action="append", default=[],
                       help="used module names (globs are ok) to ignore")
+    parser.add_option("-l", "--follow-links", dest="follow_links",
+                      action="store_true", default=False, help="follow symlinks (can cause infinite recursion)")
     parser.add_option("-v", "--verbose", dest="verbose",
                       action="store_true", default=False, help="be more verbose")
     parser.add_option("-d", "--debug", dest="debug",

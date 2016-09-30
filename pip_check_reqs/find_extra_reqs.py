@@ -68,6 +68,8 @@ def main():
     parser.add_option("-r", "--ignore-requirement", dest="ignore_reqs",
                       action="append", default=[],
                       help="reqs in requirements.txt to ignore")
+    parser.add_option("-l", "--follow-links", dest="follow_links",
+                      action="store_true", default=False, help="follow symlinks (can cause infinite recursion)")
     parser.add_option("-v", "--verbose", dest="verbose",
                       action="store_true", default=False, help="be more verbose")
     parser.add_option("-d", "--debug", dest="debug",

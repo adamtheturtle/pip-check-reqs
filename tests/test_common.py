@@ -82,7 +82,7 @@ def test_pyfiles_package(monkeypatch):
         ('spam/dub', [], ['bass.py', 'dropped']),
     ]
     monkeypatch.setattr(os, 'walk',
-                        pretend.call_recorder(lambda x: walk_results))
+                        pretend.call_recorder(lambda x, **_: walk_results))
 
     assert list(common.pyfiles('spam')) == ['spam/__init__.py', 'spam/ham.py', 'spam/dub/bass.py']
 
@@ -96,7 +96,7 @@ def test_pyfiles_package(monkeypatch):
 def test_find_imported_modules(monkeypatch, caplog, ignore_ham, ignore_hashlib,
                                expect, locs):
     monkeypatch.setattr(common, 'pyfiles',
-                        pretend.call_recorder(lambda x: ['spam.py', 'ham.py']))
+                        pretend.call_recorder(lambda x, _: ['spam.py', 'ham.py']))
 
     if sys.version_info[0] == 2:
         # py2 will find sys module but py3k won't
@@ -127,6 +127,7 @@ def test_find_imported_modules(monkeypatch, caplog, ignore_ham, ignore_hashlib,
 
     class Options:
         paths = ['dummy']
+        follow_links = False
         verbose = True
 
         @staticmethod

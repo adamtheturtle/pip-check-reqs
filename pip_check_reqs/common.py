@@ -93,7 +93,7 @@ class ImportVisitor(ast.NodeVisitor):
         return self.__modules
 
 
-def pyfiles(root):
+def pyfiles(root, followlinks=False):
     d = os.path.abspath(root)
     if not os.path.isdir(d):
         n, ext = os.path.splitext(d)
@@ -101,7 +101,7 @@ def pyfiles(root):
             yield d
         else:
             raise ValueError('%s is not a python file or directory' % root)
-    for root, dirs, files in os.walk(d):
+    for root, dirs, files in os.walk(d, followlinks=followlinks):
         for f in files:
             n, ext = os.path.splitext(f)
             if ext == '.py':
@@ -111,7 +111,7 @@ def pyfiles(root):
 def find_imported_modules(options):
     vis = ImportVisitor(options)
     for path in options.paths:
-        for filename in pyfiles(path):
+        for filename in pyfiles(path, options.follow_links):
             if options.ignore_files(filename):
                 log.info('ignoring: %s', os.path.relpath(filename))
                 continue
