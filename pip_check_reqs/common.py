@@ -85,6 +85,8 @@ class ImportVisitor(ast.NodeVisitor):
             return
 
         modname = '.'.join(progress)
+        # Convert the path to lower case to handle file systems that are case insensitive
+        modpath = modpath.lower()
         if modname not in self.__modules:
             self.__modules[modname] = FoundModule(modname, modpath)
         self.__modules[modname].locations.append((self.__location, lineno))
