@@ -6,8 +6,8 @@ import os
 import re
 
 from packaging.utils import canonicalize_name
-from pip.download import PipSession
-from pip.req import parse_requirements
+from pip._internal.download import PipSession
+from pip._internal.req.req_file import parse_requirements
 
 log = logging.getLogger(__name__)
 

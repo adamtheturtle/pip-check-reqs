@@ -74,7 +74,7 @@ def test_find_missing_reqs(monkeypatch):
 def test_main_failure(monkeypatch, caplog, fake_opts):
     monkeypatch.setattr(optparse, 'OptionParser', fake_opts)
 
-    caplog.setLevel(logging.WARN)
+    caplog.set_level(logging.WARN)
 
     monkeypatch.setattr(find_missing_reqs, 'find_missing_reqs', lambda x: [
         ('missing', [common.FoundModule('missing', 'missing.py',
@@ -85,9 +85,9 @@ def test_main_failure(monkeypatch, caplog, fake_opts):
         find_missing_reqs.main()
         assert excinfo.value == 1
 
-    assert caplog.records()[0].message == \
+    assert caplog.records[0].message == \
         'Missing requirements:'
-    assert caplog.records()[1].message == \
+    assert caplog.records[1].message == \
         'location.py:1 dist=missing module=missing'
 
 
@@ -139,7 +139,7 @@ def test_logging_config(monkeypatch, caplog, verbose_cfg, debug_cfg, result):
             (logging.WARN, 'warn')]:
         find_missing_reqs.log.log(*event)
 
-    messages = [r.message for r in caplog.records()]
+    messages = [r.message for r in caplog.records]
     # first message is always the usage message
     if verbose_cfg or debug_cfg:
         assert messages[1:] == result

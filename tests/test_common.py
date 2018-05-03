@@ -119,7 +119,7 @@ def test_find_imported_modules(monkeypatch, caplog, ignore_ham, ignore_hashlib,
             pass
     monkeypatch.setattr(common, 'open', FakeFile, raising=False)
 
-    caplog.setLevel(logging.INFO)
+    caplog.set_level(logging.INFO)
 
     class options:
         paths = ['dummy']
@@ -142,7 +142,7 @@ def test_find_imported_modules(monkeypatch, caplog, ignore_ham, ignore_hashlib,
     assert result['ast'].locations == locs
 
     if ignore_ham:
-        assert caplog.records()[0].message == 'ignoring: ham.py'
+        assert caplog.records[0].message == 'ignoring: ham.py'
 
 
 @pytest.mark.parametrize(["ignore_cfg", "candidate", "result"], [

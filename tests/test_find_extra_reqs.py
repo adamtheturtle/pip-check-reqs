@@ -80,7 +80,7 @@ def test_find_extra_reqs(monkeypatch):
 def test_main_failure(monkeypatch, caplog, fake_opts):
     monkeypatch.setattr(optparse, 'OptionParser', fake_opts)
 
-    caplog.setLevel(logging.WARN)
+    caplog.set_level(logging.WARN)
 
     monkeypatch.setattr(find_extra_reqs, 'find_extra_reqs', lambda x: [
         'extra'
@@ -90,9 +90,9 @@ def test_main_failure(monkeypatch, caplog, fake_opts):
         find_extra_reqs.main()
         assert excinfo.value == 1
 
-    assert caplog.records()[0].message == \
+    assert caplog.records[0].message == \
         'Extra requirements:'
-    assert caplog.records()[1].message == \
+    assert caplog.records[1].message == \
         'extra in requirements.txt'
 
 
@@ -145,7 +145,7 @@ def test_logging_config(monkeypatch, caplog, verbose_cfg, debug_cfg, result):
             (logging.WARN, 'warn')]:
         find_extra_reqs.log.log(*event)
 
-    messages = [r.message for r in caplog.records()]
+    messages = [r.message for r in caplog.records]
     # first message is always the usage message
     if verbose_cfg or debug_cfg:
         assert messages[1:] == result
