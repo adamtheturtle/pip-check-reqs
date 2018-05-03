@@ -1,4 +1,3 @@
 coverage
 pretend
 pytest
-pytest-capturelog >= 0.7
