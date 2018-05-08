@@ -5,9 +5,10 @@ import os
 import sys
 
 from packaging.utils import canonicalize_name
-from pip._internal.commands.show import search_packages_info
+#from pip._internal.commands.show import search_packages_info
 from pip._internal.utils.misc import get_installed_distributions
 from pip_check_reqs import common
+from pip_check_reqs.common import search_packages_info
 
 log = logging.getLogger(__name__)
 
