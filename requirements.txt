@@ -1,2 +1,2 @@
 packaging
-pip>=6.0
+pip >= 10.0.1
