@@ -5,6 +5,7 @@ import logging
 import os
 import pkg_resources
 import re
+import codecs
 
 from packaging.utils import canonicalize_name
 from pip._internal.download import PipSession
@@ -115,7 +116,10 @@ def find_imported_modules(options):
                 log.info('ignoring: %s', os.path.relpath(filename))
                 continue
             log.debug('scanning: %s', os.path.relpath(filename))
-            with open(filename, options.encoding) as f:
+            charset = None
+            if hasattr(options, 'encoding'):
+                charset = options.encoding
+            with codecs.open(filename, encoding=charset) as f:
                 content = f.read()
             vis.set_location(filename)
             vis.visit(ast.parse(content))
