@@ -74,6 +74,7 @@ def main():
         action="store_true", default=False, help="be *really* verbose")
     parser.add_option("--version", dest="version",
         action="store_true", default=False, help="display version information")
+    parser.add_option("--encoding", default=None, help="python script file encoding")
 
     (options, args) = parser.parse_args()
 
