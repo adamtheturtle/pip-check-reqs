@@ -6,7 +6,7 @@ import sys
 
 from packaging.utils import canonicalize_name
 #from pip._internal.commands.show import search_packages_info
-from pip._internal.download import PipSession
+from pip._internal.network.session import PipSession
 from pip._internal.req.req_file import parse_requirements
 from pip._internal.utils.misc import get_installed_distributions
 

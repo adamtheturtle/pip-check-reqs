@@ -7,7 +7,7 @@ import pkg_resources
 import re
 
 from packaging.utils import canonicalize_name
-from pip._internal.download import PipSession
+from pip._internal.network.session import PipSession
 from pip._internal.req.req_file import parse_requirements
 
 log = logging.getLogger(__name__)
