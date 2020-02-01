@@ -18,7 +18,7 @@ with open(path.join(here, 'requirements.txt'), encoding='utf-8') as f:
 from pip_check_reqs import __version__
 
 setup(
-    name='pip_check_reqs',
+    name='pip_check_reqs_pip_gte_20',
     version=__version__,
     description=
         'Find packages that should or should not be in requirements for a '
