@@ -14,6 +14,12 @@ I uploaded this with:
    python setup.py sdist bdist_wheel
    twine upload -r pypi dist/*
 
+Install this fork with:
+
+.. code:: sh
+
+   pip install pip-check-reqs-pip-gte-20
+
 pip-check-reqs
 ==============
 
