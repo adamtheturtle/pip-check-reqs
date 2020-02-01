@@ -6,6 +6,14 @@ I have no intention of maintaining this in the long-term.
 This exists to work around a current bug, at https://github.com/r1chardj0n3s/pip-check-reqs/pull/22,
 and to publish a fixed version to PyPI.
 
+I uploaded this with:
+
+.. code:: sh
+
+   rm -rf dist/ build/
+   python setup.py sdist bdist_wheel
+   twine upload -r pypi dist/*
+
 pip-check-reqs
 ==============
 
