@@ -1,3 +1,11 @@
+Fork details
+============
+
+This is a fork of ``r1chardj0n3s/pip-check-reqs``.
+I have no intention of maintaining this in the long-term.
+This exists to work around a current bug, at https://github.com/r1chardj0n3s/pip-check-reqs/pull/22,
+and to publish a fixed version to PyPI.
+
 pip-check-reqs
 ==============
 
