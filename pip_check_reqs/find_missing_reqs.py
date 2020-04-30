@@ -6,7 +6,11 @@ import sys
 
 from packaging.utils import canonicalize_name
 #from pip._internal.commands.show import search_packages_info
-from pip._internal.download import PipSession
+try:
+    from pip._internal.network.session import PipSession
+except ImportError:
+    from pip._internal.download import PipSession
+
 from pip._internal.req.req_file import parse_requirements
 from pip._internal.utils.misc import get_installed_distributions
 
@@ -55,6 +59,10 @@ def find_missing_reqs(options):
     explicit = set()
     for requirement in parse_requirements('requirements.txt',
             session=PipSession()):
+        if not hasattr(requirement, "name"):
+            from pip._internal.req.constructors import install_req_from_line
+            requirement = install_req_from_line(requirement.requirement)
+
         log.debug('found requirement: %s', requirement.name)
         explicit.add(canonicalize_name(requirement.name))
 
