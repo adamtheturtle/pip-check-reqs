@@ -1,3 +1,6 @@
+**Note: This project is not actively maintained. If you are interested in taking it over, please let me know.**
+
+
 pip-check-reqs
 ==============
 
