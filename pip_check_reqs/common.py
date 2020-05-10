@@ -123,6 +123,7 @@ def find_imported_modules(options):
 
 
 def find_required_modules(options):
+    assert False
     explicit = set()
     for requirement in parse_requirements('requirements.txt',
             session=PipSession()):
