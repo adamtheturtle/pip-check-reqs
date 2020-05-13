@@ -1,4 +1,6 @@
 from __future__ import absolute_import
+import os
+import sys
 
 import collections
 import logging
@@ -154,3 +156,15 @@ def test_main_version(monkeypatch, caplog, fake_opts):
     with pytest.raises(SystemExit) as excinfo:
         find_missing_reqs.main()
         assert excinfo.value == 'version'
+
+def test_pip_compatibility(tmpdir, monkeypatch):
+    with open(os.path.join(tmpdir, "requirements.txt"), "w") as ff:
+        ff.write("pytest\n")
+    
+    with open(os.path.join(tmpdir, "sample.py"), "w") as ff:
+        ff.write("import pytest\n")
+    
+    monkeypatch.chdir(str(tmpdir))
+    monkeypatch.setattr(sys, "argv", ["a", "."])
+    find_missing_reqs.main()
+    
