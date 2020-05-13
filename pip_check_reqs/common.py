@@ -126,6 +126,9 @@ def find_required_modules(options):
     explicit = set()
     for requirement in parse_requirements('requirements.txt',
             session=PipSession()):
+        if not hasattr(requirement, "name"):
+            from pip._internal.req.constructors import install_req_from_line
+            requirement = install_req_from_line(requirement.requirement)
         if options.ignore_reqs(requirement):
             log.debug('ignoring requirement: %s', requirement.name)
         else:
