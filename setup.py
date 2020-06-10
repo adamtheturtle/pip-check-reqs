@@ -27,6 +27,8 @@ setup(
     url='https://github.com/r1chardj0n3s/pip-check-reqs',
     author='Richard Jones',
     author_email='r1chardj0n3s@gmail.com',
+    maintainer='Adam Dangoor',
+    maintainer_email='adamdangoor@gmail.com',
     license='MIT',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
