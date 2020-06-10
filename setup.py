@@ -22,8 +22,7 @@ setup(
     version=__version__,
     description=(
         'Find packages that should or should not be in requirements for a '
-        'project'
-    ),
+        'project'),
     long_description=long_description,
     url='https://github.com/r1chardj0n3s/pip-check-reqs',
     author='Richard Jones',
