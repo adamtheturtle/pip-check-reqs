@@ -44,5 +44,5 @@ setup(
             'pip-extra-reqs=pip_check_reqs.find_extra_reqs:main',
         ],
     },
-    install_requires=requirements
+    install_requires=requirements,
 )
