@@ -22,7 +22,7 @@ def find_extra_reqs(options):
     all_pkgs = (pkg.project_name for pkg in get_installed_distributions())
     for package in search_packages_info(all_pkgs):
         log.debug('installed package: %s (at %s)', package['name'],
-            package['location'])
+                  package['location'])
         for f in package.get('files', []):
             path = os.path.realpath(os.path.join(package['location'], f))
             installed_files[path] = package['name']
@@ -40,7 +40,7 @@ def find_extra_reqs(options):
         if info.filename in installed_files:
             used_name = canonicalize_name(installed_files[info.filename])
             log.debug('used module: %s (from package %s)', modname,
-                installed_files[info.filename])
+                      installed_files[info.filename])
             used[used_name].append(info)
         else:
             log.debug(
@@ -58,21 +58,41 @@ def main():
 
     usage = 'usage: %prog [options] files or directories'
     parser = optparse.OptionParser(usage)
-    parser.add_option("-f", "--ignore-file", dest="ignore_files",
-        action="append", default=[],
-        help="file paths globs to ignore")
-    parser.add_option("-m", "--ignore-module", dest="ignore_mods",
-        action="append", default=[],
-        help="used module names (globs are ok) to ignore")
-    parser.add_option("-r", "--ignore-requirement", dest="ignore_reqs",
-        action="append", default=[],
-        help="reqs in requirements.txt to ignore")
-    parser.add_option("-v", "--verbose", dest="verbose",
-        action="store_true", default=False, help="be more verbose")
-    parser.add_option("-d", "--debug", dest="debug",
-        action="store_true", default=False, help="be *really* verbose")
-    parser.add_option("--version", dest="version",
-        action="store_true", default=False, help="display version information")
+    parser.add_option("-f",
+                      "--ignore-file",
+                      dest="ignore_files",
+                      action="append",
+                      default=[],
+                      help="file paths globs to ignore")
+    parser.add_option("-m",
+                      "--ignore-module",
+                      dest="ignore_mods",
+                      action="append",
+                      default=[],
+                      help="used module names (globs are ok) to ignore")
+    parser.add_option("-r",
+                      "--ignore-requirement",
+                      dest="ignore_reqs",
+                      action="append",
+                      default=[],
+                      help="reqs in requirements.txt to ignore")
+    parser.add_option("-v",
+                      "--verbose",
+                      dest="verbose",
+                      action="store_true",
+                      default=False,
+                      help="be more verbose")
+    parser.add_option("-d",
+                      "--debug",
+                      dest="debug",
+                      action="store_true",
+                      default=False,
+                      help="be *really* verbose")
+    parser.add_option("--version",
+                      dest="version",
+                      action="store_true",
+                      default=False,
+                      help="display version information")
 
     (options, args) = parser.parse_args()
 

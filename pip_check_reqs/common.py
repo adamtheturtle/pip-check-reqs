@@ -17,7 +17,7 @@ class FoundModule:
     def __init__(self, modname, filename, locations=None):
         self.modname = modname
         self.filename = os.path.realpath(filename)
-        self.locations = locations or []         # filename, lineno
+        self.locations = locations or []  # filename, lineno
 
     def __repr__(self):
         return 'FoundModule("%s")' % self.modname
@@ -66,7 +66,7 @@ class ImportVisitor(ast.NodeVisitor):
             progress.append(p)
 
             # we might have previously seen a useful path though...
-            if modpath is None:   # pragma: no cover
+            if modpath is None:  # pragma: no cover
                 # the sys module will hit this code path on py3k - possibly
                 # others will, but I've not discovered them
                 modpath = last_modpath
@@ -125,7 +125,7 @@ def find_imported_modules(options):
 def find_required_modules(options):
     explicit = set()
     for requirement in parse_requirements('requirements.txt',
-            session=PipSession()):
+                                          session=PipSession()):
         if options.ignore_reqs(requirement):
             log.debug('ignoring requirement: %s', requirement.name)
         else:
@@ -155,6 +155,7 @@ def ignorer(ignore_cfg):
             elif fnmatch.fnmatch(os.path.relpath(candidate), ignore):
                 return True
         return False
+
     return f
 
 

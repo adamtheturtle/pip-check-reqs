@@ -12,7 +12,6 @@ from pip_check_reqs import find_missing_reqs, common
 
 @pytest.fixture
 def fake_opts():
-
     class FakeOptParse:
         class options:
             paths = ['dummy']
@@ -21,6 +20,7 @@ def fake_opts():
             version = False
             ignore_files = []
             ignore_mods = []
+
         options = options()
         args = ['ham.py']
 
@@ -37,34 +37,36 @@ def fake_opts():
 
 
 def test_find_missing_reqs(monkeypatch):
-    imported_modules = dict(
-        spam=common.FoundModule('spam', 'site-spam/spam.py',
-            [('ham.py', 1)]),
-        shrub=common.FoundModule('shrub', 'site-spam/shrub.py',
-            [('ham.py', 3)]),
-        ignore=common.FoundModule('ignore', 'ignore.py',
-            [('ham.py', 2)])
-    )
+    imported_modules = dict(spam=common.FoundModule('spam',
+                                                    'site-spam/spam.py',
+                                                    [('ham.py', 1)]),
+                            shrub=common.FoundModule('shrub',
+                                                     'site-spam/shrub.py',
+                                                     [('ham.py', 3)]),
+                            ignore=common.FoundModule('ignore', 'ignore.py',
+                                                      [('ham.py', 2)]))
     monkeypatch.setattr(common, 'find_imported_modules',
-        pretend.call_recorder(lambda a: imported_modules))
+                        pretend.call_recorder(lambda a: imported_modules))
 
     FakeDist = collections.namedtuple('FakeDist', ['project_name'])
     installed_distributions = map(FakeDist, ['spam', 'pass'])
     monkeypatch.setattr(find_missing_reqs, 'get_installed_distributions',
-        pretend.call_recorder(lambda: installed_distributions))
+                        pretend.call_recorder(lambda: installed_distributions))
     packages_info = [
-        dict(name='spam', location='site-spam', files=['spam/__init__.py',
-            'spam/shrub.py']),
+        dict(name='spam',
+             location='site-spam',
+             files=['spam/__init__.py', 'spam/shrub.py']),
         dict(name='shrub', location='site-spam', files=['shrub.py']),
         dict(name='pass', location='site-spam', files=['pass.py']),
     ]
 
     monkeypatch.setattr(find_missing_reqs, 'search_packages_info',
-        pretend.call_recorder(lambda x: packages_info))
+                        pretend.call_recorder(lambda x: packages_info))
 
     FakeReq = collections.namedtuple('FakeReq', ['name'])
     requirements = [FakeReq('spam')]
-    monkeypatch.setattr(find_missing_reqs, 'parse_requirements',
+    monkeypatch.setattr(
+        find_missing_reqs, 'parse_requirements',
         pretend.call_recorder(lambda a, session=None: requirements))
 
     result = list(find_missing_reqs.find_missing_reqs(None))
@@ -76,10 +78,10 @@ def test_main_failure(monkeypatch, caplog, fake_opts):
 
     caplog.set_level(logging.WARN)
 
-    monkeypatch.setattr(find_missing_reqs, 'find_missing_reqs', lambda x: [
-        ('missing', [common.FoundModule('missing', 'missing.py',
-            [('location.py', 1)])])
-    ])
+    monkeypatch.setattr(
+        find_missing_reqs, 'find_missing_reqs', lambda x: [('missing', [
+            common.FoundModule('missing', 'missing.py', [('location.py', 1)])
+        ])])
 
     with pytest.raises(SystemExit) as excinfo:
         find_missing_reqs.main()
@@ -94,8 +96,10 @@ def test_main_failure(monkeypatch, caplog, fake_opts):
 def test_main_no_spec(monkeypatch, caplog, fake_opts):
     fake_opts.args = []
     monkeypatch.setattr(optparse, 'OptionParser', fake_opts)
-    monkeypatch.setattr(fake_opts, 'error',
-        pretend.call_recorder(lambda s, e: None), raising=False)
+    monkeypatch.setattr(fake_opts,
+                        'error',
+                        pretend.call_recorder(lambda s, e: None),
+                        raising=False)
 
     with pytest.raises(SystemExit) as excinfo:
         find_missing_reqs.main()
@@ -118,6 +122,7 @@ def test_logging_config(monkeypatch, caplog, verbose_cfg, debug_cfg, result):
         version = False
         ignore_files = []
         ignore_mods = []
+
     options = options()
 
     class FakeOptParse:
@@ -136,7 +141,7 @@ def test_logging_config(monkeypatch, caplog, verbose_cfg, debug_cfg, result):
     find_missing_reqs.main()
 
     for event in [(logging.DEBUG, 'debug'), (logging.INFO, 'info'),
-            (logging.WARN, 'warn')]:
+                  (logging.WARN, 'warn')]:
         find_missing_reqs.log.log(*event)
 
     messages = [r.message for r in caplog.records]

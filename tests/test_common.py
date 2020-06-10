@@ -12,16 +12,18 @@ import pretend
 from pip_check_reqs import common
 
 
-@pytest.mark.parametrize(["path", "result"], [
-    ('/', ''),
-    ('__init__.py', ''),    # a top-level file like this has no package name
-    ('/__init__.py', ''),   # no package name
-    ('spam/__init__.py', 'spam'),
-    ('spam/__init__.pyc', 'spam'),
-    ('spam/__init__.pyo', 'spam'),
-    ('ham/spam/__init__.py', 'ham/spam'),
-    ('/ham/spam/__init__.py', '/ham/spam'),
-])
+@pytest.mark.parametrize(
+    ["path", "result"],
+    [
+        ('/', ''),
+        ('__init__.py', ''),  # a top-level file like this has no package name
+        ('/__init__.py', ''),  # no package name
+        ('spam/__init__.py', 'spam'),
+        ('spam/__init__.pyc', 'spam'),
+        ('spam/__init__.pyo', 'spam'),
+        ('ham/spam/__init__.py', 'ham/spam'),
+        ('/ham/spam/__init__.py', '/ham/spam'),
+    ])
 def test_is_package_file(path, result):
     assert common.is_package_file(path) == result
 
@@ -34,18 +36,21 @@ def test_FoundModule():
     assert str(fm) == 'FoundModule("spam")'
 
 
-@pytest.mark.parametrize(["stmt", "result"], [
-    ('import ast', ['ast']),
-    ('import ast, sys', ['ast', 'sys']),
-    ('from sys import version', ['sys']),
-    ('from os import path', ['os']),
-    ('import distutils.command.check', ['distutils']),
-    ('import spam', []),    # don't break because bad programmer
-])
+@pytest.mark.parametrize(
+    ["stmt", "result"],
+    [
+        ('import ast', ['ast']),
+        ('import ast, sys', ['ast', 'sys']),
+        ('from sys import version', ['sys']),
+        ('from os import path', ['os']),
+        ('import distutils.command.check', ['distutils']),
+        ('import spam', []),  # don't break because bad programmer
+    ])
 def test_ImportVisitor(stmt, result):
     class options:
         def ignore_mods(self, modname):
             return False
+
     vis = common.ImportVisitor(options())
     vis.set_location('spam.py')
     vis.visit(ast.parse(stmt))
@@ -55,14 +60,14 @@ def test_ImportVisitor(stmt, result):
 
 def test_pyfiles_file(monkeypatch):
     monkeypatch.setattr(os.path, 'abspath',
-        pretend.call_recorder(lambda x: '/spam/ham.py'))
+                        pretend.call_recorder(lambda x: '/spam/ham.py'))
 
     assert list(common.pyfiles('spam')) == ['/spam/ham.py']
 
 
 def test_pyfiles_file_no_dice(monkeypatch):
     monkeypatch.setattr(os.path, 'abspath',
-        pretend.call_recorder(lambda x: '/spam/ham'))
+                        pretend.call_recorder(lambda x: '/spam/ham'))
 
     with pytest.raises(ValueError):
         list(common.pyfiles('spam'))
@@ -70,15 +75,15 @@ def test_pyfiles_file_no_dice(monkeypatch):
 
 def test_pyfiles_package(monkeypatch):
     monkeypatch.setattr(os.path, 'abspath',
-        pretend.call_recorder(lambda x: '/spam'))
+                        pretend.call_recorder(lambda x: '/spam'))
     monkeypatch.setattr(os.path, 'isdir',
-        pretend.call_recorder(lambda x: True))
+                        pretend.call_recorder(lambda x: True))
     walk_results = [
         ('spam', [], ['__init__.py', 'spam', 'ham.py']),
         ('spam/dub', [], ['bass.py', 'dropped']),
     ]
     monkeypatch.setattr(os, 'walk',
-        pretend.call_recorder(lambda x: walk_results))
+                        pretend.call_recorder(lambda x: walk_results))
 
     assert list(common.pyfiles('spam')) == \
         ['spam/__init__.py', 'spam/ham.py', 'spam/dub/bass.py']
@@ -91,9 +96,9 @@ def test_pyfiles_package(monkeypatch):
     (True, True, ['ast'], [('spam.py', 2)]),
 ])
 def test_find_imported_modules(monkeypatch, caplog, ignore_ham, ignore_hashlib,
-        expect, locs):
+                               expect, locs):
     monkeypatch.setattr(common, 'pyfiles',
-        pretend.call_recorder(lambda x: ['spam.py', 'ham.py']))
+                        pretend.call_recorder(lambda x: ['spam.py', 'ham.py']))
 
     if sys.version_info[0] == 2:
         # py2 will find sys module but py3k won't
@@ -117,6 +122,7 @@ def test_find_imported_modules(monkeypatch, caplog, ignore_ham, ignore_hashlib,
 
         def __exit__(self, *args):
             pass
+
     monkeypatch.setattr(common, 'open', FakeFile, raising=False)
 
     caplog.set_level(logging.INFO)
@@ -172,7 +178,8 @@ def test_find_required_modules(monkeypatch):
 
     FakeReq = collections.namedtuple('FakeReq', ['name'])
     requirements = [FakeReq('foobar'), FakeReq('barfoo')]
-    monkeypatch.setattr(common, 'parse_requirements',
+    monkeypatch.setattr(
+        common, 'parse_requirements',
         pretend.call_recorder(lambda a, session=None: requirements))
 
     reqs = common.find_required_modules(options)
