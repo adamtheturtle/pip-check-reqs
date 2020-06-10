@@ -25,7 +25,7 @@ setup(
         'project',
     long_description=long_description,
     url='https://github.com/r1chardj0n3s/pip-check-reqs',
-    author='Richard Jonees',
+    author='Richard Jones',
     author_email='r1chardj0n3s@gmail.com',
     license='MIT',
     classifiers=[
