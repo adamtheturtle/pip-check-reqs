@@ -2,6 +2,11 @@
 Release History
 ---------------
 
+2.1 (Next)
+
+- Remove support for Python 2.
+  Please use an older version of this tool if you require that support.
+
 2.0.1
 
 - handled removal of normalize_name from pip.utils
