@@ -2,6 +2,8 @@ from setuptools import setup
 from codecs import open
 from os import path
 
+from pip_check_reqs import __version__
+
 here = path.abspath(path.dirname(__file__))
 
 with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
@@ -15,14 +17,13 @@ with open(path.join(here, 'CHANGELOG.rst'), encoding='utf-8') as f:
 with open(path.join(here, 'requirements.txt'), encoding='utf-8') as f:
     requirements = [s.strip() for s in f.readlines()]
 
-from pip_check_reqs import __version__
-
 setup(
     name='pip_check_reqs',
     version=__version__,
-    description=
+    description=(
         'Find packages that should or should not be in requirements for a '
-        'project',
+        'project'
+    ),
     long_description=long_description,
     url='https://github.com/r1chardj0n3s/pip-check-reqs',
     author='Richard Jones',
