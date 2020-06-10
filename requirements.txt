@@ -1,2 +1,3 @@
 packaging
-pip >= 10.0.1
+setuptools
+pip >= 10.0.1, <= 19

@@ -138,7 +138,7 @@ def is_package_file(path):
     '''Determines whether the path points to a Python package sentinel
     file - the __init__.py or its compiled variants.
     '''
-    m = re.search('(.+)/__init__\.py[co]?$', path)
+    m = re.search(r'(.+)/__init__\.py[co]?$', path)
     if m is not None:
         return m.group(1)
     return ''
@@ -183,7 +183,7 @@ def search_packages_info(query):
             # RECORDs should be part of .dist-info metadatas
             if dist.has_metadata('RECORD'):
                 lines = dist.get_metadata_lines('RECORD')
-                paths = [l.split(',')[0] for l in lines]
+                paths = [line.split(',')[0] for line in lines]
                 paths = [os.path.join(dist.location, p) for p in paths]
                 file_list = [os.path.relpath(p, dist.location) for p in paths]
         else:
