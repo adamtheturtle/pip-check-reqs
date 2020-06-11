@@ -1,3 +1,5 @@
+|Build Status| |codecov| |PyPI|
+
 pip-check-reqs
 ==============
 
@@ -85,3 +87,10 @@ With Thanks To
 Josh Hesketh -- who refactored code and contributed the pip-extra-reqs tool.
 
 Wil Cooley -- who handled the removal of normalize_name and fixed some bugs.
+
+.. |Build Status| image:: https://github.com/r1chardj0n3s/pip-check-reqs/workflows/CI/badge.svg
+   :target: https://github.com/r1chardj0n3s/pip-check-reqs/actions
+.. |codecov| image:: https://codecov.io/gh/r1chardj0n3s/pip-check-reqs/branch/master/graph/badge.svg
+   :target: https://codecov.io/gh/r1chardj0n3s/pip-check-reqs
+.. |PyPI| image:: https://badge.fury.io/py/pip_check_reqs.svg
+   :target: https://badge.fury.io/py/pip_check_reqs
