@@ -16,6 +16,9 @@ jobs:
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8]
+        # These versions match the minimum and maximum versions of pip in
+        # requirements.txt
+        extra-pip-version-to-install: ['==10.0.1', '<= 19']
 
     steps:
       - uses: actions/checkout@v2
@@ -26,7 +29,8 @@ jobs:
 
       - name: "Install dependencies"
         run: |
-          python -m pip install --upgrade --editable .[dev]
+          pip install --upgrade --editable .[dev]
+          pip install --upgrade pip ${{extra-pip-version-to-install}}
           pip install flake8
 
       - name: "Lint"
