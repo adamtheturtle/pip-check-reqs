@@ -179,12 +179,3 @@ def test_find_required_modules(monkeypatch):
 
     reqs = common.find_required_modules(options)
     assert reqs == set(['foobar'])
-
-
-def test_search_packages_info():
-    # We know that 'packaging' will be installed because it is a requirement of
-    # this package.
-    installed_package = 'packaging'
-    query = ('packaging', )
-    [result] = [item for item in common.search_packages_info(query=query)]
-    assert result['name'] == installed_package
