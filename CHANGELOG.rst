@@ -6,6 +6,7 @@ Release History
 
 - Remove support for Python 2.
   Please use an older version of this tool if you require that support.
+- Remove requirement for setuptools.
 
 2.0.1
 
