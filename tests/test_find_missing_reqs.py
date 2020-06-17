@@ -63,8 +63,13 @@ def test_find_missing_reqs(monkeypatch):
     monkeypatch.setattr(find_missing_reqs, 'search_packages_info',
                         pretend.call_recorder(lambda x: packages_info))
 
-    FakeReq = collections.namedtuple('FakeReq', ['name'])
-    requirements = [FakeReq('spam')]
+    fake_requirements_file_contents = dedent(
+        """\
+        spam
+        """
+    )
+    FakeReq = collections.namedtuple('FakeReq', [])
+    requirements = [FakeReq()]
     monkeypatch.setattr(
         find_missing_reqs, 'parse_requirements',
         pretend.call_recorder(lambda a, session=None: requirements))

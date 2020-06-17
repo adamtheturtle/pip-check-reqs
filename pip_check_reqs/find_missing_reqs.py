@@ -60,7 +60,8 @@ def find_missing_reqs(options):
     explicit = set()
     for requirement in parse_requirements('requirements.txt',
                                           session=PipSession()):
-        log.debug('found requirement: %s', requirement.name)
+        import pdb; pdb.set_trace()
+        log.debug('found requirement: %s', requirement.requirement)
         explicit.add(canonicalize_name(requirement.name))
 
     return [(name, used[name]) for name in used if name not in explicit]
