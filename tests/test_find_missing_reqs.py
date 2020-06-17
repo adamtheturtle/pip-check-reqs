@@ -7,7 +7,7 @@ import optparse
 import pytest
 import pretend
 
-from pip_check_reqs import find_missing_reqs, common
+from pip_check_reqs import find_missing_reqs, common, __version__
 
 
 @pytest.fixture
@@ -85,7 +85,8 @@ def test_main_failure(monkeypatch, caplog, fake_opts):
 
     with pytest.raises(SystemExit) as excinfo:
         find_missing_reqs.main()
-        assert excinfo.value == 1
+
+    assert excinfo.value.code == 1
 
     assert caplog.records[0].message == \
         'Missing requirements:'
@@ -103,7 +104,8 @@ def test_main_no_spec(monkeypatch, caplog, fake_opts):
 
     with pytest.raises(SystemExit) as excinfo:
         find_missing_reqs.main()
-        assert excinfo.value == 2
+
+    assert excinfo.value.code == 2
 
     assert fake_opts.error.calls
 
@@ -158,4 +160,5 @@ def test_main_version(monkeypatch, caplog, fake_opts):
 
     with pytest.raises(SystemExit) as excinfo:
         find_missing_reqs.main()
-        assert excinfo.value == 'version'
+
+    assert str(excinfo.value) == __version__
