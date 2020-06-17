@@ -37,9 +37,9 @@ jobs:
 
       - name: "Run tests"
         run: |
-          # We currently require 94% test coverage and not 100% as this is the
+          # We currently require 96% test coverage and not 100% as this is the
           # level that coverage was at when the CI restriction was introduced.
-          pytest -s -vvv --cov-fail-under 94 --cov=pip_check_reqs/ --cov=tests tests/ --cov-report=xml
+          pytest -s -vvv --cov-fail-under 96 --cov=pip_check_reqs/ --cov=tests tests/ --cov-report=xml
 
       - name: "Upload coverage to Codecov"
         uses: "codecov/codecov-action@v1"

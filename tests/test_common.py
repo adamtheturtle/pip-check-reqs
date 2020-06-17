@@ -4,7 +4,6 @@ import ast
 import collections
 import logging
 import os.path
-import sys
 
 import pytest
 import pretend
@@ -99,10 +98,6 @@ def test_find_imported_modules(monkeypatch, caplog, ignore_ham, ignore_hashlib,
                                expect, locs):
     monkeypatch.setattr(common, 'pyfiles',
                         pretend.call_recorder(lambda x: ['spam.py', 'ham.py']))
-
-    if sys.version_info[0] == 2:
-        # py2 will find sys module but py3k won't
-        expect.append('sys')
 
     class FakeFile():
         contents = [
