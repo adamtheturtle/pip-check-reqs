@@ -3,7 +3,6 @@ import fnmatch
 import imp
 import logging
 import os
-import pkg_resources
 import re
 
 from packaging.utils import canonicalize_name
