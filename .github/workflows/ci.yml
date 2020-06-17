@@ -30,7 +30,7 @@ jobs:
       - name: "Install dependencies"
         run: |
           pip install --upgrade --editable .[dev]
-          pip install --upgrade 'pip ${{ matrix.pip-version }}
+          pip install --upgrade 'pip ${{ matrix.pip-version }}'
           pip install flake8
 
       - name: "Lint"
