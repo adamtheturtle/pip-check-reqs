@@ -8,7 +8,7 @@ import re
 from packaging.utils import canonicalize_name
 # Between different versions of pip the location of PipSession has changed.
 try:
-     from pip._internal.network.session import PipSession
+    from pip._internal.network.session import PipSession
 except ImportError:  # pragma: no cover
     from pip._internal.download import PipSession
 from pip._internal.req.req_file import parse_requirements
