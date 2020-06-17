@@ -20,8 +20,9 @@ jobs:
     strategy:
       matrix:
         # These versions match the minimum and maximum versions of pip in
-        # requirements.txt
-        pip-version: ['==10.0.1', '<= 19']
+        # requirements.txt.
+        # An empty string here represents the latest version.
+        pip-version: ['==10.0.1', '']
         python-version: [3.6, 3.7, 3.8]
 
     steps:
