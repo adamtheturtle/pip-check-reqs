@@ -28,7 +28,7 @@ def find_missing_reqs(options):
                   package['location'])
         for package_file in package.get('files', []) or []:
             path = os.path.realpath(
-                os.path.join(package['location'],package_file),
+                os.path.join(package['location'], package_file),
             )
             installed_files[path] = package['name']
             package_path = common.is_package_file(path)
