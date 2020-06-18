@@ -62,8 +62,16 @@ def find_missing_reqs(options, requirements_filename):
         requirements_filename,
         session=PipSession(),
     ):
-        log.debug('found requirement: %s', requirement.name)
-        explicit.add(canonicalize_name(requirement.name))
+        try:
+            requirement_name = requirement.name
+        # The type of "requirement" changed between pip versions.
+        # We exclude the "except" from coverage so that on any pip version we
+        # can report 100% coverage.
+        except AttributeError:  # pragma: no cover
+            requirement_name = requirement.requirement
+
+        log.debug('found requirement: %s', requirement_name)
+        explicit.add(canonicalize_name(requirement_name))
 
     return [(name, used[name]) for name in used if name not in explicit]
 
