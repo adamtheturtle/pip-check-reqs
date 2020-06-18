@@ -1,9 +1,9 @@
 from __future__ import absolute_import
 
 import ast
-import collections
 import logging
 import os.path
+from pathlib import Path
 
 import pytest
 import pretend
@@ -157,25 +157,23 @@ def test_find_imported_modules(monkeypatch, caplog, ignore_ham, ignore_hashlib,
     (['spam*'], 'eggs', False),
     (['spam'], '/spam', True),
 ])
-def test_ignorer(monkeypatch, ignore_cfg, candidate, result):
+def test_ignorer(monkeypatch, tmp_path: Path, ignore_cfg, candidate, result):
     monkeypatch.setattr(os.path, 'relpath', lambda s: s.lstrip('/'))
     ignorer = common.ignorer(ignore_cfg)
     assert ignorer(candidate) == result
 
 
-def test_find_required_modules(monkeypatch):
+def test_find_required_modules(monkeypatch, tmp_path: Path):
     class options:
-        @staticmethod
-        def ignore_reqs(req):
-            if req.name == 'barfoo':
-                return True
-            return False
+        pass
 
-    FakeReq = collections.namedtuple('FakeReq', ['name'])
-    requirements = [FakeReq('foobar'), FakeReq('barfoo')]
-    monkeypatch.setattr(
-        common, 'parse_requirements',
-        pretend.call_recorder(lambda a, session=None: requirements))
+    options.ignore_reqs = common.ignorer(ignore_cfg=['barfoo'])
 
-    reqs = common.find_required_modules(options)
+    fake_requirements_file = tmp_path / 'requirements.txt'
+    fake_requirements_file.write_text('foobar==1\nbarfoo==2')
+
+    reqs = common.find_required_modules(
+        options=options,
+        requirements_filename=str(fake_requirements_file),
+    )
     assert reqs == set(['foobar'])

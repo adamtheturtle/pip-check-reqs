@@ -6,7 +6,11 @@ import os
 import re
 
 from packaging.utils import canonicalize_name
-from pip._internal.download import PipSession
+# Between different versions of pip the location of PipSession has changed.
+try:
+    from pip._internal.network.session import PipSession
+except ImportError:  # pragma: no cover
+    from pip._internal.download import PipSession
 from pip._internal.req.req_file import parse_requirements
 
 log = logging.getLogger(__name__)
@@ -121,15 +125,26 @@ def find_imported_modules(options):
     return vis.finalise()
 
 
-def find_required_modules(options):
+def find_required_modules(options, requirements_filename: str):
     explicit = set()
-    for requirement in parse_requirements('requirements.txt',
+    for requirement in parse_requirements(requirements_filename,
                                           session=PipSession()):
+        try:
+            requirement_name = requirement.name
+        # The type of "requirement" changed between pip versions.
+        # We exclude the "except" from coverage so that on any pip version we
+        # can report 100% coverage.
+        except AttributeError:  # pragma: no cover
+            from pip._internal.req.constructors import install_req_from_line
+            requirement_name = install_req_from_line(
+                requirement.requirement,
+            ).name
+
         if options.ignore_reqs(requirement):
-            log.debug('ignoring requirement: %s', requirement.name)
+            log.debug('ignoring requirement: %s', requirement_name)
         else:
-            log.debug('found requirement: %s', requirement.name)
-            explicit.add(canonicalize_name(requirement.name))
+            log.debug('found requirement: %s', requirement_name)
+            explicit.add(canonicalize_name(requirement_name))
     return explicit
 
 
@@ -149,9 +164,22 @@ def ignorer(ignore_cfg):
 
     def f(candidate, ignore_cfg=ignore_cfg):
         for ignore in ignore_cfg:
-            if fnmatch.fnmatch(candidate, ignore):
+            try:
+                from pip._internal.req.constructors import (
+                    install_req_from_line,
+                )
+                candidate_path = install_req_from_line(  # pragma: no cover
+                    candidate.requirement,
+                ).name
+            except (ImportError, AttributeError):
+                try:
+                    candidate_path = candidate.name
+                except AttributeError:
+                    candidate_path = candidate
+
+            if fnmatch.fnmatch(candidate_path, ignore):
                 return True
-            elif fnmatch.fnmatch(os.path.relpath(candidate), ignore):
+            elif fnmatch.fnmatch(os.path.relpath(candidate_path), ignore):
                 return True
         return False
 

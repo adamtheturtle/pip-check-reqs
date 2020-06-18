@@ -6,7 +6,11 @@ import sys
 
 from packaging.utils import canonicalize_name
 from pip._internal.commands.show import search_packages_info
-from pip._internal.download import PipSession
+# Between different versions of pip the location of PipSession has changed.
+try:
+    from pip._internal.network.session import PipSession
+except ImportError:  # pragma: no cover
+    from pip._internal.download import PipSession
 from pip._internal.req.req_file import parse_requirements
 from pip._internal.utils.misc import get_installed_distributions
 
@@ -15,7 +19,7 @@ from pip_check_reqs import common
 log = logging.getLogger(__name__)
 
 
-def find_missing_reqs(options):
+def find_missing_reqs(options, requirements_filename):
     # 1. find files used by imports in the code (as best we can without
     #    executing)
     used_modules = common.find_imported_modules(options)
@@ -54,10 +58,23 @@ def find_missing_reqs(options):
 
     # 4. compare with requirements.txt
     explicit = set()
-    for requirement in parse_requirements('requirements.txt',
-                                          session=PipSession()):
-        log.debug('found requirement: %s', requirement.name)
-        explicit.add(canonicalize_name(requirement.name))
+    for requirement in parse_requirements(
+        requirements_filename,
+        session=PipSession(),
+    ):
+        try:
+            requirement_name = requirement.name
+        # The type of "requirement" changed between pip versions.
+        # We exclude the "except" from coverage so that on any pip version we
+        # can report 100% coverage.
+        except AttributeError:  # pragma: no cover
+            from pip._internal.req.constructors import install_req_from_line
+            requirement_name = install_req_from_line(
+                requirement.requirement,
+            ).name
+
+        log.debug('found requirement: %s', requirement_name)
+        explicit.add(canonicalize_name(requirement_name))
 
     return [(name, used[name]) for name in used if name not in explicit]
 
@@ -121,7 +138,11 @@ def main():
 
     log.info('using pip_check_reqs-%s from %s', __version__, __file__)
 
-    missing = find_missing_reqs(options)
+    requirements_filename = 'requirements.txt'
+    missing = find_missing_reqs(
+        options=options,
+        requirements_filename=requirements_filename,
+    )
 
     if missing:
         log.warning('Missing requirements:')

@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import collections
 import logging
 import optparse
+from pathlib import Path
 
 import pytest
 import pretend
@@ -37,7 +38,7 @@ def fake_opts():
     return FakeOptParse
 
 
-def test_find_extra_reqs(monkeypatch):
+def test_find_extra_reqs(monkeypatch, tmp_path: Path):
     imported_modules = dict(spam=common.FoundModule('spam',
                                                     'site-spam/spam.py',
                                                     [('ham.py', 1)]),
@@ -64,11 +65,8 @@ def test_find_extra_reqs(monkeypatch):
     monkeypatch.setattr(find_extra_reqs, 'search_packages_info',
                         pretend.call_recorder(lambda x: packages_info))
 
-    FakeReq = collections.namedtuple('FakeReq', ['name'])
-    requirements = [FakeReq('foobar')]
-    monkeypatch.setattr(
-        common, 'parse_requirements',
-        pretend.call_recorder(lambda a, session=None: requirements))
+    fake_requirements_file = tmp_path / 'requirements.txt'
+    fake_requirements_file.write_text('foobar==1')
 
     class options:
         def ignore_reqs(x, y):
@@ -76,7 +74,10 @@ def test_find_extra_reqs(monkeypatch):
 
     options = options()
 
-    result = find_extra_reqs.find_extra_reqs(options)
+    result = find_extra_reqs.find_extra_reqs(
+        options=options,
+        requirements_filename=str(fake_requirements_file),
+    )
     assert result == ['foobar']
 
 
@@ -86,7 +87,7 @@ def test_main_failure(monkeypatch, caplog, fake_opts):
     caplog.set_level(logging.WARN)
 
     monkeypatch.setattr(find_extra_reqs, 'find_extra_reqs',
-                        lambda x: ['extra'])
+                        lambda options, requirements_filename: ['extra'])
 
     with pytest.raises(SystemExit) as excinfo:
         find_extra_reqs.main()
@@ -145,7 +146,11 @@ def test_logging_config(monkeypatch, caplog, verbose_cfg, debug_cfg, result):
 
     monkeypatch.setattr(optparse, 'OptionParser', FakeOptParse)
 
-    monkeypatch.setattr(find_extra_reqs, 'find_extra_reqs', lambda x: [])
+    monkeypatch.setattr(
+        find_extra_reqs,
+        'find_extra_reqs',
+        lambda options, requirements_filename: [],
+    )
     find_extra_reqs.main()
 
     for event in [(logging.DEBUG, 'debug'), (logging.INFO, 'info'),
