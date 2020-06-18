@@ -2,7 +2,7 @@
 Release History
 ---------------
 
-2.1 (Next)
+2.1.0
 
 - Remove support for Python 2.
   Please use an older version of this tool if you require that support.
