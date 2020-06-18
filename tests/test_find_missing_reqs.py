@@ -65,7 +65,7 @@ def test_find_missing_reqs(monkeypatch, tmp_path: Path):
                         pretend.call_recorder(lambda x: packages_info))
 
     fake_requirements_file = tmp_path / 'requirements.txt'
-    fake_requirements_file.write_text('spam')
+    fake_requirements_file.write_text('spam==1')
 
     result = list(
         find_missing_reqs.find_missing_reqs(

@@ -68,7 +68,10 @@ def find_missing_reqs(options, requirements_filename):
         # We exclude the "except" from coverage so that on any pip version we
         # can report 100% coverage.
         except AttributeError:  # pragma: no cover
-            requirement_name = requirement.requirement
+            from pip._internal.req.constructors import install_req_from_line
+            requirement_name = install_req_from_line(
+                requirement.requirement,
+            ).name
 
         log.debug('found requirement: %s', requirement_name)
         explicit.add(canonicalize_name(requirement_name))
