@@ -168,11 +168,14 @@ def ignorer(ignore_cfg):
                 from pip._internal.req.constructors import (
                     install_req_from_line,
                 )
-                candidate_path = install_req_from_line(
+                candidate_path = install_req_from_line(  # pragma: no cover
                     candidate.requirement,
                 ).name
             except (ImportError, AttributeError):
-                candidate_path = candidate
+                try:
+                    candidate_path = candidate.name
+                except AttributeError:
+                    candidate_path = candidate
 
             if fnmatch.fnmatch(candidate_path, ignore):
                 return True

@@ -87,7 +87,7 @@ def test_main_failure(monkeypatch, caplog, fake_opts):
     caplog.set_level(logging.WARN)
 
     monkeypatch.setattr(find_extra_reqs, 'find_extra_reqs',
-                        lambda x: ['extra'])
+                        lambda options, requirements_filename: ['extra'])
 
     with pytest.raises(SystemExit) as excinfo:
         find_extra_reqs.main()
@@ -146,7 +146,11 @@ def test_logging_config(monkeypatch, caplog, verbose_cfg, debug_cfg, result):
 
     monkeypatch.setattr(optparse, 'OptionParser', FakeOptParse)
 
-    monkeypatch.setattr(find_extra_reqs, 'find_extra_reqs', lambda x: [])
+    monkeypatch.setattr(
+        find_extra_reqs,
+        'find_extra_reqs',
+        lambda options, requirements_filename: [],
+    )
     find_extra_reqs.main()
 
     for event in [(logging.DEBUG, 'debug'), (logging.INFO, 'info'),
