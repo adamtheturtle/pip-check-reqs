@@ -1,3 +1,5 @@
+** UPDATE: This is no longer needed as `adamtheturtle` took over maintainership of https://github.com/r1chardj0n3s/pip-check-reqs and merged parts of this fork into it. Please use that instead. **
+
 Fork details
 ============
 
