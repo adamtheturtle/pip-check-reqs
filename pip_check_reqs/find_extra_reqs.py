@@ -12,7 +12,7 @@ from pip_check_reqs import common
 log = logging.getLogger(__name__)
 
 
-def find_extra_reqs(options):
+def find_extra_reqs(options, requirements_filename):
     # 1. find files used by imports in the code (as best we can without
     #    executing)
     used_modules = common.find_imported_modules(options)
@@ -50,7 +50,10 @@ def find_extra_reqs(options):
                 modname, info.filename)
 
     # 4. compare with requirements.txt
-    explicit = common.find_required_modules(options)
+    explicit = common.find_required_modules(
+        options=options,
+        requirements_filename=requirements_filename,
+    )
 
     return [name for name in explicit if name not in used]
 
@@ -121,12 +124,20 @@ def main():
 
     log.info('using pip_check_reqs-%s from %s', __version__, __file__)
 
-    extras = find_extra_reqs(options)
+    requirements_filename = 'requirements.txt'
+    extras = find_extra_reqs(
+        options=options,
+        requirements_filename=requirements_filename,
+    )
 
     if extras:
         log.warning('Extra requirements:')
     for name in extras:
-        log.warning('%s in requirements.txt' % name)
+        message = '{name} in {requirements_filename}'.format(
+            name=name,
+            requirements_filename=requirements_filename,
+        )
+        log.warning(message)
 
     if extras:
         sys.exit(1)
