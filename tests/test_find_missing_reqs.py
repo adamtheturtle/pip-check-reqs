@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import collections
 import logging
 import optparse
+from pathlib import Path
 
 import pytest
 import pretend
@@ -36,7 +37,7 @@ def fake_opts():
     return FakeOptParse
 
 
-def test_find_missing_reqs(monkeypatch):
+def test_find_missing_reqs(monkeypatch, tmp_path: Path):
     imported_modules = dict(spam=common.FoundModule('spam',
                                                     'site-spam/spam.py',
                                                     [('ham.py', 1)]),
@@ -63,18 +64,15 @@ def test_find_missing_reqs(monkeypatch):
     monkeypatch.setattr(find_missing_reqs, 'search_packages_info',
                         pretend.call_recorder(lambda x: packages_info))
 
-    fake_requirements_file_contents = dedent(
-        """\
-        spam
-        """
-    )
-    FakeReq = collections.namedtuple('FakeReq', [])
-    requirements = [FakeReq()]
-    monkeypatch.setattr(
-        find_missing_reqs, 'parse_requirements',
-        pretend.call_recorder(lambda a, session=None: requirements))
+    fake_requirements_file = tmp_path / 'requirements.txt'
+    fake_requirements_file.write_text('spam')
 
-    result = list(find_missing_reqs.find_missing_reqs(None))
+    result = list(
+        find_missing_reqs.find_missing_reqs(
+            options=None,
+            requirements_filename=str(fake_requirements_file),
+        )
+    )
     assert result == [('shrub', [imported_modules['shrub']])]
 
 
@@ -83,10 +81,25 @@ def test_main_failure(monkeypatch, caplog, fake_opts):
 
     caplog.set_level(logging.WARN)
 
+    def fake_find_missing_reqs(options, requirements_filename):
+        return [
+            (
+                'missing',
+                [
+                    common.FoundModule(
+                        'missing',
+                        'missing.py',
+                        [('location.py', 1)],
+                    )
+                ]
+            )
+        ]
+
     monkeypatch.setattr(
-        find_missing_reqs, 'find_missing_reqs', lambda x: [('missing', [
-            common.FoundModule('missing', 'missing.py', [('location.py', 1)])
-        ])])
+        find_missing_reqs,
+        'find_missing_reqs',
+        fake_find_missing_reqs,
+    )
 
     with pytest.raises(SystemExit) as excinfo:
         find_missing_reqs.main()
@@ -144,7 +157,11 @@ def test_logging_config(monkeypatch, caplog, verbose_cfg, debug_cfg, result):
 
     monkeypatch.setattr(optparse, 'OptionParser', FakeOptParse)
 
-    monkeypatch.setattr(find_missing_reqs, 'find_missing_reqs', lambda x: [])
+    monkeypatch.setattr(
+        find_missing_reqs,
+        'find_missing_reqs',
+        lambda options, requirements_filename: [],
+    )
     find_missing_reqs.main()
 
     for event in [(logging.DEBUG, 'debug'), (logging.INFO, 'info'),

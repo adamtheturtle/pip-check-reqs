@@ -19,7 +19,7 @@ from pip_check_reqs import common
 log = logging.getLogger(__name__)
 
 
-def find_missing_reqs(options):
+def find_missing_reqs(options, requirements_filename):
     # 1. find files used by imports in the code (as best we can without
     #    executing)
     used_modules = common.find_imported_modules(options)
@@ -58,10 +58,11 @@ def find_missing_reqs(options):
 
     # 4. compare with requirements.txt
     explicit = set()
-    for requirement in parse_requirements('requirements.txt',
-                                          session=PipSession()):
-        import pdb; pdb.set_trace()
-        log.debug('found requirement: %s', requirement.requirement)
+    for requirement in parse_requirements(
+        requirements_filename,
+        session=PipSession(),
+    ):
+        log.debug('found requirement: %s', requirement.name)
         explicit.add(canonicalize_name(requirement.name))
 
     return [(name, used[name]) for name in used if name not in explicit]
@@ -126,7 +127,11 @@ def main():
 
     log.info('using pip_check_reqs-%s from %s', __version__, __file__)
 
-    missing = find_missing_reqs(options)
+    requirements_filename = 'requirements.txt'
+    missing = find_missing_reqs(
+        options=options,
+        requirements_filename=requirements_filename,
+    )
 
     if missing:
         log.warning('Missing requirements:')
