@@ -7,7 +7,8 @@ Release History
 - Remove support for Python 2.
   Please use an older version of this tool if you require that support.
 - Remove requirement for setuptools.
-- Add restriction on the pip version to install to match the pip versions which work.
+- Support newer versions of pip, including the current version, for more features (20.1.1).
+  Thanks to @Czaki for important parts of this change.
 
 2.0.1
 
