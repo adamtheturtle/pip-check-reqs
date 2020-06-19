@@ -92,5 +92,5 @@ Wil Cooley -- who handled the removal of normalize_name and fixed some bugs.
    :target: https://github.com/r1chardj0n3s/pip-check-reqs/actions
 .. |codecov| image:: https://codecov.io/gh/r1chardj0n3s/pip-check-reqs/branch/master/graph/badge.svg
    :target: https://codecov.io/gh/r1chardj0n3s/pip-check-reqs
-.. |PyPI| image:: https://badge.fury.io/py/pip_check_reqs.svg
-   :target: https://badge.fury.io/py/pip_check_reqs
+.. |PyPI| image:: https://badge.fury.io/py/pip-check-reqs.svg
+   :target: https://badge.fury.io/py/pip-check-reqs
