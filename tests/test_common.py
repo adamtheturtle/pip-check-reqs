@@ -85,7 +85,7 @@ def test_pyfiles_package(monkeypatch):
                         pretend.call_recorder(lambda x: walk_results))
 
     assert list(common.pyfiles('spam')) == \
-        ['spam/__init__.py', 'spam/ham.py', 'spam/dub/bass.py']
+           ['spam/__init__.py', 'spam/ham.py', 'spam/dub/bass.py']
 
 
 @pytest.mark.parametrize(["ignore_ham", "ignore_hashlib", "expect", "locs"], [
@@ -118,7 +118,9 @@ def test_find_imported_modules(monkeypatch, caplog, ignore_ham, ignore_hashlib,
         def __exit__(self, *args):
             pass
 
-    monkeypatch.setattr(common, 'openAndReadFile', lambda x,y: FakeFile('').read(), raising=False)
+    monkeypatch.setattr(common, 'openAndReadFile',
+                        lambda x, y: FakeFile('').read(),
+                        raising=False)
 
     caplog.set_level(logging.INFO)
 
@@ -146,14 +148,14 @@ def test_find_imported_modules(monkeypatch, caplog, ignore_ham, ignore_hashlib,
         assert caplog.records[0].message == 'ignoring: ham.py'
 
 
-@pytest.mark.parametrize(["files","encodingArg","expect"], [
-    (['utf8.py'],'utf-8',['ast', 'os', 'hashlib']),
-    (['gbk.py'],'gbk',['ast', 'os', 'hashlib'])
+@pytest.mark.parametrize(["files", "encodingArg", "expect"], [
+    (['utf8.py'], 'utf-8', ['ast', 'os', 'hashlib']),
+    (['gbk.py'], 'gbk', ['ast', 'os', 'hashlib'])
 ])
 def test_find_imported_modules_charset(monkeypatch, caplog,
-       files, encodingArg, expect):
+                                       files, encodingArg, expect):
     monkeypatch.setattr(common, 'pyfiles',
-        pretend.call_recorder(lambda x: files))
+                        pretend.call_recorder(lambda x: files))
 
     caplog.set_level(logging.INFO)
 

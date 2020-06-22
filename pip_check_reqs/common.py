@@ -110,6 +110,7 @@ def pyfiles(root):
             if ext == '.py':
                 yield os.path.join(root, f)
 
+
 def openAndReadFile(fileName, options):
     charset = None
     if hasattr(options, 'encoding'):
