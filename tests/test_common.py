@@ -145,6 +145,39 @@ def test_find_imported_modules(monkeypatch, caplog, ignore_ham, ignore_hashlib,
         assert caplog.records[0].message == 'ignoring: ham.py'
 
 
+@pytest.mark.parametrize(["files","expect"], [
+    (['utf8.py'],['ast', 'os', 'hashlib']),
+    (['gbk.py'],['ast', 'os', 'hashlib'])
+])
+def test_find_imported_modules_charset(monkeypatch, caplog,
+       files, expect):
+    monkeypatch.setattr(common, 'pyfiles',
+        pretend.call_recorder(lambda x: files))
+
+    if sys.version_info[0] == 2:
+        # py2 will find sys module but py3k won't
+        expect.append('sys')
+
+
+
+    caplog.set_level(logging.INFO)
+
+    class options:
+        paths = ['.']
+        verbose = True
+
+        @staticmethod
+        def ignore_files(path):
+            return False
+
+        @staticmethod
+        def ignore_mods(module):
+            return False
+
+    result = common.find_imported_modules(options)
+    assert set(result) == set(expect)
+
+
 @pytest.mark.parametrize(["ignore_cfg", "candidate", "result"], [
     ([], 'spam', False),
     ([], 'ham', False),
