@@ -118,7 +118,7 @@ def test_find_imported_modules(monkeypatch, caplog, ignore_ham, ignore_hashlib,
         def __exit__(self, *args):
             pass
 
-    monkeypatch.setattr(common, 'open', FakeFile, raising=False)
+    monkeypatch.setattr(common, 'openAndReadFile', lambda x,y: FakeFile('').read(), raising=False)
 
     caplog.set_level(logging.INFO)
 
