@@ -155,11 +155,6 @@ def test_find_imported_modules_charset(monkeypatch, caplog,
     monkeypatch.setattr(common, 'pyfiles',
         pretend.call_recorder(lambda x: files))
 
-    if sys.version_info[0] == 2:
-        # py2 will find sys module but py3k won't
-        expect.append('sys')
-
-
 
     caplog.set_level(logging.INFO)
 
