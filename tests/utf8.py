@@ -1,6 +1,9 @@
 from os import path
-import ast, hashlib
-from __future__ import braces
-import ast, sys
-from . import friend
+import ast
+import hashlib
+
+print(ast.Add)
+path.exists(".")
+print(hashlib.md5(bytearray()).digest())
+
 print("是汉字")

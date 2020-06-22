@@ -155,7 +155,6 @@ def test_find_imported_modules_charset(monkeypatch, caplog,
     monkeypatch.setattr(common, 'pyfiles',
         pretend.call_recorder(lambda x: files))
 
-
     caplog.set_level(logging.INFO)
 
     class options:
