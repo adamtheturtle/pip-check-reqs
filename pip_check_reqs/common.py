@@ -3,11 +3,14 @@ import fnmatch
 import imp
 import logging
 import os
-import pkg_resources
 import re
 
 from packaging.utils import canonicalize_name
-from pip._internal.download import PipSession
+# Between different versions of pip the location of PipSession has changed.
+try:
+    from pip._internal.network.session import PipSession
+except ImportError:  # pragma: no cover
+    from pip._internal.download import PipSession
 from pip._internal.req.req_file import parse_requirements
 
 log = logging.getLogger(__name__)
@@ -17,7 +20,7 @@ class FoundModule:
     def __init__(self, modname, filename, locations=None):
         self.modname = modname
         self.filename = os.path.realpath(filename)
-        self.locations = locations or []         # filename, lineno
+        self.locations = locations or []  # filename, lineno
 
     def __repr__(self):
         return 'FoundModule("%s")' % self.modname
@@ -66,7 +69,7 @@ class ImportVisitor(ast.NodeVisitor):
             progress.append(p)
 
             # we might have previously seen a useful path though...
-            if modpath is None:   # pragma: no cover
+            if modpath is None:  # pragma: no cover
                 # the sys module will hit this code path on py3k - possibly
                 # others will, but I've not discovered them
                 modpath = last_modpath
@@ -122,15 +125,26 @@ def find_imported_modules(options):
     return vis.finalise()
 
 
-def find_required_modules(options):
+def find_required_modules(options, requirements_filename: str):
     explicit = set()
-    for requirement in parse_requirements('requirements.txt',
-            session=PipSession()):
+    for requirement in parse_requirements(requirements_filename,
+                                          session=PipSession()):
+        try:
+            requirement_name = requirement.name
+        # The type of "requirement" changed between pip versions.
+        # We exclude the "except" from coverage so that on any pip version we
+        # can report 100% coverage.
+        except AttributeError:  # pragma: no cover
+            from pip._internal.req.constructors import install_req_from_line
+            requirement_name = install_req_from_line(
+                requirement.requirement,
+            ).name
+
         if options.ignore_reqs(requirement):
-            log.debug('ignoring requirement: %s', requirement.name)
+            log.debug('ignoring requirement: %s', requirement_name)
         else:
-            log.debug('found requirement: %s', requirement.name)
-            explicit.add(canonicalize_name(requirement.name))
+            log.debug('found requirement: %s', requirement_name)
+            explicit.add(canonicalize_name(requirement_name))
     return explicit
 
 
@@ -138,7 +152,7 @@ def is_package_file(path):
     '''Determines whether the path points to a Python package sentinel
     file - the __init__.py or its compiled variants.
     '''
-    m = re.search('(.+)/__init__\.py[co]?$', path)
+    m = re.search(r'(.+)/__init__\.py[co]?$', path)
     if m is not None:
         return m.group(1)
     return ''
@@ -150,49 +164,23 @@ def ignorer(ignore_cfg):
 
     def f(candidate, ignore_cfg=ignore_cfg):
         for ignore in ignore_cfg:
-            if fnmatch.fnmatch(candidate, ignore):
+            try:
+                from pip._internal.req.constructors import (
+                    install_req_from_line,
+                )
+                candidate_path = install_req_from_line(  # pragma: no cover
+                    candidate.requirement,
+                ).name
+            except (ImportError, AttributeError):
+                try:
+                    candidate_path = candidate.name
+                except AttributeError:
+                    candidate_path = candidate
+
+            if fnmatch.fnmatch(candidate_path, ignore):
                 return True
-            elif fnmatch.fnmatch(os.path.relpath(candidate), ignore):
+            elif fnmatch.fnmatch(os.path.relpath(candidate_path), ignore):
                 return True
         return False
+
     return f
-
-
-def search_packages_info(query):
-    """
-    Gather details from installed distributions. Print distribution name,
-    version, location, and installed files. Installed files requires a
-    pip generated 'installed-files.txt' in the distributions '.egg-info'
-    directory.
-    """
-    installed = {}
-    for p in pkg_resources.working_set:
-        installed[canonicalize_name(p.project_name)] = p
-
-    query_names = [canonicalize_name(name) for name in query]
-
-    for dist in [installed[pkg] for pkg in query_names if pkg in installed]:
-        package = {
-            'name': dist.project_name,
-            'version': dist.version,
-            'location': dist.location,
-            'requires': [dep.project_name for dep in dist.requires()],
-        }
-        file_list = None
-        if isinstance(dist, pkg_resources.DistInfoDistribution):
-            # RECORDs should be part of .dist-info metadatas
-            if dist.has_metadata('RECORD'):
-                lines = dist.get_metadata_lines('RECORD')
-                paths = [l.split(',')[0] for l in lines]
-                paths = [os.path.join(dist.location, p) for p in paths]
-                file_list = [os.path.relpath(p, dist.location) for p in paths]
-        else:
-            # Otherwise use pip's log for .egg-info's
-            if dist.has_metadata('installed-files.txt'):
-                paths = dist.get_metadata_lines('installed-files.txt')
-                paths = [os.path.join(dist.egg_info, p) for p in paths]
-                file_list = [os.path.relpath(p, dist.location) for p in paths]
-
-        if file_list:
-            package['files'] = sorted(file_list)
-        yield package

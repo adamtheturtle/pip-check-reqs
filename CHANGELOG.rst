@@ -2,6 +2,20 @@
 Release History
 ---------------
 
+2.1.1
+
+- Bug fix: Though Python 2 support was removed from the source code, the published wheel was still universal.
+  The published wheel now explicitly does not support Python 2.
+  Please use version 2.0.4 for Python 2.
+
+2.1.0
+
+- Remove support for Python 2.
+  Please use an older version of this tool if you require that support.
+- Remove requirement for setuptools.
+- Support newer versions of pip, including the current version, for more features (20.1.1).
+  Thanks to @Czaki for important parts of this change.
+
 2.0.1
 
 - handled removal of normalize_name from pip.utils

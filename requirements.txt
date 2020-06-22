@@ -1,2 +1,3 @@
 packaging
+# Pinned pip versions are matched in the GitHub workflows CI matrix.
 pip >= 10.0.1

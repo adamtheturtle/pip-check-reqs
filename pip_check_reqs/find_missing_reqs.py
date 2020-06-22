@@ -5,18 +5,21 @@ import os
 import sys
 
 from packaging.utils import canonicalize_name
-#from pip._internal.commands.show import search_packages_info
-from pip._internal.download import PipSession
+from pip._internal.commands.show import search_packages_info
+# Between different versions of pip the location of PipSession has changed.
+try:
+    from pip._internal.network.session import PipSession
+except ImportError:  # pragma: no cover
+    from pip._internal.download import PipSession
 from pip._internal.req.req_file import parse_requirements
 from pip._internal.utils.misc import get_installed_distributions
 
 from pip_check_reqs import common
-from pip_check_reqs.common import search_packages_info
 
 log = logging.getLogger(__name__)
 
 
-def find_missing_reqs(options):
+def find_missing_reqs(options, requirements_filename):
     # 1. find files used by imports in the code (as best we can without
     #    executing)
     used_modules = common.find_imported_modules(options)
@@ -26,9 +29,11 @@ def find_missing_reqs(options):
     all_pkgs = (pkg.project_name for pkg in get_installed_distributions())
     for package in search_packages_info(all_pkgs):
         log.debug('installed package: %s (at %s)', package['name'],
-            package['location'])
-        for file in package.get('files', []) or []:
-            path = os.path.realpath(os.path.join(package['location'], file))
+                  package['location'])
+        for package_file in package.get('files', []) or []:
+            path = os.path.realpath(
+                os.path.join(package['location'], package_file),
+            )
             installed_files[path] = package['name']
             package_path = common.is_package_file(path)
             if package_path:
@@ -44,7 +49,7 @@ def find_missing_reqs(options):
         if info.filename in installed_files:
             used_name = canonicalize_name(installed_files[info.filename])
             log.debug('used module: %s (from package %s)', modname,
-                installed_files[info.filename])
+                      installed_files[info.filename])
             used[used_name].append(info)
         else:
             log.debug(
@@ -53,13 +58,25 @@ def find_missing_reqs(options):
 
     # 4. compare with requirements.txt
     explicit = set()
-    for requirement in parse_requirements('requirements.txt',
-            session=PipSession()):
-        log.debug('found requirement: %s', requirement.name)
-        explicit.add(canonicalize_name(requirement.name))
+    for requirement in parse_requirements(
+        requirements_filename,
+        session=PipSession(),
+    ):
+        try:
+            requirement_name = requirement.name
+        # The type of "requirement" changed between pip versions.
+        # We exclude the "except" from coverage so that on any pip version we
+        # can report 100% coverage.
+        except AttributeError:  # pragma: no cover
+            from pip._internal.req.constructors import install_req_from_line
+            requirement_name = install_req_from_line(
+                requirement.requirement,
+            ).name
 
-    return [(name, used[name]) for name in used
-        if name not in explicit]
+        log.debug('found requirement: %s', requirement_name)
+        explicit.add(canonicalize_name(requirement_name))
+
+    return [(name, used[name]) for name in used if name not in explicit]
 
 
 def main():
@@ -67,18 +84,35 @@ def main():
 
     usage = 'usage: %prog [options] files or directories'
     parser = optparse.OptionParser(usage)
-    parser.add_option("-f", "--ignore-file", dest="ignore_files",
-        action="append", default=[],
-        help="file paths globs to ignore")
-    parser.add_option("-m", "--ignore-module", dest="ignore_mods",
-        action="append", default=[],
-        help="used module names (globs are ok) to ignore")
-    parser.add_option("-v", "--verbose", dest="verbose",
-        action="store_true", default=False, help="be more verbose")
-    parser.add_option("-d", "--debug", dest="debug",
-        action="store_true", default=False, help="be *really* verbose")
-    parser.add_option("--version", dest="version",
-        action="store_true", default=False, help="display version information")
+    parser.add_option("-f",
+                      "--ignore-file",
+                      dest="ignore_files",
+                      action="append",
+                      default=[],
+                      help="file paths globs to ignore")
+    parser.add_option("-m",
+                      "--ignore-module",
+                      dest="ignore_mods",
+                      action="append",
+                      default=[],
+                      help="used module names (globs are ok) to ignore")
+    parser.add_option("-v",
+                      "--verbose",
+                      dest="verbose",
+                      action="store_true",
+                      default=False,
+                      help="be more verbose")
+    parser.add_option("-d",
+                      "--debug",
+                      dest="debug",
+                      action="store_true",
+                      default=False,
+                      help="be *really* verbose")
+    parser.add_option("--version",
+                      dest="version",
+                      action="store_true",
+                      default=False,
+                      help="display version information")
 
     (options, args) = parser.parse_args()
 
@@ -104,7 +138,11 @@ def main():
 
     log.info('using pip_check_reqs-%s from %s', __version__, __file__)
 
-    missing = find_missing_reqs(options)
+    requirements_filename = 'requirements.txt'
+    missing = find_missing_reqs(
+        options=options,
+        requirements_filename=requirements_filename,
+    )
 
     if missing:
         log.warning('Missing requirements:')
@@ -112,7 +150,8 @@ def main():
         for use in uses:
             for filename, lineno in use.locations:
                 log.warning('%s:%s dist=%s module=%s',
-                    os.path.relpath(filename), lineno, name, use.modname)
+                            os.path.relpath(filename), lineno, name,
+                            use.modname)
 
     if missing:
         sys.exit(1)
