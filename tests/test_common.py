@@ -118,7 +118,7 @@ def test_find_imported_modules(monkeypatch, caplog, ignore_ham, ignore_hashlib,
         def __exit__(self, *args):
             pass
 
-    monkeypatch.setattr(common, 'open', FakeFile, raising=False)
+    monkeypatch.setattr(common, 'openAndReadFile', lambda x,y: FakeFile('').read(), raising=False)
 
     caplog.set_level(logging.INFO)
 
@@ -146,12 +146,12 @@ def test_find_imported_modules(monkeypatch, caplog, ignore_ham, ignore_hashlib,
         assert caplog.records[0].message == 'ignoring: ham.py'
 
 
-@pytest.mark.parametrize(["files","expect"], [
-    (['utf8.py'],['ast', 'os', 'hashlib']),
-    (['gbk.py'],['ast', 'os', 'hashlib'])
+@pytest.mark.parametrize(["files","encodingArg","expect"], [
+    (['utf8.py'],'utf-8',['ast', 'os', 'hashlib']),
+    (['gbk.py'],'gbk',['ast', 'os', 'hashlib'])
 ])
 def test_find_imported_modules_charset(monkeypatch, caplog,
-       files, expect):
+       files, encodingArg, expect):
     monkeypatch.setattr(common, 'pyfiles',
         pretend.call_recorder(lambda x: files))
 
@@ -161,6 +161,7 @@ def test_find_imported_modules_charset(monkeypatch, caplog,
     class options:
         paths = ['.']
         verbose = True
+        encoding = encodingArg
 
         @staticmethod
         def ignore_files(path):
