@@ -150,7 +150,8 @@ def test_find_imported_modules(monkeypatch, caplog, ignore_ham, ignore_hashlib,
 
 @pytest.mark.parametrize(["files", "encodingArg", "expect"], [
     (['tests/anylizeFiles/utf8.py'], 'utf-8', ['ast', 'os', 'hashlib']),
-    (['tests/anylizeFiles/gbk.py'], 'gbk', ['ast', 'os', 'hashlib'])
+    (['tests/anylizeFiles/gbk.py'], 'gbk', ['ast', 'os', 'hashlib']),
+    (['tests/anylizeFiles/utf8.py'], None, ['ast', 'os', 'hashlib'])
 ])
 def test_find_imported_modules_charset(monkeypatch, caplog,
                                        files, encodingArg, expect):
