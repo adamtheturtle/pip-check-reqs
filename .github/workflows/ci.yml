@@ -34,9 +34,12 @@ jobs:
 
       - name: "Install dependencies"
         run: |
-          pip install --upgrade --editable .[dev]
-          pip install --upgrade 'pip ${{ matrix.pip-version }}'
-          pip install flake8
+          python -m pip install --upgrade 'pip ${{ matrix.pip-version }}'
+          # We use '--ignore-installed' to avoid GitHub's cache which can cause
+          # issues - we have seen packages from this cache be cause trouble with
+          # pip-extra-reqs.
+          python -m pip install --ignore-installed --upgrade --editable .[dev]
+          python -m pip install flake8
 
       - name: "Lint"
         run: |
