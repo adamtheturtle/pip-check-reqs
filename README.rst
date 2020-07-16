@@ -68,10 +68,10 @@ You may exclude those test files from your check using the `--ignore-file`
 option (shorthand is `-f`). Multiple instances of the option are allowed.
 
 
-Excluding modules from the check
---------------------------------
+Excluding imported modules from the check
+------------------------------------------
 
-If your project has modules which are conditionally imported, or requirements
+If your project has installed modules which are conditionally imported, or requirements
 which are conditionally included, you may exclude certain modules from the
 check by name (or glob pattern) using `--ignore-module` (shorthand is `-m`)::
 
