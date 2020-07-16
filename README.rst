@@ -69,7 +69,7 @@ option (shorthand is `-f`). Multiple instances of the option are allowed.
 
 
 Excluding imported modules from the check
-------------------------------------------
+-----------------------------------------
 
 If your project has installed modules which are conditionally imported, or requirements
 which are conditionally included, you may exclude certain modules from the
