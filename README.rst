@@ -71,7 +71,7 @@ option (shorthand is `-f`). Multiple instances of the option are allowed.
 Excluding imported modules from the check
 -----------------------------------------
 
-If your project has installed modules which are conditionally imported, or requirements
+If your project has modules which are conditionally imported, or requirements
 which are conditionally included, you may exclude certain modules from the
 check by name (or glob pattern) using `--ignore-module` (shorthand is `-m`)::
 
@@ -80,6 +80,7 @@ check by name (or glob pattern) using `--ignore-module` (shorthand is `-m`)::
     # ignore the whole package spam as well
     pip-missing-reqs --ignore-module=spam --ignore-module=spam.* sample
 
+This is useful for example when your project has a module installed that it's not referenced anywhere in the code (but it's needed by external tools like docker). Without this option he module would be erroneously marked as unused because it isn't referenced anywhere in the code.
 
 With Thanks To
 --------------
