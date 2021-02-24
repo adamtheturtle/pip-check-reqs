@@ -63,6 +63,12 @@ def main():
 
     usage = 'usage: %prog [options] files or directories'
     parser = optparse.OptionParser(usage)
+    parser.add_option("--requirements-file",
+                      dest="requirements_filename",
+                      metavar="PATH",
+                      default="requirements.txt",
+                      help="path to the requirements file "
+                           "(defaults to \"requirements.txt\")")
     parser.add_option("-f",
                       "--ignore-file",
                       dest="ignore_files",
@@ -124,10 +130,9 @@ def main():
 
     log.info('using pip_check_reqs-%s from %s', __version__, __file__)
 
-    requirements_filename = 'requirements.txt'
     extras = find_extra_reqs(
         options=options,
-        requirements_filename=requirements_filename,
+        requirements_filename=options.requirements_filename,
     )
 
     if extras:
@@ -135,7 +140,7 @@ def main():
     for name in extras:
         message = '{name} in {requirements_filename}'.format(
             name=name,
-            requirements_filename=requirements_filename,
+            requirements_filename=options.requirements_filename,
         )
         log.warning(message)
 
