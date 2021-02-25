@@ -49,7 +49,7 @@ def find_extra_reqs(options, requirements_filename):
                 'used module: %s (from file %s, assuming stdlib or local)',
                 modname, info.filename)
 
-    # 4. compare with requirements.txt
+    # 4. compare with requirements
     explicit = common.find_required_modules(
         options=options,
         requirements_filename=requirements_filename,
@@ -86,7 +86,7 @@ def main():
                       dest="ignore_reqs",
                       action="append",
                       default=[],
-                      help="reqs in requirements.txt to ignore")
+                      help="reqs in requirements to ignore")
     parser.add_option("-v",
                       "--verbose",
                       dest="verbose",

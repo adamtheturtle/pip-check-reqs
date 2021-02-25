@@ -56,7 +56,7 @@ def find_missing_reqs(options, requirements_filename):
                 'used module: %s (from file %s, assuming stdlib or local)',
                 modname, info.filename)
 
-    # 4. compare with requirements.txt
+    # 4. compare with requirements
     explicit = set()
     for requirement in parse_requirements(
         requirements_filename,
