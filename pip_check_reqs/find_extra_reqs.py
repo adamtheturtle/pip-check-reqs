@@ -87,6 +87,13 @@ def main():
                       action="append",
                       default=[],
                       help="reqs in requirements to ignore")
+    parser.add_option("-s",
+                      "--skip-incompatible",
+                      dest="skip_incompatible",
+                      action="store_true",
+                      default=False,
+                      help="skip requirements that have incompatible "
+                           "environment markers")
     parser.add_option("-v",
                       "--verbose",
                       dest="verbose",
