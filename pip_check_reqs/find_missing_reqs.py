@@ -136,11 +136,13 @@ def main():
 
     logging.basicConfig(format='%(message)s')
     if options.debug:
-        log.setLevel(logging.DEBUG)
+        level = logging.DEBUG
     elif options.verbose:
-        log.setLevel(logging.INFO)
+        level = logging.INFO
     else:
-        log.setLevel(logging.WARN)
+        level = logging.WARN
+    log.setLevel(level)
+    common.log.setLevel(level)
 
     log.info('using pip_check_reqs-%s from %s', __version__, __file__)
 
