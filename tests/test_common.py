@@ -165,7 +165,7 @@ def test_ignorer(monkeypatch, tmp_path: Path, ignore_cfg, candidate, result):
 
 def test_find_required_modules(monkeypatch, tmp_path: Path):
     class options:
-        pass
+        skip_incompatible = False
 
     options.ignore_reqs = common.ignorer(ignore_cfg=['barfoo'])
 
