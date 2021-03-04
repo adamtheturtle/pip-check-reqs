@@ -177,3 +177,22 @@ def test_find_required_modules(monkeypatch, tmp_path: Path):
         requirements_filename=str(fake_requirements_file),
     )
     assert reqs == set(['foobar'])
+
+
+def test_find_required_modules_env_markers(monkeypatch, tmp_path):
+    class options:
+        skip_incompatible = True
+
+        def ignore_reqs(self, modname):
+            return False
+
+    fake_requirements_file = tmp_path / 'requirements.txt'
+    fake_requirements_file.write_text('spam==1; python_version<"2.0"\n'
+                                      'ham==2;\n'
+                                      'eggs==3\n')
+
+    reqs = common.find_required_modules(
+        options=options(),
+        requirements_filename=str(fake_requirements_file),
+    )
+    assert not reqs
