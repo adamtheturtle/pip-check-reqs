@@ -2,6 +2,12 @@
 Release History
 ---------------
 
+2.2.0
+
+- Added `--requirements-file` flag to `pip-extra-reqs` and `pip-missing-reqs`
+  commands. This flag makes it possible to specify a path to the requirements
+  file. Previously, `"requirements.txt"` was always used.
+
 2.1.1
 
 - Bug fix: Though Python 2 support was removed from the source code, the published wheel was still universal.

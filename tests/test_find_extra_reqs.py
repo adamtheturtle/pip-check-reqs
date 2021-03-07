@@ -15,6 +15,7 @@ from pip_check_reqs import find_extra_reqs, common, __version__
 def fake_opts():
     class FakeOptParse:
         class options:
+            requirements_filename = 'requirements.txt'
             paths = ['dummy']
             verbose = False
             debug = False
@@ -124,6 +125,7 @@ def test_main_no_spec(monkeypatch, caplog, fake_opts):
 ])
 def test_logging_config(monkeypatch, caplog, verbose_cfg, debug_cfg, result):
     class options:
+        requirements_filename = ''
         paths = ['dummy']
         verbose = verbose_cfg
         debug = debug_cfg
