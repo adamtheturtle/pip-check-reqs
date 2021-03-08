@@ -4,6 +4,9 @@ Release History
 
 2.2.0
 
+- Added `--skip-incompatible` flag to `pip-extra-reqs`, which makes it ignore
+  requirements with environment markers that are incompatible with the current
+  environment.
 - Added `--requirements-file` flag to `pip-extra-reqs` and `pip-missing-reqs`
   commands. This flag makes it possible to specify a path to the requirements
   file. Previously, `"requirements.txt"` was always used.

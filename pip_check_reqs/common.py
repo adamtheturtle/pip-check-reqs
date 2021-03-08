@@ -6,6 +6,7 @@ import os
 import re
 
 from packaging.utils import canonicalize_name
+from packaging.markers import Marker
 # Between different versions of pip the location of PipSession has changed.
 try:
     from pip._internal.network.session import PipSession
@@ -142,10 +143,31 @@ def find_required_modules(options, requirements_filename: str):
 
         if options.ignore_reqs(requirement):
             log.debug('ignoring requirement: %s', requirement_name)
+            continue
+
+        if options.skip_incompatible:
+            requirement_string = requirement.requirement
+            if not has_compatible_markers(requirement_string):
+                log.debug('ignoring requirement (incompatible environment '
+                          'marker): %s', requirement_string)
+                continue
+
         else:
             log.debug('found requirement: %s', requirement_name)
             explicit.add(canonicalize_name(requirement_name))
+
     return explicit
+
+
+def has_compatible_markers(full_requirement: str) -> bool:
+    if ';' not in full_requirement:
+        return True  # No environment marker.
+
+    enviroment_marker = full_requirement.split(';')[1]
+    if not enviroment_marker:
+        return True  # Empty environment marker.
+
+    return Marker(enviroment_marker).evaluate()
 
 
 def is_package_file(path):

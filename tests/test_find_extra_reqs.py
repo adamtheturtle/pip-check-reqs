@@ -72,6 +72,7 @@ def test_find_extra_reqs(monkeypatch, tmp_path: Path):
     class options:
         def ignore_reqs(x, y):
             return False
+        skip_incompatible = False
 
     options = options()
 
