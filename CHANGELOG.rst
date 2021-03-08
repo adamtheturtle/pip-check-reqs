@@ -7,6 +7,7 @@ Release History
 - Added `--requirements-file` flag to `pip-extra-reqs` and `pip-missing-reqs`
   commands. This flag makes it possible to specify a path to the requirements
   file. Previously, `"requirements.txt"` was always used.
+- Fixed some of the logs not being visible with `-d` and `-v` flags.
 
 2.1.1
 
