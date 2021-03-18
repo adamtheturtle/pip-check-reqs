@@ -106,7 +106,7 @@ def test_find_imported_modules(monkeypatch, caplog, ignore_ham, ignore_hashlib,
             'from . import friend',
         ]
 
-        def __init__(self, filename):
+        def __init__(self, filename, encoding=None):
             pass
 
         def read(self):
