@@ -119,7 +119,7 @@ def find_imported_modules(options):
                 log.info('ignoring: %s', os.path.relpath(filename))
                 continue
             log.debug('scanning: %s', os.path.relpath(filename))
-            with open(filename) as f:
+            with open(filename, encoding='utf-8') as f:
                 content = f.read()
             vis.set_location(filename)
             vis.visit(ast.parse(content))

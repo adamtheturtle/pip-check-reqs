@@ -2,6 +2,10 @@
 Release History
 ---------------
 
+2.2.1
+- Python source is now always read using utf-8, even if default encoding is set
+  otherwise.
+
 2.2.0
 
 - Added `--skip-incompatible` flag to `pip-extra-reqs`, which makes it ignore
