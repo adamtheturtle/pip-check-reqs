@@ -4,6 +4,7 @@ import imp
 import logging
 import os
 import re
+import codecs
 
 from packaging.utils import canonicalize_name
 from packaging.markers import Marker
@@ -111,6 +112,15 @@ def pyfiles(root):
                 yield os.path.join(root, f)
 
 
+def openAndReadFile(fileName, options):
+    charset = None
+    if hasattr(options, 'encoding'):
+        charset = options.encoding
+    with codecs.open(fileName, encoding=charset) as f:
+        content = f.read()
+    return content
+
+
 def find_imported_modules(options):
     vis = ImportVisitor(options)
     for path in options.paths:
@@ -119,8 +129,7 @@ def find_imported_modules(options):
                 log.info('ignoring: %s', os.path.relpath(filename))
                 continue
             log.debug('scanning: %s', os.path.relpath(filename))
-            with open(filename) as f:
-                content = f.read()
+            content = openAndReadFile(filename, options)
             vis.set_location(filename)
             vis.visit(ast.parse(content))
     return vis.finalise()

@@ -119,6 +119,9 @@ def main():
                       action="store_true",
                       default=False,
                       help="display version information")
+    parser.add_option("--encoding",
+                      default=None,
+                      help="python script file encoding")
 
     (options, args) = parser.parse_args()
 
