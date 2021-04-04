@@ -196,3 +196,32 @@ def test_find_required_modules_env_markers(monkeypatch, tmp_path):
         requirements_filename=str(fake_requirements_file),
     )
     assert not reqs
+
+
+def test_find_imported_modules_sets_encoding_to_utf8_when_reading(tmp_path):
+    (tmp_path / 'module.py').touch()
+
+    class options:
+        paths = [tmp_path]
+
+        def ignore_files(*_):
+            return False
+
+    expected_encoding = 'utf-8'
+    used_encoding = None
+
+    original_open = common.__builtins__['open']
+
+    def mocked_open(*args, **kwargs):
+        # As of Python 3.9, the args to open() are as follows:
+        # file, mode, buffering, encoding, erorrs, newline, closedf, opener
+        nonlocal used_encoding
+        if 'encoding' in kwargs:
+            used_encoding = kwargs['encoding']
+        return original_open(*args, **kwargs)
+
+    common.__builtins__['open'] = mocked_open
+    common.find_imported_modules(options)
+    common.__builtins__['open'] = original_open
+
+    assert used_encoding == expected_encoding
