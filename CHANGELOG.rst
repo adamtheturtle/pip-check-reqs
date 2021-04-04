@@ -3,8 +3,8 @@ Release History
 ---------------
 
 2.2.1
-- Python source is now always read using utf-8, even if default encoding is set
-  otherwise.
+- Python source is now always read using utf-8, even if default encoding for
+  reading files is set otherwise.
 
 2.2.0
 
