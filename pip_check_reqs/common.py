@@ -7,6 +7,7 @@ import re
 
 from packaging.utils import canonicalize_name
 from packaging.markers import Marker
+
 # Between different versions of pip the location of PipSession has changed.
 try:
     from pip._internal.network.session import PipSession
@@ -140,6 +141,12 @@ def find_required_modules(options, requirements_filename: str):
             requirement_name = install_req_from_line(
                 requirement.requirement,
             ).name
+
+        if requirement_name is None:
+            # This happens when the requirement parsing fails, for e.g. a
+            # requirement in the format of
+            # git+ssh://git@github.com/...
+            continue
 
         if options.ignore_reqs(requirement):
             log.debug('ignoring requirement: %s', requirement_name)

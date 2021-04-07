@@ -170,7 +170,9 @@ def test_find_required_modules(monkeypatch, tmp_path: Path):
     options.ignore_reqs = common.ignorer(ignore_cfg=['barfoo'])
 
     fake_requirements_file = tmp_path / 'requirements.txt'
-    fake_requirements_file.write_text('foobar==1\nbarfoo==2')
+    fake_requirements_file.write_text('foobar==1\nbarfoo==2\n'
+                                      'git+ssh://git@github.com/'
+                                      'r1chardj0n3s/pip-check-reqs.git@master')
 
     reqs = common.find_required_modules(
         options=options,
