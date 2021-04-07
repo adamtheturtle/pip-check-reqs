@@ -2,7 +2,12 @@
 Release History
 ---------------
 
+2.2.2
+
+- Fix crash on requirements of the "git+ssh://..." format.
+
 2.2.1
+
 - Python source is now always read using utf-8, even if default encoding for
   reading files is set otherwise.
 
