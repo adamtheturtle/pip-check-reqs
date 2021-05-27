@@ -2,6 +2,10 @@
 Release History
 ---------------
 
+2.2.2
+- AST parsing failures will now report tracebacks with a proper filename for
+  the parsed frame, instead of `<unknown>`.
+
 2.2.1
 - Python source is now always read using utf-8, even if default encoding for
   reading files is set otherwise.
