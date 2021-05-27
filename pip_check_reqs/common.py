@@ -122,7 +122,7 @@ def find_imported_modules(options):
             with open(filename, encoding='utf-8') as f:
                 content = f.read()
             vis.set_location(filename)
-            vis.visit(ast.parse(content))
+            vis.visit(ast.parse(content, filename))
     return vis.finalise()
 
 
