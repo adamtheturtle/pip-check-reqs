@@ -3,10 +3,12 @@ Release History
 ---------------
 
 2.2.2
+
 - AST parsing failures will now report tracebacks with a proper filename for
   the parsed frame, instead of `<unknown>`.
 
 2.2.1
+
 - Python source is now always read using utf-8, even if default encoding for
   reading files is set otherwise.
 
@@ -98,6 +100,6 @@ Release History
 - vendored code from pip 1.6dev which fixes bug in search_packages_info
   until pip 1.6 is released
 
-1.1.0 
+1.1.0
 
 - implemented --ignore-module
