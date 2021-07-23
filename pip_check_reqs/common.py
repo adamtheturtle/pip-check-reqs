@@ -154,7 +154,8 @@ def find_required_modules(options, requirements_filename: str):
 
         else:
             log.debug('found requirement: %s', requirement_name)
-            explicit.add(canonicalize_name(requirement_name))
+            if requirement_name:
+	    	explicit.add(canonicalize_name(requirement_name))
 
     return explicit
 
