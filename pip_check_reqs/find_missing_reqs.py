@@ -41,9 +41,12 @@ def find_missing_reqs(options, requirements_filename):
                 here = pathlib.Path('.').resolve()
                 item_location_rel = (pathlib.Path(package_location) / item)
                 item_location = item_location_rel.resolve()
-                if item_location.is_relative_to(here):
+                try:
                     relative_item_location = item_location.relative_to(here)
-                else:
+                except ValueError:
+                    # Ideally we would use Pathlib.is_relative_to rather than
+                    # checking for a ValueError, but that is only available in
+                    # Python 3.9+.
                     relative_item_location = item_location
                 package_files.append(str(relative_item_location))
 
