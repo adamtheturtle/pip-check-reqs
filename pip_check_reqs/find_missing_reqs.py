@@ -29,11 +29,11 @@ def find_missing_reqs(options, requirements_filename):
     installed_files = {}
     all_pkgs = (pkg.project_name for pkg in get_installed_distributions())
     for package in search_packages_info(all_pkgs):
-        if isinstance(package, dict):
+        if isinstance(package, dict):  # pragma: no cover
             package_name = package['name']
             package_location = package['location']
             package_files = package.get('files', []) or []
-        else:
+        else:  # pragma: no cover
             package_name = package.name
             package_location = package.location
             package_files = []
