@@ -2,6 +2,10 @@
 Release History
 ---------------
 
+2.3.0
+
+- Support pip >= 21.2.1
+
 2.2.2
 
 - AST parsing failures will now report tracebacks with a proper filename for
