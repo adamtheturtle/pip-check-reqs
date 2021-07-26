@@ -1,5 +1,6 @@
 import collections
 import logging
+import pathlib
 import optparse
 import os
 import sys
@@ -28,7 +29,16 @@ def find_extra_reqs(options, requirements_filename):
         else:
             package_name = package.name
             package_location = package.location
-            package_files = package.files or []
+            package_files = []
+            for item in (package.files or []):
+                here = pathlib.Path('.').resolve()
+                item_location_rel = (pathlib.Path(package_location) / item)
+                item_location = item_location_rel.resolve()
+                if item_location.is_relative_to(here):
+                    relative_item_location = item_location.relative_to(here)
+                else:
+                    relative_item_location = item_location
+                package_files.append(str(relative_item_location))
 
         log.debug('installed package: %s (at %s)', package_name,
                   package_location)
