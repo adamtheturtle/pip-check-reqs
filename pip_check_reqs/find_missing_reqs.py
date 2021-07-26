@@ -28,19 +28,28 @@ def find_missing_reqs(options, requirements_filename):
     installed_files = {}
     all_pkgs = (pkg.project_name for pkg in get_installed_distributions())
     for package in search_packages_info(all_pkgs):
-        log.debug('installed package: %s (at %s)', package['name'],
-                  package['location'])
-        for package_file in package.get('files', []) or []:
+        if isinstance(package, dict):
+            package_name = package['name']
+            package_location = package['location']
+            package_files = package.get('files', []) or []
+        else:
+            package_name = package.name
+            package_location = package.location
+            package_files = package.files or []
+
+        log.debug('installed package: %s (at %s)', package_name,
+                  package_location)
+        for package_file in package_files:
             path = os.path.realpath(
-                os.path.join(package['location'], package_file),
+                os.path.join(package_location, package_file),
             )
-            installed_files[path] = package['name']
+            installed_files[path] = package_name
             package_path = common.is_package_file(path)
             if package_path:
                 # we've seen a package file so add the bare package directory
                 # to the installed list as well as we might want to look up
                 # a package by its directory path later
-                installed_files[package_path] = package['name']
+                installed_files[package_path] = package_name
 
     # 3. match imported modules against those packages
     used = collections.defaultdict(list)
