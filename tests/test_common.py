@@ -195,7 +195,7 @@ def test_find_required_modules_env_markers(monkeypatch, tmp_path):
         options=options(),
         requirements_filename=str(fake_requirements_file),
     )
-    assert not reqs
+    assert reqs == {'ham', 'eggs'}
 
 
 def test_find_imported_modules_sets_encoding_to_utf8_when_reading(tmp_path):

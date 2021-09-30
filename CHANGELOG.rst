@@ -2,6 +2,10 @@
 Release History
 ---------------
 
+2.3.1
+
+- Fixed `--skip-incompatible` skipping other requirements too.
+
 2.3.0
 
 - Support pip >= 21.2.1

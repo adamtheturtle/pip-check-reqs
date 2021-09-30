@@ -152,9 +152,8 @@ def find_required_modules(options, requirements_filename: str):
                           'marker): %s', requirement_string)
                 continue
 
-        else:
-            log.debug('found requirement: %s', requirement_name)
-            explicit.add(canonicalize_name(requirement_name))
+        log.debug('found requirement: %s', requirement_name)
+        explicit.add(canonicalize_name(requirement_name))
 
     return explicit
 
