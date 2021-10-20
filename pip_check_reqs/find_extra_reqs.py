@@ -7,8 +7,8 @@ import sys
 
 from packaging.utils import canonicalize_name
 from pip._internal.commands.show import search_packages_info
-from pip._internal.utils.misc import get_installed_distributions
 from pip_check_reqs import common
+from pip_check_reqs.common import get_installed_distributions
 
 log = logging.getLogger(__name__)
 

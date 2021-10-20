@@ -13,9 +13,9 @@ try:
 except ImportError:  # pragma: no cover
     from pip._internal.download import PipSession
 from pip._internal.req.req_file import parse_requirements
-from pip._internal.utils.misc import get_installed_distributions
 
 from pip_check_reqs import common
+from pip_check_reqs.common import get_installed_distributions
 
 log = logging.getLogger(__name__)
 
