@@ -2,6 +2,10 @@
 Release History
 ---------------
 
+2.3.1
+
+- Support pip >= 21.3
+
 2.3.0
 
 - Support pip >= 21.2.1
