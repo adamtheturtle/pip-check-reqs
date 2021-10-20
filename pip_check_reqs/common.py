@@ -4,6 +4,7 @@ import imp
 import logging
 import os
 import re
+from typing import Container, Optional, List, cast
 
 from packaging.utils import canonicalize_name
 from packaging.markers import Marker
@@ -13,8 +14,46 @@ try:
 except ImportError:  # pragma: no cover
     from pip._internal.download import PipSession
 from pip._internal.req.req_file import parse_requirements
+from pip._internal.utils.compat import stdlib_pkgs
+from pip._internal.metadata import get_default_environment, get_environment
+from pip._internal.metadata.pkg_resources import Distribution as _Dist
+from pip._vendor.pkg_resources import Distribution
 
 log = logging.getLogger(__name__)
+
+
+# get_installed_distributions was removed in pip 21.3.
+# This is a copy from pip.
+# See
+# https://github.com/pypa/pip/commit/d051a00fc57037104fca85ad8ebf2cdbd1e32d24#diff-058e40cb3a9ea705f655937e48f3a053f5dc7c500b7f1b2aae76e9bd673faf64.
+#
+# This is mocked in all tests (unfortunately) and so we do not cover this
+# function.
+def get_installed_distributions(
+     local_only: bool = True,
+     skip: Container[str] = stdlib_pkgs,
+     include_editables: bool = True,
+     editables_only: bool = False,
+     user_only: bool = False,
+     paths: Optional[List[str]] = None,
+ ) -> List[Distribution]:  # pragma: no cover
+    """Return a list of installed Distribution objects.
+
+    Left for compatibility until direct pkg_resources uses are refactored out.
+    """
+    if paths is None:
+        env = get_default_environment()
+    else:
+        env = get_environment(paths)
+
+    dists = env.iter_installed_distributions(
+        local_only=local_only,
+        skip=skip,
+        include_editables=include_editables,
+        editables_only=editables_only,
+        user_only=user_only,
+    )
+    return [cast(_Dist, dist)._dist for dist in dists]
 
 
 class FoundModule:
