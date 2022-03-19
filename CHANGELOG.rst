@@ -2,6 +2,11 @@
 Release History
 ---------------
 
+(unreleased)
+
+- Added `python_requires` to metadata; from now on, releases of
+  `pip-check-reqs` are marked as compatible with Python 3.6.1 and up.
+
 2.3.2
 
 - Fixed support for pip < 21.3
