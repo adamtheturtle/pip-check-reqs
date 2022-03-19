@@ -4,10 +4,16 @@ import imp
 import logging
 import os
 import re
+import sys
+
+from pathlib import Path
 from typing import Container, Optional, List, cast
 
 from packaging.utils import canonicalize_name
 from packaging.markers import Marker
+
+from . import __version__
+
 # Between different versions of pip the location of PipSession has changed.
 try:
     from pip._internal.network.session import PipSession
@@ -248,3 +254,11 @@ def ignorer(ignore_cfg):
         return False
 
     return f
+
+
+def version_info():
+    return "pip-check-reqs {} from {} (python {})".format(
+        __version__,
+        str((Path(__file__) / '..').resolve()),
+        "{}.{}.{}".format(*sys.version_info),
+    )

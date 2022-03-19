@@ -15,7 +15,7 @@ except ImportError:  # pragma: no cover
 from pip._internal.req.req_file import parse_requirements
 
 from pip_check_reqs import common
-from pip_check_reqs.common import get_installed_distributions
+from pip_check_reqs.common import get_installed_distributions, version_info
 
 log = logging.getLogger(__name__)
 
@@ -102,8 +102,6 @@ def find_missing_reqs(options, requirements_filename):
 
 
 def main():
-    from pip_check_reqs import __version__
-
     usage = 'usage: %prog [options] files or directories'
     parser = optparse.OptionParser(usage)
     parser.add_option("--requirements-file",
@@ -136,7 +134,7 @@ def main():
                       action="store_true",
                       default=False,
                       help="be *really* verbose")
-    parser.add_option("--version",
+    parser.add_option("-V", "--version",
                       dest="version",
                       action="store_true",
                       default=False,
@@ -145,7 +143,8 @@ def main():
     (options, args) = parser.parse_args()
 
     if options.version:
-        sys.exit(__version__)
+        print(version_info())
+        sys.exit(0)
 
     if not args:
         parser.error("no source files or directories specified")
@@ -166,7 +165,7 @@ def main():
     log.setLevel(level)
     common.log.setLevel(level)
 
-    log.info('using pip_check_reqs-%s from %s', __version__, __file__)
+    log.info(version_info())
 
     missing = find_missing_reqs(
         options=options,
