@@ -82,8 +82,6 @@ def find_extra_reqs(options, requirements_filename):
 
 
 def main():
-    from pip_check_reqs import __version__
-
     usage = 'usage: %prog [options] files or directories'
     parser = optparse.OptionParser(usage)
     parser.add_option("--requirements-file",
@@ -161,7 +159,7 @@ def main():
     log.setLevel(level)
     common.log.setLevel(level)
 
-    log.info('using pip_check_reqs-%s from %s', __version__, __file__)
+    log.info(version_info())
 
     extras = find_extra_reqs(
         options=options,
