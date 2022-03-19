@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 import pretend
 
-from pip_check_reqs import find_extra_reqs, common, __version__
+from pip_check_reqs import find_extra_reqs, common
 
 
 @pytest.fixture
@@ -166,13 +166,3 @@ def test_logging_config(monkeypatch, caplog, verbose_cfg, debug_cfg, result):
         assert messages[1:] == result
     else:
         assert messages == result
-
-
-def test_main_version(monkeypatch, caplog, fake_opts):
-    fake_opts.options.version = True
-    monkeypatch.setattr(optparse, 'OptionParser', fake_opts)
-
-    with pytest.raises(SystemExit) as excinfo:
-        find_extra_reqs.main()
-
-    assert str(excinfo.value) == __version__
