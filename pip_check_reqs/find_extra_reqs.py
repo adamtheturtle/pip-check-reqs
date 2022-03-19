@@ -129,7 +129,7 @@ def main():
                       action="store_true",
                       default=False,
                       help="be *really* verbose")
-    parser.add_option("--version",
+    parser.add_option("-V", "--version",
                       dest="version",
                       action="store_true",
                       default=False,
