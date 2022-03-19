@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 import pretend
 
-from pip_check_reqs import common
+from pip_check_reqs import common, __version__
 
 
 @pytest.mark.parametrize(
@@ -225,3 +225,7 @@ def test_find_imported_modules_sets_encoding_to_utf8_when_reading(tmp_path):
     common.__builtins__['open'] = original_open
 
     assert used_encoding == expected_encoding
+
+
+def test_version_info_shows_version_number():
+    assert __version__ in common.version_info()
