@@ -52,6 +52,7 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3',
     ],
+    python_requires=">=3.6.1",
     packages=['pip_check_reqs'],
     entry_points={
         'console_scripts': [
