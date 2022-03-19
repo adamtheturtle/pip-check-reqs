@@ -176,3 +176,13 @@ def test_logging_config(monkeypatch, caplog, verbose_cfg, debug_cfg, result):
         assert messages[1:] == result
     else:
         assert messages == result
+
+
+def test_main_version(monkeypatch, capsys, fake_opts):
+    fake_opts.options.version = True
+    monkeypatch.setattr(optparse, 'OptionParser', fake_opts)
+
+    with pytest.raises(SystemExit):
+        find_missing_reqs.main()
+
+    assert capsys.readouterr().out == common.version_info() + "\n"
