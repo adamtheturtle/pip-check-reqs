@@ -8,7 +8,7 @@ import sys
 from packaging.utils import canonicalize_name
 from pip._internal.commands.show import search_packages_info
 from pip_check_reqs import common
-from pip_check_reqs.common import get_installed_distributions
+from pip_check_reqs.common import get_installed_distributions, version_info
 
 log = logging.getLogger(__name__)
 
@@ -138,7 +138,8 @@ def main():
     (options, args) = parser.parse_args()
 
     if options.version:
-        sys.exit(__version__)
+        print(version_info())
+        sys.exit(0)
 
     if not args:
         parser.error("no source files or directories specified")
