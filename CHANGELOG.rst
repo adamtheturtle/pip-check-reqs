@@ -9,6 +9,7 @@ Release History
 - Made `--version` flag show interpretter version and path to the package which
   pip-check-reqs is running from, similar to information shown by `pip
   --version`.
+- `-V` is now an alias of `--version`.
 
 2.3.2
 
