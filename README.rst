@@ -22,7 +22,7 @@ pip-extra-reqs tool will find those modules so you can remove them.
 .. _`virtualenv`: https://virtualenv.pypa.io/en/latest/
 .. _`requirements.txt`: https://pip.pypa.io/en/latest/user_guide.html#requirements-files
 
-Assuming your project follows a layout like the suggested `sample project`_::
+Assuming your project follows a layout like the suggested sample project::
 
     setup.py
     setup.cfg
@@ -30,8 +30,6 @@ Assuming your project follows a layout like the suggested `sample project`_::
     sample/__init__.py
     sample/sample.py
     sample/tests/test_sample.py
-
-.. _`sample project`: https://packaging.python.org/en/latest/tutorial.html#creating-your-own-project
 
 Basic usage, running in your project directory::
 
