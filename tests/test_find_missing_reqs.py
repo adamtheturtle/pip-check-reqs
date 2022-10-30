@@ -1,6 +1,8 @@
 from __future__ import absolute_import
+from dataclasses import dataclass
+import importlib
+from typing import Dict, Optional
 
-import collections
 import logging
 import optparse
 from pathlib import Path
@@ -50,10 +52,20 @@ def test_find_missing_reqs(monkeypatch, tmp_path: Path):
     monkeypatch.setattr(common, 'find_imported_modules',
                         pretend.call_recorder(lambda a: imported_modules))
 
-    FakeDist = collections.namedtuple('FakeDist', ['project_name'])
-    installed_distributions = map(FakeDist, ['spam', 'pass'])
-    monkeypatch.setattr(find_missing_reqs, 'get_installed_distributions',
-                        pretend.call_recorder(lambda: installed_distributions))
+    @dataclass
+    class FakePathDistribution:
+        metadata: Dict
+        name: Optional[str] = None
+
+    installed_distributions = map(
+        FakePathDistribution,
+        [{'Name': 'spam'}, {'Name': 'pass'}],
+    )
+    monkeypatch.setattr(
+        importlib.metadata,
+        'distributions',
+        pretend.call_recorder(lambda **kwargs: installed_distributions),
+    )
     packages_info = [
         dict(name='spam',
              location='site-spam',

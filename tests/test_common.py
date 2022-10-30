@@ -89,9 +89,20 @@ def test_pyfiles_package(monkeypatch):
         ['spam/__init__.py', 'spam/ham.py', 'spam/dub/bass.py']
 
 
+# Beware - using "sys" or "os" here can have weird results.
+# See the comment in the implementation.
+# We don't mind so much as we only really use this for third party packages.
 @pytest.mark.parametrize(["ignore_ham", "ignore_hashlib", "expect", "locs"], [
-    (False, False, ['ast', 'os', 'hashlib'], [('spam.py', 2), ('ham.py', 2)]),
-    (False, True, ['ast', 'os'], [('spam.py', 2), ('ham.py', 2)]),
+    (
+        False,
+        False,
+        ['ast', 'pathlib', 'hashlib'],
+        [
+            ('spam.py', 2),
+            ('ham.py', 2),
+        ],
+    ),
+    (False, True, ['ast', 'pathlib'], [('spam.py', 2), ('ham.py', 2)]),
     (True, False, ['ast'], [('spam.py', 2)]),
     (True, True, ['ast'], [('spam.py', 2)]),
 ])
@@ -110,7 +121,7 @@ def test_find_imported_modules(caplog, ignore_ham, ignore_hashlib,
     )
     ham_file_contents = textwrap.dedent(
         """\
-        from os import path
+        from pathlib import Path
         import ast, hashlib
         """,
     )

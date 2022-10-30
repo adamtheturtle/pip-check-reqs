@@ -1,4 +1,5 @@
 import collections
+import importlib.metadata
 import logging
 import optparse
 import os
@@ -15,7 +16,7 @@ except ImportError:  # pragma: no cover
 from pip._internal.req.req_file import parse_requirements
 
 from pip_check_reqs import common
-from pip_check_reqs.common import get_installed_distributions, version_info
+from pip_check_reqs.common import version_info
 
 log = logging.getLogger(__name__)
 
@@ -27,7 +28,11 @@ def find_missing_reqs(options, requirements_filename):
 
     # 2. find which packages provide which files
     installed_files = {}
-    all_pkgs = (pkg.project_name for pkg in get_installed_distributions())
+    all_pkgs = (
+        dist.metadata["Name"] for dist
+        in importlib.metadata.distributions()
+    )
+
     for package in search_packages_info(all_pkgs):
         if isinstance(package, dict):  # pragma: no cover
             package_name = package['name']
