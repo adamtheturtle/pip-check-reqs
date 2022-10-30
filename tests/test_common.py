@@ -36,28 +36,6 @@ def test_FoundModule():
     assert str(fm) == 'FoundModule("spam")'
 
 
-@pytest.mark.parametrize(
-    ["stmt", "result"],
-    [
-        ('import ast', ['ast']),
-        ('import ast, sys', ['ast', 'sys']),
-        ('from sys import version', ['sys']),
-        ('from os import path', ['os']),
-        ('import distutils.command.check', ['distutils']),
-        ('import spam', []),  # don't break because bad programmer
-    ])
-def test_ImportVisitor(stmt, result):
-    class options:
-        def ignore_mods(self, modname):
-            return False
-
-    vis = common.ImportVisitor(options())
-    vis.set_location('spam.py')
-    vis.visit(ast.parse(stmt))
-    result = vis.finalise()
-    assert set(result.keys()) == set(result)
-
-
 def test_pyfiles_file(monkeypatch):
     monkeypatch.setattr(os.path, 'abspath',
                         pretend.call_recorder(lambda x: '/spam/ham.py'))
@@ -89,9 +67,12 @@ def test_pyfiles_package(monkeypatch):
         ['spam/__init__.py', 'spam/ham.py', 'spam/dub/bass.py']
 
 
+# Be careful - "os" and "sys" (at least) are weird - see comments in the
+# implementation.
+# We don't really care because these are standard library modules.
 @pytest.mark.parametrize(["ignore_ham", "ignore_hashlib", "expect", "locs"], [
-    (False, False, ['ast', 'os', 'hashlib'], [('spam.py', 2), ('ham.py', 2)]),
-    (False, True, ['ast', 'os'], [('spam.py', 2), ('ham.py', 2)]),
+    (False, False, ['ast', 'pathlib', 'hashlib'], [('spam.py', 2), ('ham.py', 2)]),
+    (False, True, ['ast', 'pathlib'], [('spam.py', 2), ('ham.py', 2)]),
     (True, False, ['ast'], [('spam.py', 2)]),
     (True, True, ['ast'], [('spam.py', 2)]),
 ])
@@ -110,7 +91,7 @@ def test_find_imported_modules(caplog, ignore_ham, ignore_hashlib,
     )
     ham_file_contents = textwrap.dedent(
         """\
-        from os import path
+        from pathlib import Path
         import ast, hashlib
         """,
     )
@@ -199,35 +180,6 @@ def test_find_required_modules_env_markers(tmp_path):
         requirements_filename=str(fake_requirements_file),
     )
     assert reqs == {'ham', 'eggs'}
-
-
-def test_find_imported_modules_sets_encoding_to_utf8_when_reading(tmp_path):
-    (tmp_path / 'module.py').touch()
-
-    class options:
-        paths = [tmp_path]
-
-        def ignore_files(*_):
-            return False
-
-    expected_encoding = 'utf-8'
-    used_encoding = None
-
-    original_open = common.__builtins__['open']
-
-    def mocked_open(*args, **kwargs):
-        # As of Python 3.9, the args to open() are as follows:
-        # file, mode, buffering, encoding, erorrs, newline, closedf, opener
-        nonlocal used_encoding
-        if 'encoding' in kwargs:
-            used_encoding = kwargs['encoding']
-        return original_open(*args, **kwargs)
-
-    common.__builtins__['open'] = mocked_open
-    common.find_imported_modules(options)
-    common.__builtins__['open'] = original_open
-
-    assert used_encoding == expected_encoding
 
 
 def test_version_info_shows_version_number():

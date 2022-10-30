@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 from typing import Container, Optional, List, cast
 
+import depfinder
 from packaging.utils import canonicalize_name
 from packaging.markers import Marker
 
@@ -66,6 +67,42 @@ except ImportError:  # pip>=21.3
 log = logging.getLogger(__name__)
 
 
+def _get_module_name_and_path(modname):
+    path = None
+    progress = []
+    modpath = last_modpath = None
+    for p in modname.split('.'):
+        try:
+            file, modpath, description = imp.find_module(p, path)
+        except ImportError:
+            # the component specified at this point is not importable
+            # (is just an attr of the module)
+            # *or* it's not actually installed, so we don't care either
+            break
+
+        # success! we found *something*
+        progress.append(p)
+
+        # we might have previously seen a useful path though...
+        if modpath is None:  # pragma: no cover
+            # the sys module will hit this code path on py3k and os will on 3.11 - possibly
+            # others will, but I've not discovered them
+            modpath = last_modpath
+            break
+
+        # ... though it might not be a file, so not interesting to us
+        if not os.path.isdir(modpath):
+            break
+
+        path = [modpath]
+        last_modpath = modpath
+
+    if modpath is None:
+        raise ValueError(f"The module '{modname}' doesn't actually appear to exist on disk")
+
+    modname = '.'.join(progress)
+    return (modname, modpath)
+
 class FoundModule:
     def __init__(self, modname, filename, locations=None):
         self.modname = modname
@@ -74,75 +111,6 @@ class FoundModule:
 
     def __repr__(self):
         return 'FoundModule("%s")' % self.modname
-
-
-class ImportVisitor(ast.NodeVisitor):
-    def __init__(self, options):
-        super(ImportVisitor, self).__init__()
-        self.__options = options
-        self.__modules = {}
-        self.__location = None
-
-    def set_location(self, location):
-        self.__location = location
-
-    def visit_Import(self, node):
-        for alias in node.names:
-            self.__addModule(alias.name, node.lineno)
-
-    def visit_ImportFrom(self, node):
-        if node.module == '__future__':
-            # not an actual module
-            return
-        for alias in node.names:
-            if node.module is None:
-                # relative import
-                continue
-            self.__addModule(node.module + '.' + alias.name, node.lineno)
-
-    def __addModule(self, modname, lineno):
-        if self.__options.ignore_mods(modname):
-            return
-        path = None
-        progress = []
-        modpath = last_modpath = None
-        for p in modname.split('.'):
-            try:
-                file, modpath, description = imp.find_module(p, path)
-            except ImportError:
-                # the component specified at this point is not importable
-                # (is just an attr of the module)
-                # *or* it's not actually installed, so we don't care either
-                break
-
-            # success! we found *something*
-            progress.append(p)
-
-            # we might have previously seen a useful path though...
-            if modpath is None:  # pragma: no cover
-                # the sys module will hit this code path on py3k - possibly
-                # others will, but I've not discovered them
-                modpath = last_modpath
-                break
-
-            # ... though it might not be a file, so not interesting to us
-            if not os.path.isdir(modpath):
-                break
-
-            path = [modpath]
-            last_modpath = modpath
-
-        if modpath is None:
-            # the module doesn't actually appear to exist on disk
-            return
-
-        modname = '.'.join(progress)
-        if modname not in self.__modules:
-            self.__modules[modname] = FoundModule(modname, modpath)
-        self.__modules[modname].locations.append((self.__location, lineno))
-
-    def finalise(self):
-        return self.__modules
 
 
 def pyfiles(root):
@@ -161,18 +129,32 @@ def pyfiles(root):
 
 
 def find_imported_modules(options):
-    vis = ImportVisitor(options)
+    modules = {}
     for path in options.paths:
         for filename in pyfiles(path):
             if options.ignore_files(filename):
                 log.info('ignoring: %s', os.path.relpath(filename))
                 continue
             log.debug('scanning: %s', os.path.relpath(filename))
-            with open(filename, encoding='utf-8') as f:
-                content = f.read()
-            vis.set_location(filename)
-            vis.visit(ast.parse(content, filename))
-    return vis.finalise()
+            depfinder_result = depfinder.parse_file(filename)
+            _, _, import_catcher = depfinder_result
+            for module_name, location_details in import_catcher.total_imports.items():
+                if module_name == '__future__':
+                    continue
+                if options.ignore_mods(module_name):
+                    continue
+
+                try:
+                    module_name, module_path = _get_module_name_and_path(modname=module_name)
+                except ValueError:
+                    continue
+            
+                if module_name not in modules:
+                    modules[module_name] = FoundModule(modname=module_name, filename=module_path)
+
+                for location in location_details:
+                    modules[module_name].locations.append(location)
+    return modules
 
 
 def find_required_modules(options, requirements_filename: str):
