@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import ast
 import logging
 import os.path
+import textwrap
 from pathlib import Path
 
 import pytest
@@ -94,41 +95,38 @@ def test_pyfiles_package(monkeypatch):
     (True, False, ['ast'], [('spam.py', 2)]),
     (True, True, ['ast'], [('spam.py', 2)]),
 ])
-def test_find_imported_modules(monkeypatch, caplog, ignore_ham, ignore_hashlib,
-                               expect, locs):
-    monkeypatch.setattr(common, 'pyfiles',
-                        pretend.call_recorder(lambda x: ['spam.py', 'ham.py']))
+def test_find_imported_modules(caplog, ignore_ham, ignore_hashlib,
+                               expect, locs, tmp_path):
+    root = tmp_path
+    spam = root / "spam.py"
+    ham = root / "ham.py"
 
-    class FakeFile():
-        contents = [
-            'from os import path\nimport ast, hashlib',
-            'from __future__ import braces\nimport ast, sys\n'
-            'from . import friend',
-        ]
+    spam_file_contents = textwrap.dedent(
+        """\
+        from __future__ import braces
+        import ast, sys
+        from . import friend
+        """,
+    )
+    ham_file_contents = textwrap.dedent(
+        """\
+        from os import path
+        import ast, hashlib
+        """,
+    )
 
-        def __init__(self, filename, encoding=None):
-            pass
-
-        def read(self):
-            return self.contents.pop()
-
-        def __enter__(self):
-            return self
-
-        def __exit__(self, *args):
-            pass
-
-    monkeypatch.setattr(common, 'open', FakeFile, raising=False)
+    spam.write_text(data=spam_file_contents)
+    ham.write_text(data=ham_file_contents)
 
     caplog.set_level(logging.INFO)
 
     class options:
-        paths = ['dummy']
+        paths = [str(root)]
         verbose = True
 
         @staticmethod
         def ignore_files(path):
-            if path == 'ham.py' and ignore_ham:
+            if Path(path).name == 'ham.py' and ignore_ham:
                 return True
             return False
 
@@ -140,10 +138,15 @@ def test_find_imported_modules(monkeypatch, caplog, ignore_ham, ignore_hashlib,
 
     result = common.find_imported_modules(options)
     assert set(result) == set(expect)
-    assert result['ast'].locations == locs
+    absolute_locations = result['ast'].locations
+    relative_locations = [
+        (str(Path(item[0]).relative_to(root)), item[1])
+        for item in absolute_locations
+    ]
+    assert sorted(relative_locations) == sorted(locs)
 
     if ignore_ham:
-        assert caplog.records[0].message == 'ignoring: ham.py'
+        assert caplog.records[0].message == f'ignoring: {os.path.relpath(ham)}'
 
 
 @pytest.mark.parametrize(["ignore_cfg", "candidate", "result"], [
@@ -163,7 +166,7 @@ def test_ignorer(monkeypatch, tmp_path: Path, ignore_cfg, candidate, result):
     assert ignorer(candidate) == result
 
 
-def test_find_required_modules(monkeypatch, tmp_path: Path):
+def test_find_required_modules(tmp_path: Path):
     class options:
         skip_incompatible = False
 
@@ -179,7 +182,7 @@ def test_find_required_modules(monkeypatch, tmp_path: Path):
     assert reqs == set(['foobar'])
 
 
-def test_find_required_modules_env_markers(monkeypatch, tmp_path):
+def test_find_required_modules_env_markers(tmp_path):
     class options:
         skip_incompatible = True
 
