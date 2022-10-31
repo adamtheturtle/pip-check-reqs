@@ -35,7 +35,6 @@ Basic usage, running in your project directory::
 
     <activate virtualenv for your project>
     pip-missing-reqs --ignore-file=sample/tests/* sample
-    pip-extra-reqs --ignore-file=sample/tests/* sample
 
 This will find all imports in the code in "sample" and check that the
 packages those modules belong to are in the requirements.txt file.
