@@ -55,7 +55,7 @@ setup(
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
     ],
-    python_requires=">=3.6.1",
+    python_requires=">=3.8.0",
     packages=['pip_check_reqs'],
     entry_points={
         'console_scripts': [
