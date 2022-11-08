@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from dataclasses import dataclass
 import importlib
+import site
 from typing import Dict, Optional
 
 import logging
@@ -11,6 +12,8 @@ import pytest
 import pretend
 
 from pip_check_reqs import find_missing_reqs, common
+
+from .package_info_mock import _PackageInfo
 
 
 @pytest.fixture
@@ -41,11 +44,12 @@ def fake_opts():
 
 
 def test_find_missing_reqs(monkeypatch, tmp_path: Path):
+    site_path = site.getsitepackages()[0]
     imported_modules = dict(spam=common.FoundModule('spam',
-                                                    'site-spam/spam.py',
+                                                    f'{site_path}/spam.py',
                                                     [('ham.py', 1)]),
                             shrub=common.FoundModule('shrub',
-                                                     'site-spam/shrub.py',
+                                                     f'{site_path}/shrub.py',
                                                      [('ham.py', 3)]),
                             ignore=common.FoundModule('ignore', 'ignore.py',
                                                       [('ham.py', 2)]))
@@ -67,11 +71,11 @@ def test_find_missing_reqs(monkeypatch, tmp_path: Path):
         pretend.call_recorder(lambda **kwargs: installed_distributions),
     )
     packages_info = [
-        dict(name='spam',
-             location='site-spam',
-             files=['spam/__init__.py', 'spam/shrub.py']),
-        dict(name='shrub', location='site-spam', files=['shrub.py']),
-        dict(name='pass', location='site-spam', files=['pass.py']),
+        _PackageInfo(name='spam',
+                     location=site_path,
+                     files=['spam/__init__.py', 'spam/shrub.py']),
+        _PackageInfo(name='shrub', location=site_path, files=['shrub.py']),
+        _PackageInfo(name='pass', location=site_path, files=['pass.py']),
     ]
 
     monkeypatch.setattr(find_missing_reqs, 'search_packages_info',
