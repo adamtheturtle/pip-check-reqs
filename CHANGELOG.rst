@@ -2,10 +2,11 @@
 Release History
 ---------------
 
-(unreleased)
+2.4.2
 
+- Added support for Python 3.11.
 - Added `python_requires` to metadata; from now on, releases of
-  `pip-check-reqs` are marked as compatible with Python 3.6.1 and up.
+  `pip-check-reqs` are marked as compatible with Python 3.8.0 and up.
 - Made `--version` flag show interpretter version and path to the package which
   pip-check-reqs is running from, similar to information shown by `pip
   --version`.
