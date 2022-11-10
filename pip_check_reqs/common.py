@@ -13,11 +13,8 @@ from packaging.markers import Marker
 
 from . import __version__
 
-# Between different versions of pip the location of PipSession has changed.
-try:
-    from pip._internal.network.session import PipSession
-except ImportError:  # pragma: no cover
-    from pip._internal.download import PipSession
+from pip._internal.network.session import PipSession
+from pip._internal.req.constructors import install_req_from_line
 from pip._internal.req.req_file import parse_requirements
 
 
@@ -137,16 +134,9 @@ def find_required_modules(options, requirements_filename: str):
     explicit = set()
     for requirement in parse_requirements(requirements_filename,
                                           session=PipSession()):
-        try:
-            requirement_name = requirement.name
-        # The type of "requirement" changed between pip versions.
-        # We exclude the "except" from coverage so that on any pip version we
-        # can report 100% coverage.
-        except AttributeError:  # pragma: no cover
-            from pip._internal.req.constructors import install_req_from_line
-            requirement_name = install_req_from_line(
-                requirement.requirement,
-            ).name
+        requirement_name = install_req_from_line(
+            requirement.requirement,
+        ).name
 
         if options.ignore_reqs(requirement):
             log.debug('ignoring requirement: %s', requirement_name)
@@ -193,13 +183,10 @@ def ignorer(ignore_cfg):
     def f(candidate, ignore_cfg=ignore_cfg):
         for ignore in ignore_cfg:
             try:
-                from pip._internal.req.constructors import (
-                    install_req_from_line,
-                )
-                candidate_path = install_req_from_line(  # pragma: no cover
+                candidate_path = install_req_from_line(
                     candidate.requirement,
                 ).name
-            except (ImportError, AttributeError):
+            except AttributeError:
                 try:
                     candidate_path = candidate.name
                 except AttributeError:

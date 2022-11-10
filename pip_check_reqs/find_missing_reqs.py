@@ -8,11 +8,8 @@ import sys
 
 from packaging.utils import canonicalize_name
 from pip._internal.commands.show import search_packages_info
-# Between different versions of pip the location of PipSession has changed.
-try:
-    from pip._internal.network.session import PipSession
-except ImportError:  # pragma: no cover
-    from pip._internal.download import PipSession
+from pip._internal.network.session import PipSession
+from pip._internal.req.constructors import install_req_from_line
 from pip._internal.req.req_file import parse_requirements
 
 from pip_check_reqs import common
@@ -89,16 +86,9 @@ def find_missing_reqs(options, requirements_filename):
         requirements_filename,
         session=PipSession(),
     ):
-        try:
-            requirement_name = requirement.name
-        # The type of "requirement" changed between pip versions.
-        # We exclude the "except" from coverage so that on any pip version we
-        # can report 100% coverage.
-        except AttributeError:  # pragma: no cover
-            from pip._internal.req.constructors import install_req_from_line
-            requirement_name = install_req_from_line(
-                requirement.requirement,
-            ).name
+        requirement_name = install_req_from_line(
+            requirement.requirement,
+        ).name
 
         log.debug('found requirement: %s', requirement_name)
         explicit.add(canonicalize_name(requirement_name))
