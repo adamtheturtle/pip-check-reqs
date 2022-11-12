@@ -1,4 +1,5 @@
 import ast
+from dataclasses import dataclass, field
 import fnmatch
 import imp
 import logging
@@ -11,6 +12,8 @@ from pathlib import Path
 from packaging.utils import canonicalize_name
 from packaging.markers import Marker
 
+from typing import List, Tuple
+
 from . import __version__
 
 from pip._internal.network.session import PipSession
@@ -21,14 +24,14 @@ from pip._internal.req.req_file import parse_requirements
 log = logging.getLogger(__name__)
 
 
+@dataclass
 class FoundModule:
-    def __init__(self, modname, filename, locations=None):
-        self.modname = modname
-        self.filename = os.path.realpath(filename)
-        self.locations = locations or []  # filename, lineno
+    modname: str
+    filename: str
+    locations: List[Tuple[str, int]] = field(default_factory=list)
 
-    def __repr__(self):
-        return 'FoundModule("%s")' % self.modname
+    def __post_init__(self) -> None:
+        self.filename = os.path.realpath(self.filename)
 
 
 class ImportVisitor(ast.NodeVisitor):

@@ -33,7 +33,6 @@ def test_FoundModule():
     assert fm.modname == 'spam'
     assert fm.filename == os.path.realpath('ham')
     assert fm.locations == []
-    assert str(fm) == 'FoundModule("spam")'
 
 
 @pytest.mark.parametrize(
