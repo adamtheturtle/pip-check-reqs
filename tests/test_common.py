@@ -56,7 +56,7 @@ def test_ImportVisitor(stmt: str, result: List[str]) -> None:
     vis.set_location('spam.py')
     vis.visit(ast.parse(stmt))
     result = vis.finalise()
-    # This is broken because two variables are named the same thing!
+    # TODO: This is broken because two variables are named the same thing!
     assert set(result.keys()) == set(result)
 
 

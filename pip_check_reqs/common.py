@@ -12,7 +12,7 @@ from pathlib import Path
 from packaging.utils import canonicalize_name
 from packaging.markers import Marker
 
-from typing import Callable, Generator, List, Tuple
+from typing import Callable, Dict, Generator, List, Tuple
 
 from . import __version__
 
@@ -35,13 +35,13 @@ class FoundModule:
 
 
 class ImportVisitor(ast.NodeVisitor):
-    def __init__(self, options):
+    def __init__(self, options) -> None:
         super(ImportVisitor, self).__init__()
         self.__options = options
         self.__modules = {}
         self.__location = None
 
-    def set_location(self, location):
+    def set_location(self, location) -> None:
         self.__location = location
 
     def visit_Import(self, node):
@@ -99,8 +99,9 @@ class ImportVisitor(ast.NodeVisitor):
             self.__modules[modname] = FoundModule(modname, modpath)
         self.__modules[modname].locations.append((self.__location, lineno))
 
-    def finalise(self):
-        return self.__modules
+    def finalise(self) -> Dict[str, FoundModule]:
+        result = self.__modules
+        return result
 
 
 def pyfiles(root) -> Generator[str, None, None]:
