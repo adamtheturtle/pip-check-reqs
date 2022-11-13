@@ -15,7 +15,7 @@ from pip_check_reqs.common import version_info
 log = logging.getLogger(__name__)
 
 
-def find_extra_reqs(options, requirements_filename) -> List[str]:
+def find_extra_reqs(options, requirements_filename: str) -> List[str]:
     # 1. find files used by imports in the code (as best we can without
     #    executing)
     used_modules = common.find_imported_modules(options)

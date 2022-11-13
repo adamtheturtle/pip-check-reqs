@@ -15,7 +15,7 @@ from pip_check_reqs import find_missing_reqs, common
 
 
 @pytest.fixture
-def fake_opts():
+def fake_opts() -> Any:
     class FakeOptParse:
         class options:
             requirements_filename = ''
@@ -23,10 +23,10 @@ def fake_opts():
             verbose = False
             debug = False
             version = False
-            ignore_files = []
-            ignore_mods = []
+            ignore_files: List[str] = []
+            ignore_mods: List[str] = []
 
-        options = options()
+        given_options = options()
         args = ['ham.py']
 
         def __init__(self, usage: str) -> None:
@@ -36,12 +36,12 @@ def fake_opts():
             pass
 
         def parse_args(self) -> Tuple[options, List[str]]:
-            return (self.options, self.args)
+            return (self.given_options, self.args)
 
     return FakeOptParse
 
 
-def test_find_missing_reqs(monkeypatch: MonkeyPatch, tmp_path: Path):
+def test_find_missing_reqs(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     imported_modules = dict(spam=common.FoundModule('spam',
                                                     'site-spam/spam.py',
                                                     [('ham.py', 1)]),
@@ -55,7 +55,7 @@ def test_find_missing_reqs(monkeypatch: MonkeyPatch, tmp_path: Path):
 
     @dataclass
     class FakePathDistribution:
-        metadata: Dict
+        metadata: Dict[str, str]
         name: Optional[str] = None
 
     installed_distributions = map(
@@ -81,21 +81,19 @@ def test_find_missing_reqs(monkeypatch: MonkeyPatch, tmp_path: Path):
     fake_requirements_file = tmp_path / 'requirements.txt'
     fake_requirements_file.write_text('spam==1')
 
-    result = list(
-        find_missing_reqs.find_missing_reqs(
-            options=None,
-            requirements_filename=str(fake_requirements_file),
-        )
+    result = find_missing_reqs.find_missing_reqs(
+        options=None,
+        requirements_filename=str(fake_requirements_file),
     )
     assert result == [('shrub', [imported_modules['shrub']])]
 
 
-def test_main_failure(monkeypatch: MonkeyPatch, caplog: pytest.LogCaptureFixture, fake_opts) -> None:
+def test_main_failure(monkeypatch: MonkeyPatch, caplog: pytest.LogCaptureFixture, fake_opts: Any) -> None:
     monkeypatch.setattr(optparse, 'OptionParser', fake_opts)
 
     caplog.set_level(logging.WARN)
 
-    def fake_find_missing_reqs(options, requirements_filename: str) -> None:
+    def fake_find_missing_reqs(options: Any, requirements_filename: str) -> List[Tuple[str, List[common.FoundModule]]]:
         return [
             (
                 'missing',
@@ -126,7 +124,7 @@ def test_main_failure(monkeypatch: MonkeyPatch, caplog: pytest.LogCaptureFixture
         'location.py:1 dist=missing module=missing'
 
 
-def test_main_no_spec(monkeypatch: MonkeyPatch, caplog: pytest.LogCaptureFixture, fake_opts) -> None:
+def test_main_no_spec(monkeypatch: MonkeyPatch, caplog: pytest.LogCaptureFixture, fake_opts: Any) -> None:
     fake_opts.args = []
     monkeypatch.setattr(optparse, 'OptionParser', fake_opts)
     monkeypatch.setattr(fake_opts,
@@ -155,8 +153,8 @@ def test_logging_config(monkeypatch: MonkeyPatch, caplog: pytest.LogCaptureFixtu
         verbose = verbose_cfg
         debug = debug_cfg
         version = False
-        ignore_files = []
-        ignore_mods = []
+        ignore_files: List[str] = []
+        ignore_mods: List[str] = []
 
     given_options = options()
 
@@ -191,7 +189,7 @@ def test_logging_config(monkeypatch: MonkeyPatch, caplog: pytest.LogCaptureFixtu
         assert messages == result
 
 
-def test_main_version(monkeypatch: MonkeyPatch, capsys: pytest.CaptureFixture, fake_opts) -> None:
+def test_main_version(monkeypatch: MonkeyPatch, capsys: pytest.CaptureFixture[Any], fake_opts: Any) -> None:
     fake_opts.options.version = True
     monkeypatch.setattr(optparse, 'OptionParser', fake_opts)
 
