@@ -49,14 +49,14 @@ class ImportVisitor(ast.NodeVisitor):
             self.__addModule(alias.name, node.lineno)
 
     def visit_ImportFrom(self, node):
-        if node.module == '__future__':
+        if node.module == "__future__":
             # not an actual module
             return
         for alias in node.names:
             if node.module is None:
                 # relative import
                 continue
-            self.__addModule(node.module + '.' + alias.name, node.lineno)
+            self.__addModule(node.module + "." + alias.name, node.lineno)
 
     def __addModule(self, modname, lineno):
         if self.__options.ignore_mods(modname):
@@ -64,7 +64,7 @@ class ImportVisitor(ast.NodeVisitor):
         path = None
         progress = []
         modpath = last_modpath = None
-        for p in modname.split('.'):
+        for p in modname.split("."):
             try:
                 file, modpath, description = imp.find_module(p, path)
             except ImportError:
@@ -94,7 +94,7 @@ class ImportVisitor(ast.NodeVisitor):
             # the module doesn't actually appear to exist on disk
             return
 
-        modname = '.'.join(progress)
+        modname = ".".join(progress)
         if modname not in self.__modules:
             self.__modules[modname] = FoundModule(modname, modpath)
         self.__modules[modname].locations.append((self.__location, lineno))
@@ -107,14 +107,14 @@ def pyfiles(root):
     d = os.path.abspath(root)
     if not os.path.isdir(d):
         n, ext = os.path.splitext(d)
-        if ext == '.py':
+        if ext == ".py":
             yield d
         else:
-            raise ValueError('%s is not a python file or directory' % root)
+            raise ValueError("%s is not a python file or directory" % root)
     for root, dirs, files in os.walk(d):
         for f in files:
             n, ext = os.path.splitext(f)
-            if ext == '.py':
+            if ext == ".py":
                 yield os.path.join(root, f)
 
 
@@ -123,10 +123,10 @@ def find_imported_modules(options):
     for path in options.paths:
         for filename in pyfiles(path):
             if options.ignore_files(filename):
-                log.info('ignoring: %s', os.path.relpath(filename))
+                log.info("ignoring: %s", os.path.relpath(filename))
                 continue
-            log.debug('scanning: %s', os.path.relpath(filename))
-            with open(filename, encoding='utf-8') as f:
+            log.debug("scanning: %s", os.path.relpath(filename))
+            with open(filename, encoding="utf-8") as f:
                 content = f.read()
             vis.set_location(filename)
             vis.visit(ast.parse(content, filename))
@@ -135,34 +135,38 @@ def find_imported_modules(options):
 
 def find_required_modules(options, requirements_filename: str):
     explicit = set()
-    for requirement in parse_requirements(requirements_filename,
-                                          session=PipSession()):
+    for requirement in parse_requirements(
+        requirements_filename, session=PipSession()
+    ):
         requirement_name = install_req_from_line(
             requirement.requirement,
         ).name
 
         if options.ignore_reqs(requirement):
-            log.debug('ignoring requirement: %s', requirement_name)
+            log.debug("ignoring requirement: %s", requirement_name)
             continue
 
         if options.skip_incompatible:
             requirement_string = requirement.requirement
             if not has_compatible_markers(requirement_string):
-                log.debug('ignoring requirement (incompatible environment '
-                          'marker): %s', requirement_string)
+                log.debug(
+                    "ignoring requirement (incompatible environment "
+                    "marker): %s",
+                    requirement_string,
+                )
                 continue
 
-        log.debug('found requirement: %s', requirement_name)
+        log.debug("found requirement: %s", requirement_name)
         explicit.add(canonicalize_name(requirement_name))
 
     return explicit
 
 
 def has_compatible_markers(full_requirement: str) -> bool:
-    if ';' not in full_requirement:
+    if ";" not in full_requirement:
         return True  # No environment marker.
 
-    enviroment_marker = full_requirement.split(';')[1]
+    enviroment_marker = full_requirement.split(";")[1]
     if not enviroment_marker:
         return True  # Empty environment marker.
 
@@ -170,13 +174,13 @@ def has_compatible_markers(full_requirement: str) -> bool:
 
 
 def is_package_file(path):
-    '''Determines whether the path points to a Python package sentinel
+    """Determines whether the path points to a Python package sentinel
     file - the __init__.py or its compiled variants.
-    '''
-    m = re.search(r'(.+)/__init__\.py[co]?$', path)
+    """
+    m = re.search(r"(.+)/__init__\.py[co]?$", path)
     if m is not None:
         return m.group(1)
-    return ''
+    return ""
 
 
 def ignorer(ignore_cfg):
@@ -207,6 +211,6 @@ def ignorer(ignore_cfg):
 def version_info():
     return "pip-check-reqs {} from {} (python {})".format(
         __version__,
-        str((Path(__file__) / '..').resolve()),
+        str((Path(__file__) / "..").resolve()),
         "{}.{}.{}".format(*sys.version_info),
     )
