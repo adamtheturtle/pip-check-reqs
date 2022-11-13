@@ -80,7 +80,7 @@ def test_pyfiles_package(monkeypatch: MonkeyPatch) -> None:
                         pretend.call_recorder(lambda x: '/spam'))
     monkeypatch.setattr(os.path, 'isdir',
                         pretend.call_recorder(lambda x: True))
-    walk_results = [
+    walk_results: List[Tuple[str, List[str], List[str]]]= [
         ('spam', [], ['__init__.py', 'spam', 'ham.py']),
         ('spam/dub', [], ['bass.py', 'dropped']),
     ]
@@ -182,8 +182,7 @@ def test_ignorer(monkeypatch: MonkeyPatch, tmp_path: Path, ignore_cfg, candidate
 def test_find_required_modules(tmp_path: Path) -> None:
     class options:
         skip_incompatible = False
-
-    options.ignore_reqs = common.ignorer(ignore_cfg=['barfoo'])
+        ignore_reqs = common.ignorer(ignore_cfg=['barfoo'])
 
     fake_requirements_file = tmp_path / 'requirements.txt'
     fake_requirements_file.write_text('foobar==1\nbarfoo==2')
@@ -214,7 +213,7 @@ def test_find_required_modules_env_markers(tmp_path: Path) -> None:
     assert reqs == {'ham', 'eggs'}
 
 
-def test_find_imported_modules_sets_encoding_to_utf8_when_reading(tmp_path) -> None:
+def test_find_imported_modules_sets_encoding_to_utf8_when_reading(tmp_path: Path) -> None:
     (tmp_path / 'module.py').touch()
 
     class options:

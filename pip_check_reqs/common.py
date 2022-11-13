@@ -119,7 +119,7 @@ def pyfiles(root) -> Generator[str, None, None]:
                 yield os.path.join(root, f)
 
 
-def find_imported_modules(options):
+def find_imported_modules(options) -> Dict[str, FoundModule]:
     vis = ImportVisitor(options)
     for path in options.paths:
         for filename in pyfiles(path):
