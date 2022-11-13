@@ -12,7 +12,7 @@ from pathlib import Path
 from packaging.utils import canonicalize_name
 from packaging.markers import Marker
 
-from typing import Callable, Dict, Generator, List, Tuple
+from typing import Callable, Dict, Generator, List, Set, Tuple
 
 from . import __version__
 
@@ -44,11 +44,11 @@ class ImportVisitor(ast.NodeVisitor):
     def set_location(self, location) -> None:
         self.__location = location
 
-    def visit_Import(self, node):
+    def visit_Import(self, node) -> None:
         for alias in node.names:
             self.__addModule(alias.name, node.lineno)
 
-    def visit_ImportFrom(self, node):
+    def visit_ImportFrom(self, node) -> None:
         if node.module == '__future__':
             # not an actual module
             return
@@ -58,7 +58,7 @@ class ImportVisitor(ast.NodeVisitor):
                 continue
             self.__addModule(node.module + '.' + alias.name, node.lineno)
 
-    def __addModule(self, modname, lineno):
+    def __addModule(self, modname, lineno) -> None:
         if self.__options.ignore_mods(modname):
             return
         path = None
@@ -134,7 +134,7 @@ def find_imported_modules(options) -> Dict[str, FoundModule]:
     return vis.finalise()
 
 
-def find_required_modules(options, requirements_filename: str):
+def find_required_modules(options, requirements_filename: str) -> Set[str]:
     explicit = set()
     for requirement in parse_requirements(requirements_filename,
                                           session=PipSession()):
@@ -184,7 +184,7 @@ def ignorer(ignore_cfg) -> Callable[..., bool]:
     if not ignore_cfg:
         return lambda candidate: False
 
-    def f(candidate, ignore_cfg=ignore_cfg) -> str:
+    def f(candidate, ignore_cfg=ignore_cfg) -> bool:
         for ignore in ignore_cfg:
             try:
                 candidate_path = install_req_from_line(
