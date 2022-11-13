@@ -1,17 +1,17 @@
 from __future__ import absolute_import
-from dataclasses import dataclass
-import importlib
-from typing import Any, Dict, List, Tuple, Optional
 
+import importlib
 import logging
 import optparse
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
-import pytest
 import pretend
+import pytest
 from pytest import MonkeyPatch
 
-from pip_check_reqs import find_missing_reqs, common
+from pip_check_reqs import common, find_missing_reqs
 
 
 @pytest.fixture

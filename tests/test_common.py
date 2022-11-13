@@ -10,11 +10,11 @@ from copy import copy
 from pathlib import Path
 from typing import Any, List, Tuple
 
-import pytest
 import pretend
+import pytest
 from pytest import MonkeyPatch
 
-from pip_check_reqs import common, __version__
+from pip_check_reqs import __version__, common
 
 
 @pytest.mark.parametrize(

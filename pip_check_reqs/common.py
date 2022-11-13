@@ -1,26 +1,22 @@
 import ast
-from dataclasses import dataclass, field
 import fnmatch
 import imp
 import logging
-import os
 import optparse
+import os
 import re
 import sys
-
+from dataclasses import dataclass, field
 from pathlib import Path
-
-from packaging.utils import NormalizedName, canonicalize_name
-from packaging.markers import Marker
-
 from typing import Callable, Dict, Generator, List, Optional, Set, Tuple, Union
 
-from . import __version__
-
+from packaging.markers import Marker
+from packaging.utils import NormalizedName, canonicalize_name
 from pip._internal.network.session import PipSession
 from pip._internal.req.constructors import install_req_from_line
-from pip._internal.req.req_file import parse_requirements, ParsedRequirement
+from pip._internal.req.req_file import ParsedRequirement, parse_requirements
 
+from . import __version__
 
 log = logging.getLogger(__name__)
 

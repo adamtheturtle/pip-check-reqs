@@ -1,14 +1,15 @@
 import collections
 import importlib.metadata
 import logging
-import pathlib
 import optparse
 import os
+import pathlib
 import sys
 from typing import List
 
 from packaging.utils import canonicalize_name
 from pip._internal.commands.show import search_packages_info
+
 from pip_check_reqs import common
 from pip_check_reqs.common import version_info
 
