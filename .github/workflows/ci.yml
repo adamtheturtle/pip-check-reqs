@@ -52,11 +52,12 @@ jobs:
           #
           # We avoid "--upgrade" as we do version tests for the "pip" dependency.
           python -m pip install --ignore-installed --editable .[dev]
-          python -m pip install flake8
+          python -m pip install flake8 black
 
       - name: "Lint"
         run: |
           flake8 *.py pip_check_reqs tests
+          black --check .
           pip-extra-reqs pip_check_reqs
           pip-missing-reqs pip_check_reqs
 
