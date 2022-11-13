@@ -1,0 +1,11 @@
+[tool.mypy]
+
+strict = true
+
+[[tool.mypy.overrides]]
+
+module = [
+    "pretend",
+]
+
+ignore_missing_imports = true

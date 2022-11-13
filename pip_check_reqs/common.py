@@ -12,7 +12,7 @@ from pathlib import Path
 from packaging.utils import canonicalize_name
 from packaging.markers import Marker
 
-from typing import List, Tuple
+from typing import Callable, List, Tuple
 
 from . import __version__
 
@@ -169,7 +169,7 @@ def has_compatible_markers(full_requirement: str) -> bool:
     return Marker(enviroment_marker).evaluate()
 
 
-def is_package_file(path):
+def is_package_file(path: str) -> bool:
     '''Determines whether the path points to a Python package sentinel
     file - the __init__.py or its compiled variants.
     '''
@@ -179,11 +179,11 @@ def is_package_file(path):
     return ''
 
 
-def ignorer(ignore_cfg):
+def ignorer(ignore_cfg) -> Callable[..., bool]:
     if not ignore_cfg:
         return lambda candidate: False
 
-    def f(candidate, ignore_cfg=ignore_cfg):
+    def f(candidate, ignore_cfg=ignore_cfg) -> str:
         for ignore in ignore_cfg:
             try:
                 candidate_path = install_req_from_line(
@@ -204,7 +204,7 @@ def ignorer(ignore_cfg):
     return f
 
 
-def version_info():
+def version_info() -> str:
     return "pip-check-reqs {} from {} (python {})".format(
         __version__,
         str((Path(__file__) / '..').resolve()),

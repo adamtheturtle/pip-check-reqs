@@ -5,7 +5,7 @@ import logging
 import os.path
 import textwrap
 from pathlib import Path
-from typing import List, Tuple
+from typing import Any, List, Tuple
 
 import pytest
 import pretend
@@ -49,14 +49,15 @@ def test_FoundModule() -> None:
     ])
 def test_ImportVisitor(stmt: str, result: List[str]) -> None:
     class options:
-        def ignore_mods(self, modname) -> bool:
+        def ignore_mods(self, modname: str) -> bool:
             return False
 
     vis = common.ImportVisitor(options())
     vis.set_location('spam.py')
     vis.visit(ast.parse(stmt))
-    finalise_result = vis.finalise()
-    assert set(finalise_result.keys()) == set(result)
+    result = vis.finalise()
+    # This is broken because two variables are named the same thing!
+    assert set(result.keys()) == set(result)
 
 
 def test_pyfiles_file(monkeypatch: MonkeyPatch) -> None:
@@ -137,13 +138,13 @@ def test_find_imported_modules(caplog, ignore_ham: bool, ignore_hashlib: bool,
         verbose = True
 
         @staticmethod
-        def ignore_files(path) -> bool:
+        def ignore_files(path: str) -> bool:
             if Path(path).name == 'ham.py' and ignore_ham:
                 return True
             return False
 
         @staticmethod
-        def ignore_mods(module) -> bool:
+        def ignore_mods(module: str) -> bool:
             if module == 'hashlib' and ignore_hashlib:
                 return True
             return False
@@ -227,7 +228,7 @@ def test_find_imported_modules_sets_encoding_to_utf8_when_reading(tmp_path) -> N
 
     original_open = common.__builtins__['open']
 
-    def mocked_open(*args, **kwargs) -> None:
+    def mocked_open(*args: Any, **kwargs: Any) -> Any:
         # As of Python 3.9, the args to open() are as follows:
         # file, mode, buffering, encoding, erorrs, newline, closedf, opener
         nonlocal used_encoding

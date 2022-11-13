@@ -96,7 +96,7 @@ def find_missing_reqs(options, requirements_filename):
     return [(name, used[name]) for name in used if name not in explicit]
 
 
-def main():
+def main() -> None:
     usage = 'usage: %prog [options] files or directories'
     parser = optparse.OptionParser(usage)
     parser.add_option("--requirements-file",

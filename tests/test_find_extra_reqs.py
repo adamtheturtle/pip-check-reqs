@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from dataclasses import dataclass
 import importlib
-from typing import Dict, Optional
+from typing import Any, Dict, List, Tuple, Optional
 
 import logging
 import optparse
@@ -15,7 +15,7 @@ from pip_check_reqs import find_extra_reqs, common
 
 
 @pytest.fixture
-def fake_opts():
+def fake_opts() -> Any:
     class FakeOptParse:
         class options:
             requirements_filename = 'requirements.txt'
@@ -23,21 +23,21 @@ def fake_opts():
             verbose = False
             debug = False
             version = False
-            ignore_files = []
-            ignore_mods = []
-            ignore_reqs = []
+            ignore_files: List[str] = []
+            ignore_mods: List[str] = []
+            ignore_reqs: List[str] = []
 
-        options = options()
+        given_options = options()
         args = ['ham.py']
 
-        def __init__(self, usage):
+        def __init__(self, usage) -> None:
             pass
 
-        def add_option(*args, **kw):
+        def add_option(*args, **kw) -> None:
             pass
 
-        def parse_args(self):
-            return (self.options, self.args)
+        def parse_args(self) -> Tuple[options, List[str]]:
+            return (self.given_options, self.args)
 
     return FakeOptParse
 
@@ -56,7 +56,7 @@ def test_find_extra_reqs(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
 
     @dataclass
     class FakePathDistribution:
-        metadata: Dict
+        metadata: Dict[str, str]
         name: Optional[str] = None
 
     installed_distributions = map(
@@ -83,14 +83,14 @@ def test_find_extra_reqs(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     fake_requirements_file.write_text('foobar==1')
 
     class options:
-        def ignore_reqs(x, y):
+        def ignore_reqs(x, y) -> bool:
             return False
         skip_incompatible = False
 
-    options = options()
+    given_options = options()
 
     result = find_extra_reqs.find_extra_reqs(
-        options=options,
+        options=given_options,
         requirements_filename=str(fake_requirements_file),
     )
     assert result == ['foobar']
@@ -144,11 +144,11 @@ def test_logging_config(monkeypatch: MonkeyPatch, caplog, verbose_cfg, debug_cfg
         verbose = verbose_cfg
         debug = debug_cfg
         version = False
-        ignore_files = []
-        ignore_mods = []
-        ignore_reqs = []
+        ignore_files: List[str] = []
+        ignore_mods: List[str] = []
+        ignore_reqs: List[str] = []
 
-    options = options()
+    given_options = options()
 
     class FakeOptParse:
         def __init__(self, usage):
@@ -158,7 +158,7 @@ def test_logging_config(monkeypatch: MonkeyPatch, caplog, verbose_cfg, debug_cfg
             pass
 
         def parse_args(self):
-            return (options, ['ham.py'])
+            return (given_options, ['ham.py'])
 
     monkeypatch.setattr(optparse, 'OptionParser', FakeOptParse)
 
