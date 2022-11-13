@@ -1,10 +1,12 @@
 from __future__ import absolute_import
 
 import ast
+import builtins
 import logging
 import optparse
 import os.path
 import textwrap
+from copy import copy
 from pathlib import Path
 from typing import Any, List, Tuple
 
@@ -223,7 +225,10 @@ def test_find_required_modules_env_markers(tmp_path: Path) -> None:
     assert reqs == {'ham', 'eggs'}
 
 
-def test_find_imported_modules_sets_encoding_to_utf8_when_reading(tmp_path: Path) -> None:
+def test_find_imported_modules_sets_encoding_to_utf8_when_reading(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+) -> None:
     (tmp_path / 'module.py').touch()
 
     def ignore_files(filename: str) -> bool:
@@ -236,7 +241,7 @@ def test_find_imported_modules_sets_encoding_to_utf8_when_reading(tmp_path: Path
     expected_encoding = 'utf-8'
     used_encoding = None
 
-    original_open = common.__builtins__['open']
+    original_open = copy(builtins.open)
 
     def mocked_open(*args: Any, **kwargs: Any) -> Any:
         # As of Python 3.9, the args to open() are as follows:
@@ -246,9 +251,8 @@ def test_find_imported_modules_sets_encoding_to_utf8_when_reading(tmp_path: Path
             used_encoding = kwargs['encoding']
         return original_open(*args, **kwargs)
 
-    common.__builtins__['open'] = mocked_open
+    monkeypatch.setattr(builtins, 'open', mocked_open)
     common.find_imported_modules(options)
-    common.__builtins__['open'] = original_open
 
     assert used_encoding == expected_encoding
 
