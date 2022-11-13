@@ -15,17 +15,17 @@ from pip_check_reqs.common import version_info
 log = logging.getLogger(__name__)
 
 
-def find_extra_reqs(options, requirements_filename: str) -> List[str]:
+def find_extra_reqs(options: optparse.Values, requirements_filename: str) -> List[str]:
     # 1. find files used by imports in the code (as best we can without
     #    executing)
     used_modules = common.find_imported_modules(options)
 
     # 2. find which packages provide which files
     installed_files = {}
-    all_pkgs = (
+    all_pkgs = [
         dist.metadata["Name"] for dist
         in importlib.metadata.distributions()
-    )
+    ]
 
     for package in search_packages_info(all_pkgs):
         if isinstance(package, dict):  # pragma: no cover

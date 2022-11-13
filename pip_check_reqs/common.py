@@ -4,21 +4,22 @@ import fnmatch
 import imp
 import logging
 import os
+import optparse
 import re
 import sys
 
 from pathlib import Path
 
-from packaging.utils import canonicalize_name
+from packaging.utils import NormalizedName, canonicalize_name
 from packaging.markers import Marker
 
-from typing import Callable, Dict, Generator, List, Set, Tuple
+from typing import Callable, Dict, Generator, List, Optional, Set, Tuple, Union
 
 from . import __version__
 
 from pip._internal.network.session import PipSession
 from pip._internal.req.constructors import install_req_from_line
-from pip._internal.req.req_file import parse_requirements
+from pip._internal.req.req_file import parse_requirements, ParsedRequirement
 
 
 log = logging.getLogger(__name__)
@@ -35,20 +36,20 @@ class FoundModule:
 
 
 class ImportVisitor(ast.NodeVisitor):
-    def __init__(self, options) -> None:
+    def __init__(self, options: optparse.Values) -> None:
         super(ImportVisitor, self).__init__()
         self.__options = options
-        self.__modules = {}
-        self.__location = None
+        self.__modules: Dict[str, FoundModule] = {}
+        self.__location: Optional[str] = None
 
-    def set_location(self, location) -> None:
+    def set_location(self, location: str) -> None:
         self.__location = location
 
-    def visit_Import(self, node) -> None:
+    def visit_Import(self, node: ast.Import) -> None:
         for alias in node.names:
             self.__addModule(alias.name, node.lineno)
 
-    def visit_ImportFrom(self, node) -> None:
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         if node.module == '__future__':
             # not an actual module
             return
@@ -58,7 +59,7 @@ class ImportVisitor(ast.NodeVisitor):
                 continue
             self.__addModule(node.module + '.' + alias.name, node.lineno)
 
-    def __addModule(self, modname, lineno) -> None:
+    def __addModule(self, modname: str, lineno: int) -> None:
         if self.__options.ignore_mods(modname):
             return
         path = None
@@ -97,6 +98,7 @@ class ImportVisitor(ast.NodeVisitor):
         modname = '.'.join(progress)
         if modname not in self.__modules:
             self.__modules[modname] = FoundModule(modname, modpath)
+        assert isinstance(self.__location, str)
         self.__modules[modname].locations.append((self.__location, lineno))
 
     def finalise(self) -> Dict[str, FoundModule]:
@@ -104,7 +106,7 @@ class ImportVisitor(ast.NodeVisitor):
         return result
 
 
-def pyfiles(root) -> Generator[str, None, None]:
+def pyfiles(root: str) -> Generator[str, None, None]:
     d = os.path.abspath(root)
     if not os.path.isdir(d):
         n, ext = os.path.splitext(d)
@@ -119,7 +121,7 @@ def pyfiles(root) -> Generator[str, None, None]:
                 yield os.path.join(root, f)
 
 
-def find_imported_modules(options) -> Dict[str, FoundModule]:
+def find_imported_modules(options: optparse.Values) -> Dict[str, FoundModule]:
     vis = ImportVisitor(options)
     for path in options.paths:
         for filename in pyfiles(path):
@@ -134,13 +136,14 @@ def find_imported_modules(options) -> Dict[str, FoundModule]:
     return vis.finalise()
 
 
-def find_required_modules(options, requirements_filename: str) -> Set[str]:
+def find_required_modules(options: optparse.Values, requirements_filename: str) -> Set[NormalizedName]:
     explicit = set()
     for requirement in parse_requirements(requirements_filename,
                                           session=PipSession()):
         requirement_name = install_req_from_line(
             requirement.requirement,
         ).name
+        assert isinstance(requirement_name, str)
 
         if options.ignore_reqs(requirement):
             log.debug('ignoring requirement: %s', requirement_name)
@@ -180,21 +183,20 @@ def is_package_file(path: str) -> str:
     return ''
 
 
-def ignorer(ignore_cfg) -> Callable[..., bool]:
+def ignorer(ignore_cfg: List[str]) -> Callable[..., bool]:
     if not ignore_cfg:
         return lambda candidate: False
 
-    def f(candidate, ignore_cfg=ignore_cfg) -> bool:
+    def f(candidate: Union[str, ParsedRequirement], ignore_cfg: List[str] = ignore_cfg) -> bool:
         for ignore in ignore_cfg:
-            try:
-                candidate_path = install_req_from_line(
+            if isinstance(candidate, str):
+                candidate_path = candidate
+            else:
+                optional_candidate_path = install_req_from_line(
                     candidate.requirement,
                 ).name
-            except AttributeError:
-                try:
-                    candidate_path = candidate.name
-                except AttributeError:
-                    candidate_path = candidate
+                assert isinstance(optional_candidate_path, str)
+                candidate_path = optional_candidate_path
 
             if fnmatch.fnmatch(candidate_path, ignore):
                 return True
