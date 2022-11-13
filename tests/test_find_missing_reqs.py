@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from dataclasses import dataclass
 import importlib
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import logging
 import optparse
@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 import pretend
+from pytest import MonkeyPatch
 
 from pip_check_reqs import find_missing_reqs, common
 
@@ -40,7 +41,7 @@ def fake_opts():
     return FakeOptParse
 
 
-def test_find_missing_reqs(monkeypatch, tmp_path: Path):
+def test_find_missing_reqs(monkeypatch: MonkeyPatch, tmp_path: Path):
     imported_modules = dict(spam=common.FoundModule('spam',
                                                     'site-spam/spam.py',
                                                     [('ham.py', 1)]),
@@ -89,7 +90,7 @@ def test_find_missing_reqs(monkeypatch, tmp_path: Path):
     assert result == [('shrub', [imported_modules['shrub']])]
 
 
-def test_main_failure(monkeypatch, caplog, fake_opts) -> None:
+def test_main_failure(monkeypatch: MonkeyPatch, caplog, fake_opts) -> None:
     monkeypatch.setattr(optparse, 'OptionParser', fake_opts)
 
     caplog.set_level(logging.WARN)
@@ -125,7 +126,7 @@ def test_main_failure(monkeypatch, caplog, fake_opts) -> None:
         'location.py:1 dist=missing module=missing'
 
 
-def test_main_no_spec(monkeypatch, caplog, fake_opts) -> None:
+def test_main_no_spec(monkeypatch: MonkeyPatch, caplog, fake_opts) -> None:
     fake_opts.args = []
     monkeypatch.setattr(optparse, 'OptionParser', fake_opts)
     monkeypatch.setattr(fake_opts,
@@ -147,7 +148,7 @@ def test_main_no_spec(monkeypatch, caplog, fake_opts) -> None:
     (False, True, ['debug', 'info', 'warn']),
     (True, True, ['debug', 'info', 'warn']),
 ])
-def test_logging_config(monkeypatch, caplog, verbose_cfg, debug_cfg, result) -> None:
+def test_logging_config(monkeypatch: MonkeyPatch, caplog, verbose_cfg: bool, debug_cfg: bool, result: List[str]) -> None:
     class options:
         requirements_filename = '',
         paths = ['dummy']
@@ -190,7 +191,7 @@ def test_logging_config(monkeypatch, caplog, verbose_cfg, debug_cfg, result) -> 
         assert messages == result
 
 
-def test_main_version(monkeypatch, capsys, fake_opts) -> None:
+def test_main_version(monkeypatch: MonkeyPatch, capsys, fake_opts) -> None:
     fake_opts.options.version = True
     monkeypatch.setattr(optparse, 'OptionParser', fake_opts)
 

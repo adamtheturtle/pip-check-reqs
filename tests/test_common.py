@@ -5,9 +5,11 @@ import logging
 import os.path
 import textwrap
 from pathlib import Path
+from typing import List, Tuple
 
 import pytest
 import pretend
+from pytest import MonkeyPatch
 
 from pip_check_reqs import common, __version__
 
@@ -24,7 +26,7 @@ from pip_check_reqs import common, __version__
         ('ham/spam/__init__.py', 'ham/spam'),
         ('/ham/spam/__init__.py', '/ham/spam'),
     ])
-def test_is_package_file(path, result) -> None:
+def test_is_package_file(path: str, result: str) -> None:
     assert common.is_package_file(path) == result
 
 
@@ -45,7 +47,7 @@ def test_FoundModule() -> None:
         ('import distutils.command.check', ['distutils']),
         ('import spam', []),  # don't break because bad programmer
     ])
-def test_ImportVisitor(stmt, result) -> None:
+def test_ImportVisitor(stmt: str, result: List[str]) -> None:
     class options:
         def ignore_mods(self, modname) -> bool:
             return False
@@ -53,18 +55,18 @@ def test_ImportVisitor(stmt, result) -> None:
     vis = common.ImportVisitor(options())
     vis.set_location('spam.py')
     vis.visit(ast.parse(stmt))
-    result = vis.finalise()
-    assert set(result.keys()) == set(result)
+    finalise_result = vis.finalise()
+    assert set(finalise_result.keys()) == set(result)
 
 
-def test_pyfiles_file(monkeypatch) -> None:
+def test_pyfiles_file(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(os.path, 'abspath',
                         pretend.call_recorder(lambda x: '/spam/ham.py'))
 
     assert list(common.pyfiles('spam')) == ['/spam/ham.py']
 
 
-def test_pyfiles_file_no_dice(monkeypatch) -> None:
+def test_pyfiles_file_no_dice(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(os.path, 'abspath',
                         pretend.call_recorder(lambda x: '/spam/ham'))
 
@@ -72,7 +74,7 @@ def test_pyfiles_file_no_dice(monkeypatch) -> None:
         list(common.pyfiles('spam'))
 
 
-def test_pyfiles_package(monkeypatch) -> None:
+def test_pyfiles_package(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(os.path, 'abspath',
                         pretend.call_recorder(lambda x: '/spam'))
     monkeypatch.setattr(os.path, 'isdir',
@@ -105,8 +107,8 @@ def test_pyfiles_package(monkeypatch) -> None:
     (True, False, ['ast'], [('spam.py', 2)]),
     (True, True, ['ast'], [('spam.py', 2)]),
 ])
-def test_find_imported_modules(caplog, ignore_ham, ignore_hashlib,
-                               expect, locs, tmp_path) -> None:
+def test_find_imported_modules(caplog, ignore_ham: bool, ignore_hashlib: bool,
+                               expect: List[str], locs: List[Tuple[str, int]], tmp_path: Path) -> None:
     root = tmp_path
     spam = root / "spam.py"
     ham = root / "ham.py"
@@ -170,7 +172,7 @@ def test_find_imported_modules(caplog, ignore_ham, ignore_hashlib,
     (['spam*'], 'eggs', False),
     (['spam'], '/spam', True),
 ])
-def test_ignorer(monkeypatch, tmp_path: Path, ignore_cfg, candidate, result) -> None:
+def test_ignorer(monkeypatch: MonkeyPatch, tmp_path: Path, ignore_cfg, candidate, result) -> None:
     monkeypatch.setattr(os.path, 'relpath', lambda s: s.lstrip('/'))
     ignorer = common.ignorer(ignore_cfg)
     assert ignorer(candidate) == result
@@ -192,11 +194,11 @@ def test_find_required_modules(tmp_path: Path) -> None:
     assert reqs == set(['foobar'])
 
 
-def test_find_required_modules_env_markers(tmp_path) -> None:
+def test_find_required_modules_env_markers(tmp_path: Path) -> None:
     class options:
         skip_incompatible = True
 
-        def ignore_reqs(self, modname) -> bool:
+        def ignore_reqs(self, modname: str) -> bool:
             return False
 
     fake_requirements_file = tmp_path / 'requirements.txt'
