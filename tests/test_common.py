@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import ast
 import logging
+import optparse
 import os.path
 import textwrap
 from pathlib import Path
@@ -48,11 +49,13 @@ def test_FoundModule() -> None:
         ('import spam', []),  # don't break because bad programmer
     ])
 def test_ImportVisitor(stmt: str, result: List[str]) -> None:
-    class options:
-        def ignore_mods(self, modname: str) -> bool:
-            return False
+    def ignore_mods(modname: str) -> bool:
+        return False
 
-    vis = common.ImportVisitor(options())
+    options = optparse.Values()
+    options.ignore_mods = ignore_mods
+
+    vis = common.ImportVisitor(options)
     vis.set_location('spam.py')
     vis.visit(ast.parse(stmt))
     result = vis.finalise()
@@ -108,8 +111,14 @@ def test_pyfiles_package(monkeypatch: MonkeyPatch) -> None:
     (True, False, ['ast'], [('spam.py', 2)]),
     (True, True, ['ast'], [('spam.py', 2)]),
 ])
-def test_find_imported_modules(caplog, ignore_ham: bool, ignore_hashlib: bool,
-                               expect: List[str], locs: List[Tuple[str, int]], tmp_path: Path) -> None:
+def test_find_imported_modules(
+    caplog: pytest.LogCaptureFixture,
+    ignore_ham: bool,
+    ignore_hashlib: bool,
+    expect: List[str],
+    locs: List[Tuple[str, int]],
+    tmp_path: Path,
+) -> None:
     root = tmp_path
     spam = root / "spam.py"
     ham = root / "ham.py"
@@ -133,21 +142,21 @@ def test_find_imported_modules(caplog, ignore_ham: bool, ignore_hashlib: bool,
 
     caplog.set_level(logging.INFO)
 
-    class options:
-        paths = [str(root)]
-        verbose = True
+    def ignore_files(path: str) -> bool:
+        if Path(path).name == 'ham.py' and ignore_ham:
+            return True
+        return False
 
-        @staticmethod
-        def ignore_files(path: str) -> bool:
-            if Path(path).name == 'ham.py' and ignore_ham:
-                return True
-            return False
+    def ignore_mods(module: str) -> bool:
+        if module == 'hashlib' and ignore_hashlib:
+            return True
+        return False
 
-        @staticmethod
-        def ignore_mods(module: str) -> bool:
-            if module == 'hashlib' and ignore_hashlib:
-                return True
-            return False
+    options = optparse.Values()
+    options.paths = [str(root)]
+    options.verbose = True
+    options.ignore_files = ignore_files
+    options.ignore_mods = ignore_mods
 
     result = common.find_imported_modules(options)
     assert set(result) == set(expect)
@@ -173,16 +182,16 @@ def test_find_imported_modules(caplog, ignore_ham: bool, ignore_hashlib: bool,
     (['spam*'], 'eggs', False),
     (['spam'], '/spam', True),
 ])
-def test_ignorer(monkeypatch: MonkeyPatch, tmp_path: Path, ignore_cfg, candidate, result) -> None:
+def test_ignorer(monkeypatch: MonkeyPatch, tmp_path: Path, ignore_cfg: List[str], candidate: str, result: bool) -> None:
     monkeypatch.setattr(os.path, 'relpath', lambda s: s.lstrip('/'))
     ignorer = common.ignorer(ignore_cfg)
     assert ignorer(candidate) == result
 
 
 def test_find_required_modules(tmp_path: Path) -> None:
-    class options:
-        skip_incompatible = False
-        ignore_reqs = common.ignorer(ignore_cfg=['barfoo'])
+    options = optparse.Values()
+    options.skip_incompatible = False
+    options.ignore_reqs = common.ignorer(ignore_cfg=['barfoo'])
 
     fake_requirements_file = tmp_path / 'requirements.txt'
     fake_requirements_file.write_text('foobar==1\nbarfoo==2')
@@ -195,11 +204,12 @@ def test_find_required_modules(tmp_path: Path) -> None:
 
 
 def test_find_required_modules_env_markers(tmp_path: Path) -> None:
-    class options:
-        skip_incompatible = True
+    def ignore_reqs(modname: str) -> bool:
+        return False
 
-        def ignore_reqs(self, modname: str) -> bool:
-            return False
+    options = optparse.Values()
+    options.skip_incompatible = True
+    options.ignore_reqs = ignore_reqs
 
     fake_requirements_file = tmp_path / 'requirements.txt'
     fake_requirements_file.write_text('spam==1; python_version<"2.0"\n'
@@ -207,7 +217,7 @@ def test_find_required_modules_env_markers(tmp_path: Path) -> None:
                                       'eggs==3\n')
 
     reqs = common.find_required_modules(
-        options=options(),
+        options=options,
         requirements_filename=str(fake_requirements_file),
     )
     assert reqs == {'ham', 'eggs'}
@@ -216,11 +226,12 @@ def test_find_required_modules_env_markers(tmp_path: Path) -> None:
 def test_find_imported_modules_sets_encoding_to_utf8_when_reading(tmp_path: Path) -> None:
     (tmp_path / 'module.py').touch()
 
-    class options:
-        paths = [tmp_path]
+    def ignore_files(filename: str) -> bool:
+        return False
 
-        def ignore_files(*_) -> bool:
-            return False
+    options = optparse.Values()
+    options.paths = [tmp_path]
+    options.ignore_files = ignore_files
 
     expected_encoding = 'utf-8'
     used_encoding = None
