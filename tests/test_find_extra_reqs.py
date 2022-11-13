@@ -82,15 +82,15 @@ def test_find_extra_reqs(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     fake_requirements_file = tmp_path / 'requirements.txt'
     fake_requirements_file.write_text('foobar==1')
 
-    class options:
-        def ignore_reqs(x: Any, y: Any) -> bool:
-            return False
-        skip_incompatible = False
+    def ignore_reqs(modname: str) -> bool:
+        return False
 
-    given_options = options()
+    options = optparse.Values()
+    options.skip_incompatible = False
+    options.ignore_reqs = ignore_reqs
 
     result = find_extra_reqs.find_extra_reqs(
-        options=given_options,
+        options=options,
         requirements_filename=str(fake_requirements_file),
     )
     assert result == ['foobar']

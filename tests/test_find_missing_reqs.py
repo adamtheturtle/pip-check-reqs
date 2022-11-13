@@ -81,8 +81,9 @@ def test_find_missing_reqs(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     fake_requirements_file = tmp_path / 'requirements.txt'
     fake_requirements_file.write_text('spam==1')
 
+    options = optparse.Values()
     result = find_missing_reqs.find_missing_reqs(
-        options=None,
+        options=options,
         requirements_filename=str(fake_requirements_file),
     )
     assert result == [('shrub', [imported_modules['shrub']])]
