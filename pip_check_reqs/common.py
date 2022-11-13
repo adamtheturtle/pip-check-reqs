@@ -12,7 +12,7 @@ from pathlib import Path
 from packaging.utils import canonicalize_name
 from packaging.markers import Marker
 
-from typing import Callable, List, Tuple
+from typing import Callable, Generator, List, Tuple
 
 from . import __version__
 
@@ -103,7 +103,7 @@ class ImportVisitor(ast.NodeVisitor):
         return self.__modules
 
 
-def pyfiles(root):
+def pyfiles(root) -> Generator[str, None, None]:
     d = os.path.abspath(root)
     if not os.path.isdir(d):
         n, ext = os.path.splitext(d)
@@ -169,7 +169,7 @@ def has_compatible_markers(full_requirement: str) -> bool:
     return Marker(enviroment_marker).evaluate()
 
 
-def is_package_file(path: str) -> bool:
+def is_package_file(path: str) -> str:
     '''Determines whether the path points to a Python package sentinel
     file - the __init__.py or its compiled variants.
     '''

@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from dataclasses import dataclass
 import importlib
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Tuple, Optional
 
 import logging
 import optparse
@@ -29,13 +29,13 @@ def fake_opts():
         options = options()
         args = ['ham.py']
 
-        def __init__(self, usage):
+        def __init__(self, usage: str) -> None:
             pass
 
-        def add_option(*args, **kw):
+        def add_option(*args: Any, **kw: Any) -> None:
             pass
 
-        def parse_args(self):
+        def parse_args(self) -> Tuple[options, List[str]]:
             return (self.options, self.args)
 
     return FakeOptParse
@@ -90,12 +90,12 @@ def test_find_missing_reqs(monkeypatch: MonkeyPatch, tmp_path: Path):
     assert result == [('shrub', [imported_modules['shrub']])]
 
 
-def test_main_failure(monkeypatch: MonkeyPatch, caplog, fake_opts) -> None:
+def test_main_failure(monkeypatch: MonkeyPatch, caplog: pytest.LogCaptureFixture, fake_opts) -> None:
     monkeypatch.setattr(optparse, 'OptionParser', fake_opts)
 
     caplog.set_level(logging.WARN)
 
-    def fake_find_missing_reqs(options, requirements_filename):
+    def fake_find_missing_reqs(options, requirements_filename: str) -> None:
         return [
             (
                 'missing',
@@ -126,7 +126,7 @@ def test_main_failure(monkeypatch: MonkeyPatch, caplog, fake_opts) -> None:
         'location.py:1 dist=missing module=missing'
 
 
-def test_main_no_spec(monkeypatch: MonkeyPatch, caplog, fake_opts) -> None:
+def test_main_no_spec(monkeypatch: MonkeyPatch, caplog: pytest.LogCaptureFixture, fake_opts) -> None:
     fake_opts.args = []
     monkeypatch.setattr(optparse, 'OptionParser', fake_opts)
     monkeypatch.setattr(fake_opts,
@@ -148,7 +148,7 @@ def test_main_no_spec(monkeypatch: MonkeyPatch, caplog, fake_opts) -> None:
     (False, True, ['debug', 'info', 'warn']),
     (True, True, ['debug', 'info', 'warn']),
 ])
-def test_logging_config(monkeypatch: MonkeyPatch, caplog, verbose_cfg: bool, debug_cfg: bool, result: List[str]) -> None:
+def test_logging_config(monkeypatch: MonkeyPatch, caplog: pytest.LogCaptureFixture, verbose_cfg: bool, debug_cfg: bool, result: List[str]) -> None:
     class options:
         requirements_filename = '',
         paths = ['dummy']
@@ -158,17 +158,17 @@ def test_logging_config(monkeypatch: MonkeyPatch, caplog, verbose_cfg: bool, deb
         ignore_files = []
         ignore_mods = []
 
-    options = options()
+    given_options = options()
 
     class FakeOptParse:
-        def __init__(self, usage):
+        def __init__(self, usage: str) -> None:
             pass
 
-        def add_option(*args, **kw):
+        def add_option(*args: Any, **kw: Any) -> None:
             pass
 
-        def parse_args(self):
-            return (options, ['ham.py'])
+        def parse_args(self) -> Tuple[options, List[str]]:
+            return (given_options, ['ham.py'])
 
     monkeypatch.setattr(optparse, 'OptionParser', FakeOptParse)
 
@@ -191,7 +191,7 @@ def test_logging_config(monkeypatch: MonkeyPatch, caplog, verbose_cfg: bool, deb
         assert messages == result
 
 
-def test_main_version(monkeypatch: MonkeyPatch, capsys: pytest.LogCaptureFixture, fake_opts) -> None:
+def test_main_version(monkeypatch: MonkeyPatch, capsys: pytest.CaptureFixture, fake_opts) -> None:
     fake_opts.options.version = True
     monkeypatch.setattr(optparse, 'OptionParser', fake_opts)
 
