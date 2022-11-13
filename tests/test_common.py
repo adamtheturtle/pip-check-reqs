@@ -44,10 +44,10 @@ def test_FoundModule() -> None:
     ["stmt", "result"],
     [
         ('import ast', ['ast']),
-        ('import ast, sys', ['ast', 'sys']),
-        ('from sys import version', ['sys']),
-        ('from os import path', ['os']),
-        ('import distutils.command.check', ['distutils']),
+        ('import ast, pathlib', ['ast', 'pathlib']),
+        ('from pathlib import Path', ['pathlib']),
+        ('from string import hexdigits', ['string']),
+        ('import distutils.command.check', ['distutils.command.check']),
         ('import spam', []),  # don't break because bad programmer
     ])
 def test_ImportVisitor(stmt: str, result: List[str]) -> None:
@@ -60,9 +60,8 @@ def test_ImportVisitor(stmt: str, result: List[str]) -> None:
     vis = common.ImportVisitor(options)
     vis.set_location('spam.py')
     vis.visit(ast.parse(stmt))
-    result = vis.finalise()
-    # TODO: This is broken because two variables are named the same thing!
-    assert set(result.keys()) == set(result)
+    finalise_result = vis.finalise()
+    assert set(finalise_result.keys()) == set(result)
 
 
 def test_pyfiles_file(monkeypatch: MonkeyPatch) -> None:
