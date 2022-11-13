@@ -34,16 +34,16 @@ class FoundModule:
 class ImportVisitor(ast.NodeVisitor):
     def __init__(self, options: optparse.Values) -> None:
         super(ImportVisitor, self).__init__()
-        self.__options = options
-        self.__modules: Dict[str, FoundModule] = {}
-        self.__location: Optional[str] = None
+        self._options = options
+        self._modules: Dict[str, FoundModule] = {}
+        self._location: Optional[str] = None
 
     def set_location(self, location: str) -> None:
-        self.__location = location
+        self._location = location
 
     def visit_Import(self, node: ast.Import) -> None:
         for alias in node.names:
-            self.__addModule(alias.name, node.lineno)
+            self._addModule(alias.name, node.lineno)
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         if node.module == "__future__":
@@ -53,10 +53,10 @@ class ImportVisitor(ast.NodeVisitor):
             if node.module is None:
                 # relative import
                 continue
-            self.__addModule(node.module + "." + alias.name, node.lineno)
+            self._addModule(node.module + "." + alias.name, node.lineno)
 
-    def __addModule(self, modname: str, lineno: int) -> None:
-        if self.__options.ignore_mods(modname):
+    def _addModule(self, modname: str, lineno: int) -> None:
+        if self._options.ignore_mods(modname):
             return
         path = None
         progress = []
@@ -92,13 +92,13 @@ class ImportVisitor(ast.NodeVisitor):
             return
 
         modname = ".".join(progress)
-        if modname not in self.__modules:
-            self.__modules[modname] = FoundModule(modname, modpath)
-        assert isinstance(self.__location, str)
-        self.__modules[modname].locations.append((self.__location, lineno))
+        if modname not in self._modules:
+            self._modules[modname] = FoundModule(modname, modpath)
+        assert isinstance(self._location, str)
+        self._modules[modname].locations.append((self._location, lineno))
 
     def finalise(self) -> Dict[str, FoundModule]:
-        result = self.__modules
+        result = self._modules
         return result
 
 
