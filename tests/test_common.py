@@ -24,11 +24,11 @@ from pip_check_reqs import common, __version__
         ('ham/spam/__init__.py', 'ham/spam'),
         ('/ham/spam/__init__.py', '/ham/spam'),
     ])
-def test_is_package_file(path, result):
+def test_is_package_file(path, result) -> None:
     assert common.is_package_file(path) == result
 
 
-def test_FoundModule():
+def test_FoundModule() -> None:
     fm = common.FoundModule('spam', 'ham')
     assert fm.modname == 'spam'
     assert fm.filename == os.path.realpath('ham')
@@ -45,9 +45,9 @@ def test_FoundModule():
         ('import distutils.command.check', ['distutils']),
         ('import spam', []),  # don't break because bad programmer
     ])
-def test_ImportVisitor(stmt, result):
+def test_ImportVisitor(stmt, result) -> None:
     class options:
-        def ignore_mods(self, modname):
+        def ignore_mods(self, modname) -> bool:
             return False
 
     vis = common.ImportVisitor(options())
@@ -57,14 +57,14 @@ def test_ImportVisitor(stmt, result):
     assert set(result.keys()) == set(result)
 
 
-def test_pyfiles_file(monkeypatch):
+def test_pyfiles_file(monkeypatch) -> None:
     monkeypatch.setattr(os.path, 'abspath',
                         pretend.call_recorder(lambda x: '/spam/ham.py'))
 
     assert list(common.pyfiles('spam')) == ['/spam/ham.py']
 
 
-def test_pyfiles_file_no_dice(monkeypatch):
+def test_pyfiles_file_no_dice(monkeypatch) -> None:
     monkeypatch.setattr(os.path, 'abspath',
                         pretend.call_recorder(lambda x: '/spam/ham'))
 
@@ -72,7 +72,7 @@ def test_pyfiles_file_no_dice(monkeypatch):
         list(common.pyfiles('spam'))
 
 
-def test_pyfiles_package(monkeypatch):
+def test_pyfiles_package(monkeypatch) -> None:
     monkeypatch.setattr(os.path, 'abspath',
                         pretend.call_recorder(lambda x: '/spam'))
     monkeypatch.setattr(os.path, 'isdir',
@@ -106,7 +106,7 @@ def test_pyfiles_package(monkeypatch):
     (True, True, ['ast'], [('spam.py', 2)]),
 ])
 def test_find_imported_modules(caplog, ignore_ham, ignore_hashlib,
-                               expect, locs, tmp_path):
+                               expect, locs, tmp_path) -> None:
     root = tmp_path
     spam = root / "spam.py"
     ham = root / "ham.py"
@@ -135,13 +135,13 @@ def test_find_imported_modules(caplog, ignore_ham, ignore_hashlib,
         verbose = True
 
         @staticmethod
-        def ignore_files(path):
+        def ignore_files(path) -> bool:
             if Path(path).name == 'ham.py' and ignore_ham:
                 return True
             return False
 
         @staticmethod
-        def ignore_mods(module):
+        def ignore_mods(module) -> bool:
             if module == 'hashlib' and ignore_hashlib:
                 return True
             return False
@@ -170,13 +170,13 @@ def test_find_imported_modules(caplog, ignore_ham, ignore_hashlib,
     (['spam*'], 'eggs', False),
     (['spam'], '/spam', True),
 ])
-def test_ignorer(monkeypatch, tmp_path: Path, ignore_cfg, candidate, result):
+def test_ignorer(monkeypatch, tmp_path: Path, ignore_cfg, candidate, result) -> None:
     monkeypatch.setattr(os.path, 'relpath', lambda s: s.lstrip('/'))
     ignorer = common.ignorer(ignore_cfg)
     assert ignorer(candidate) == result
 
 
-def test_find_required_modules(tmp_path: Path):
+def test_find_required_modules(tmp_path: Path) -> None:
     class options:
         skip_incompatible = False
 
@@ -192,11 +192,11 @@ def test_find_required_modules(tmp_path: Path):
     assert reqs == set(['foobar'])
 
 
-def test_find_required_modules_env_markers(tmp_path):
+def test_find_required_modules_env_markers(tmp_path) -> None:
     class options:
         skip_incompatible = True
 
-        def ignore_reqs(self, modname):
+        def ignore_reqs(self, modname) -> bool:
             return False
 
     fake_requirements_file = tmp_path / 'requirements.txt'
@@ -211,13 +211,13 @@ def test_find_required_modules_env_markers(tmp_path):
     assert reqs == {'ham', 'eggs'}
 
 
-def test_find_imported_modules_sets_encoding_to_utf8_when_reading(tmp_path):
+def test_find_imported_modules_sets_encoding_to_utf8_when_reading(tmp_path) -> None:
     (tmp_path / 'module.py').touch()
 
     class options:
         paths = [tmp_path]
 
-        def ignore_files(*_):
+        def ignore_files(*_) -> bool:
             return False
 
     expected_encoding = 'utf-8'
@@ -225,7 +225,7 @@ def test_find_imported_modules_sets_encoding_to_utf8_when_reading(tmp_path):
 
     original_open = common.__builtins__['open']
 
-    def mocked_open(*args, **kwargs):
+    def mocked_open(*args, **kwargs) -> None:
         # As of Python 3.9, the args to open() are as follows:
         # file, mode, buffering, encoding, erorrs, newline, closedf, opener
         nonlocal used_encoding
@@ -240,5 +240,5 @@ def test_find_imported_modules_sets_encoding_to_utf8_when_reading(tmp_path):
     assert used_encoding == expected_encoding
 
 
-def test_version_info_shows_version_number():
+def test_version_info_shows_version_number() -> None:
     assert __version__ in common.version_info()
