@@ -181,7 +181,7 @@ def test_logging_config(monkeypatch: MonkeyPatch, caplog, verbose_cfg, debug_cfg
         assert messages == result
 
 
-def test_main_version(monkeypatch: MonkeyPatch, capsys, fake_opts) -> None:
+def test_main_version(monkeypatch: MonkeyPatch, capsys: pytest.LogCaptureFixture, fake_opts) -> None:
     fake_opts.options.version = True
     monkeypatch.setattr(optparse, 'OptionParser', fake_opts)
 
