@@ -19,7 +19,9 @@ from pip_check_reqs.common import FoundModule, version_info
 log = logging.getLogger(__name__)
 
 
-def find_missing_reqs(options: optparse.Values, requirements_filename: str) -> List[Tuple[NormalizedName, List[FoundModule]]]:
+def find_missing_reqs(
+    options: optparse.Values, requirements_filename: str
+) -> List[Tuple[NormalizedName, List[FoundModule]]]:
     # 1. find files used by imports in the code (as best we can without
     #    executing)
     used_modules = common.find_imported_modules(options)
@@ -27,22 +29,21 @@ def find_missing_reqs(options: optparse.Values, requirements_filename: str) -> L
     # 2. find which packages provide which files
     installed_files = {}
     all_pkgs = [
-        dist.metadata["Name"] for dist
-        in importlib.metadata.distributions()
+        dist.metadata["Name"] for dist in importlib.metadata.distributions()
     ]
 
     for package in search_packages_info(all_pkgs):
         if isinstance(package, dict):  # pragma: no cover
-            package_name = package['name']
-            package_location = package['location']
-            package_files = package.get('files', []) or []
+            package_name = package["name"]
+            package_location = package["location"]
+            package_files = package.get("files", []) or []
         else:  # pragma: no cover
             package_name = package.name
             package_location = package.location
             package_files = []
-            for item in (package.files or []):
-                here = pathlib.Path('.').resolve()
-                item_location_rel = (pathlib.Path(package_location) / item)
+            for item in package.files or []:
+                here = pathlib.Path(".").resolve()
+                item_location_rel = pathlib.Path(package_location) / item
                 item_location = item_location_rel.resolve()
                 try:
                     relative_item_location = item_location.relative_to(here)
@@ -53,8 +54,9 @@ def find_missing_reqs(options: optparse.Values, requirements_filename: str) -> L
                     relative_item_location = item_location
                 package_files.append(str(relative_item_location))
 
-        log.debug('installed package: %s (at %s)', package_name,
-                  package_location)
+        log.debug(
+            "installed package: %s (at %s)", package_name, package_location
+        )
         for package_file in package_files:
             path = os.path.realpath(
                 os.path.join(package_location, package_file),
@@ -73,13 +75,18 @@ def find_missing_reqs(options: optparse.Values, requirements_filename: str) -> L
         # probably standard library if it's not in the files list
         if info.filename in installed_files:
             used_name = canonicalize_name(installed_files[info.filename])
-            log.debug('used module: %s (from package %s)', modname,
-                      installed_files[info.filename])
+            log.debug(
+                "used module: %s (from package %s)",
+                modname,
+                installed_files[info.filename],
+            )
             used[used_name].append(info)
         else:
             log.debug(
-                'used module: %s (from file %s, assuming stdlib or local)',
-                modname, info.filename)
+                "used module: %s (from file %s, assuming stdlib or local)",
+                modname,
+                info.filename,
+            )
 
     # 4. compare with requirements
     explicit = set()
@@ -92,7 +99,7 @@ def find_missing_reqs(options: optparse.Values, requirements_filename: str) -> L
         ).name
 
         assert isinstance(requirement_name, str)
-        log.debug('found requirement: %s', requirement_name)
+        log.debug("found requirement: %s", requirement_name)
         explicit.add(canonicalize_name(requirement_name))
 
     result = [(name, used[name]) for name in used if name not in explicit]
@@ -100,43 +107,56 @@ def find_missing_reqs(options: optparse.Values, requirements_filename: str) -> L
 
 
 def main() -> None:
-    usage = 'usage: %prog [options] files or directories'
+    usage = "usage: %prog [options] files or directories"
     parser = optparse.OptionParser(usage)
-    parser.add_option("--requirements-file",
-                      dest="requirements_filename",
-                      metavar="PATH",
-                      default="requirements.txt",
-                      help="path to the requirements file "
-                           "(defaults to \"requirements.txt\")")
-    parser.add_option("-f",
-                      "--ignore-file",
-                      dest="ignore_files",
-                      action="append",
-                      default=[],
-                      help="file paths globs to ignore")
-    parser.add_option("-m",
-                      "--ignore-module",
-                      dest="ignore_mods",
-                      action="append",
-                      default=[],
-                      help="used module names (globs are ok) to ignore")
-    parser.add_option("-v",
-                      "--verbose",
-                      dest="verbose",
-                      action="store_true",
-                      default=False,
-                      help="be more verbose")
-    parser.add_option("-d",
-                      "--debug",
-                      dest="debug",
-                      action="store_true",
-                      default=False,
-                      help="be *really* verbose")
-    parser.add_option("-V", "--version",
-                      dest="version",
-                      action="store_true",
-                      default=False,
-                      help="display version information")
+    parser.add_option(
+        "--requirements-file",
+        dest="requirements_filename",
+        metavar="PATH",
+        default="requirements.txt",
+        help="path to the requirements file "
+        '(defaults to "requirements.txt")',
+    )
+    parser.add_option(
+        "-f",
+        "--ignore-file",
+        dest="ignore_files",
+        action="append",
+        default=[],
+        help="file paths globs to ignore",
+    )
+    parser.add_option(
+        "-m",
+        "--ignore-module",
+        dest="ignore_mods",
+        action="append",
+        default=[],
+        help="used module names (globs are ok) to ignore",
+    )
+    parser.add_option(
+        "-v",
+        "--verbose",
+        dest="verbose",
+        action="store_true",
+        default=False,
+        help="be more verbose",
+    )
+    parser.add_option(
+        "-d",
+        "--debug",
+        dest="debug",
+        action="store_true",
+        default=False,
+        help="be *really* verbose",
+    )
+    parser.add_option(
+        "-V",
+        "--version",
+        dest="version",
+        action="store_true",
+        default=False,
+        help="display version information",
+    )
 
     (options, args) = parser.parse_args()
 
@@ -153,7 +173,7 @@ def main() -> None:
 
     options.paths = args
 
-    logging.basicConfig(format='%(message)s')
+    logging.basicConfig(format="%(message)s")
     if options.debug:
         level = logging.DEBUG
     elif options.verbose:
@@ -171,17 +191,21 @@ def main() -> None:
     )
 
     if missing:
-        log.warning('Missing requirements:')
+        log.warning("Missing requirements:")
     for name, uses in missing:
         for use in uses:
             for filename, lineno in use.locations:
-                log.warning('%s:%s dist=%s module=%s',
-                            os.path.relpath(filename), lineno, name,
-                            use.modname)
+                log.warning(
+                    "%s:%s dist=%s module=%s",
+                    os.path.relpath(filename),
+                    lineno,
+                    name,
+                    use.modname,
+                )
 
     if missing:
         sys.exit(1)
 
 
-if __name__ == '__main__':  # pragma: no cover
+if __name__ == "__main__":  # pragma: no cover
     main()

@@ -15,7 +15,9 @@ from pip_check_reqs.common import version_info
 log = logging.getLogger(__name__)
 
 
-def find_extra_reqs(options: optparse.Values, requirements_filename: str) -> List[str]:
+def find_extra_reqs(
+    options: optparse.Values, requirements_filename: str
+) -> List[str]:
     # 1. find files used by imports in the code (as best we can without
     #    executing)
     used_modules = common.find_imported_modules(options)
@@ -23,22 +25,21 @@ def find_extra_reqs(options: optparse.Values, requirements_filename: str) -> Lis
     # 2. find which packages provide which files
     installed_files = {}
     all_pkgs = [
-        dist.metadata["Name"] for dist
-        in importlib.metadata.distributions()
+        dist.metadata["Name"] for dist in importlib.metadata.distributions()
     ]
 
     for package in search_packages_info(all_pkgs):
         if isinstance(package, dict):  # pragma: no cover
-            package_name = package['name']
-            package_location = package['location']
-            package_files = package.get('files', []) or []
+            package_name = package["name"]
+            package_location = package["location"]
+            package_files = package.get("files", []) or []
         else:  # pragma: no cover
             package_name = package.name
             package_location = package.location
             package_files = []
-            for item in (package.files or []):
-                here = pathlib.Path('.').resolve()
-                item_location_rel = (pathlib.Path(package_location) / item)
+            for item in package.files or []:
+                here = pathlib.Path(".").resolve()
+                item_location_rel = pathlib.Path(package_location) / item
                 item_location = item_location_rel.resolve()
                 try:
                     relative_item_location = item_location.relative_to(here)
@@ -49,8 +50,9 @@ def find_extra_reqs(options: optparse.Values, requirements_filename: str) -> Lis
                     relative_item_location = item_location
                 package_files.append(str(relative_item_location))
 
-        log.debug('installed package: %s (at %s)', package_name,
-                  package_location)
+        log.debug(
+            "installed package: %s (at %s)", package_name, package_location
+        )
         for package_file in package_files:
             path = os.path.realpath(
                 os.path.join(package_location, package_file),
@@ -70,13 +72,18 @@ def find_extra_reqs(options: optparse.Values, requirements_filename: str) -> Lis
         # probably standard library if it's not in the files list
         if info.filename in installed_files:
             used_name = canonicalize_name(installed_files[info.filename])
-            log.debug('used module: %s (from package %s)', modname,
-                      installed_files[info.filename])
+            log.debug(
+                "used module: %s (from package %s)",
+                modname,
+                installed_files[info.filename],
+            )
             used[used_name].append(info)
         else:
             log.debug(
-                'used module: %s (from file %s, assuming stdlib or local)',
-                modname, info.filename)
+                "used module: %s (from file %s, assuming stdlib or local)",
+                modname,
+                info.filename,
+            )
 
     # 4. compare with requirements
     explicit = common.find_required_modules(
@@ -88,56 +95,72 @@ def find_extra_reqs(options: optparse.Values, requirements_filename: str) -> Lis
 
 
 def main() -> None:
-    usage = 'usage: %prog [options] files or directories'
+    usage = "usage: %prog [options] files or directories"
     parser = optparse.OptionParser(usage)
-    parser.add_option("--requirements-file",
-                      dest="requirements_filename",
-                      metavar="PATH",
-                      default="requirements.txt",
-                      help="path to the requirements file "
-                           "(defaults to \"requirements.txt\")")
-    parser.add_option("-f",
-                      "--ignore-file",
-                      dest="ignore_files",
-                      action="append",
-                      default=[],
-                      help="file paths globs to ignore")
-    parser.add_option("-m",
-                      "--ignore-module",
-                      dest="ignore_mods",
-                      action="append",
-                      default=[],
-                      help="used module names (globs are ok) to ignore")
-    parser.add_option("-r",
-                      "--ignore-requirement",
-                      dest="ignore_reqs",
-                      action="append",
-                      default=[],
-                      help="reqs in requirements to ignore")
-    parser.add_option("-s",
-                      "--skip-incompatible",
-                      dest="skip_incompatible",
-                      action="store_true",
-                      default=False,
-                      help="skip requirements that have incompatible "
-                           "environment markers")
-    parser.add_option("-v",
-                      "--verbose",
-                      dest="verbose",
-                      action="store_true",
-                      default=False,
-                      help="be more verbose")
-    parser.add_option("-d",
-                      "--debug",
-                      dest="debug",
-                      action="store_true",
-                      default=False,
-                      help="be *really* verbose")
-    parser.add_option("-V", "--version",
-                      dest="version",
-                      action="store_true",
-                      default=False,
-                      help="display version information")
+    parser.add_option(
+        "--requirements-file",
+        dest="requirements_filename",
+        metavar="PATH",
+        default="requirements.txt",
+        help="path to the requirements file "
+        '(defaults to "requirements.txt")',
+    )
+    parser.add_option(
+        "-f",
+        "--ignore-file",
+        dest="ignore_files",
+        action="append",
+        default=[],
+        help="file paths globs to ignore",
+    )
+    parser.add_option(
+        "-m",
+        "--ignore-module",
+        dest="ignore_mods",
+        action="append",
+        default=[],
+        help="used module names (globs are ok) to ignore",
+    )
+    parser.add_option(
+        "-r",
+        "--ignore-requirement",
+        dest="ignore_reqs",
+        action="append",
+        default=[],
+        help="reqs in requirements to ignore",
+    )
+    parser.add_option(
+        "-s",
+        "--skip-incompatible",
+        dest="skip_incompatible",
+        action="store_true",
+        default=False,
+        help="skip requirements that have incompatible " "environment markers",
+    )
+    parser.add_option(
+        "-v",
+        "--verbose",
+        dest="verbose",
+        action="store_true",
+        default=False,
+        help="be more verbose",
+    )
+    parser.add_option(
+        "-d",
+        "--debug",
+        dest="debug",
+        action="store_true",
+        default=False,
+        help="be *really* verbose",
+    )
+    parser.add_option(
+        "-V",
+        "--version",
+        dest="version",
+        action="store_true",
+        default=False,
+        help="display version information",
+    )
 
     (options, args) = parser.parse_args()
 
@@ -155,7 +178,7 @@ def main() -> None:
 
     options.paths = args
 
-    logging.basicConfig(format='%(message)s')
+    logging.basicConfig(format="%(message)s")
     if options.debug:
         level = logging.DEBUG
     elif options.verbose:
@@ -173,9 +196,9 @@ def main() -> None:
     )
 
     if extras:
-        log.warning('Extra requirements:')
+        log.warning("Extra requirements:")
     for name in extras:
-        message = '{name} in {requirements_filename}'.format(
+        message = "{name} in {requirements_filename}".format(
             name=name,
             requirements_filename=options.requirements_filename,
         )
@@ -185,5 +208,5 @@ def main() -> None:
         sys.exit(1)
 
 
-if __name__ == '__main__':  # pragma: no cover
+if __name__ == "__main__":  # pragma: no cover
     main()
