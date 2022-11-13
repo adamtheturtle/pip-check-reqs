@@ -1,8 +1,9 @@
-from setuptools import setup
 from codecs import open
 from os import path
 from pathlib import Path
 from typing import List
+
+from setuptools import setup
 
 from pip_check_reqs import __version__
 
