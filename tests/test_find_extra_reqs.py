@@ -41,7 +41,7 @@ def fake_opts():
     return FakeOptParse
 
 
-def test_find_extra_reqs(monkeypatch, tmp_path: Path):
+def test_find_extra_reqs(monkeypatch, tmp_path: Path) -> None:
     imported_modules = dict(spam=common.FoundModule('spam',
                                                     'site-spam/spam.py',
                                                     [('ham.py', 1)]),
@@ -95,7 +95,7 @@ def test_find_extra_reqs(monkeypatch, tmp_path: Path):
     assert result == ['foobar']
 
 
-def test_main_failure(monkeypatch, caplog, fake_opts):
+def test_main_failure(monkeypatch, caplog, fake_opts) -> None:
     monkeypatch.setattr(optparse, 'OptionParser', fake_opts)
 
     caplog.set_level(logging.WARN)
@@ -114,7 +114,7 @@ def test_main_failure(monkeypatch, caplog, fake_opts):
         'extra in requirements.txt'
 
 
-def test_main_no_spec(monkeypatch, caplog, fake_opts):
+def test_main_no_spec(monkeypatch, caplog, fake_opts) -> None:
     fake_opts.args = []
     monkeypatch.setattr(optparse, 'OptionParser', fake_opts)
     monkeypatch.setattr(fake_opts,
@@ -136,7 +136,7 @@ def test_main_no_spec(monkeypatch, caplog, fake_opts):
     (False, True, ['debug', 'info', 'warn']),
     (True, True, ['debug', 'info', 'warn']),
 ])
-def test_logging_config(monkeypatch, caplog, verbose_cfg, debug_cfg, result):
+def test_logging_config(monkeypatch, caplog, verbose_cfg, debug_cfg, result) -> None:
     class options:
         requirements_filename = ''
         paths = ['dummy']
@@ -180,7 +180,7 @@ def test_logging_config(monkeypatch, caplog, verbose_cfg, debug_cfg, result):
         assert messages == result
 
 
-def test_main_version(monkeypatch, capsys, fake_opts):
+def test_main_version(monkeypatch, capsys, fake_opts) -> None:
     fake_opts.options.version = True
     monkeypatch.setattr(optparse, 'OptionParser', fake_opts)
 
