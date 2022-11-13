@@ -1,13 +1,18 @@
 from __future__ import absolute_import
 
 import ast
+import builtins
 import logging
+import optparse
 import os.path
 import textwrap
+from copy import copy
 from pathlib import Path
+from typing import Any, List, Tuple
 
 import pytest
 import pretend
+from pytest import MonkeyPatch
 
 from pip_check_reqs import common, __version__
 
@@ -25,11 +30,11 @@ from pip_check_reqs import common, __version__
         ("/ham/spam/__init__.py", "/ham/spam"),
     ],
 )
-def test_is_package_file(path, result):
+def test_is_package_file(path: str, result: str) -> None:
     assert common.is_package_file(path) == result
 
 
-def test_FoundModule():
+def test_FoundModule() -> None:
     fm = common.FoundModule("spam", "ham")
     assert fm.modname == "spam"
     assert fm.filename == os.path.realpath("ham")
@@ -40,26 +45,28 @@ def test_FoundModule():
     ["stmt", "result"],
     [
         ("import ast", ["ast"]),
-        ("import ast, sys", ["ast", "sys"]),
-        ("from sys import version", ["sys"]),
-        ("from os import path", ["os"]),
-        ("import distutils.command.check", ["distutils"]),
+        ("import ast, pathlib", ["ast", "pathlib"]),
+        ("from pathlib import Path", ["pathlib"]),
+        ("from string import hexdigits", ["string"]),
+        ("import distutils.command.check", ["distutils.command.check"]),
         ("import spam", []),  # don't break because bad programmer
     ],
 )
-def test_ImportVisitor(stmt, result):
-    class options:
-        def ignore_mods(self, modname):
-            return False
+def test_ImportVisitor(stmt: str, result: List[str]) -> None:
+    def ignore_mods(modname: str) -> bool:
+        return False
 
-    vis = common.ImportVisitor(options())
+    options = optparse.Values()
+    options.ignore_mods = ignore_mods
+
+    vis = common.ImportVisitor(options)
     vis.set_location("spam.py")
     vis.visit(ast.parse(stmt))
-    result = vis.finalise()
-    assert set(result.keys()) == set(result)
+    finalise_result = vis.finalise()
+    assert set(finalise_result.keys()) == set(result)
 
 
-def test_pyfiles_file(monkeypatch):
+def test_pyfiles_file(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(
         os.path, "abspath", pretend.call_recorder(lambda x: "/spam/ham.py")
     )
@@ -67,7 +74,7 @@ def test_pyfiles_file(monkeypatch):
     assert list(common.pyfiles("spam")) == ["/spam/ham.py"]
 
 
-def test_pyfiles_file_no_dice(monkeypatch):
+def test_pyfiles_file_no_dice(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(
         os.path, "abspath", pretend.call_recorder(lambda x: "/spam/ham")
     )
@@ -76,14 +83,14 @@ def test_pyfiles_file_no_dice(monkeypatch):
         list(common.pyfiles("spam"))
 
 
-def test_pyfiles_package(monkeypatch):
+def test_pyfiles_package(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(
         os.path, "abspath", pretend.call_recorder(lambda x: "/spam")
     )
     monkeypatch.setattr(
         os.path, "isdir", pretend.call_recorder(lambda x: True)
     )
-    walk_results = [
+    walk_results: List[Tuple[str, List[str], List[str]]] = [
         ("spam", [], ["__init__.py", "spam", "ham.py"]),
         ("spam/dub", [], ["bass.py", "dropped"]),
     ]
@@ -119,8 +126,13 @@ def test_pyfiles_package(monkeypatch):
     ],
 )
 def test_find_imported_modules(
-    caplog, ignore_ham, ignore_hashlib, expect, locs, tmp_path
-):
+    caplog: pytest.LogCaptureFixture,
+    ignore_ham: bool,
+    ignore_hashlib: bool,
+    expect: List[str],
+    locs: List[Tuple[str, int]],
+    tmp_path: Path,
+) -> None:
     root = tmp_path
     spam = root / "spam.py"
     ham = root / "ham.py"
@@ -144,21 +156,21 @@ def test_find_imported_modules(
 
     caplog.set_level(logging.INFO)
 
-    class options:
-        paths = [str(root)]
-        verbose = True
+    def ignore_files(path: str) -> bool:
+        if Path(path).name == "ham.py" and ignore_ham:
+            return True
+        return False
 
-        @staticmethod
-        def ignore_files(path):
-            if Path(path).name == "ham.py" and ignore_ham:
-                return True
-            return False
+    def ignore_mods(module: str) -> bool:
+        if module == "hashlib" and ignore_hashlib:
+            return True
+        return False
 
-        @staticmethod
-        def ignore_mods(module):
-            if module == "hashlib" and ignore_hashlib:
-                return True
-            return False
+    options = optparse.Values()
+    options.paths = [str(root)]
+    options.verbose = True
+    options.ignore_files = ignore_files
+    options.ignore_mods = ignore_mods
 
     result = common.find_imported_modules(options)
     assert set(result) == set(expect)
@@ -187,16 +199,21 @@ def test_find_imported_modules(
         (["spam"], "/spam", True),
     ],
 )
-def test_ignorer(monkeypatch, tmp_path: Path, ignore_cfg, candidate, result):
+def test_ignorer(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+    ignore_cfg: List[str],
+    candidate: str,
+    result: bool,
+) -> None:
     monkeypatch.setattr(os.path, "relpath", lambda s: s.lstrip("/"))
     ignorer = common.ignorer(ignore_cfg)
     assert ignorer(candidate) == result
 
 
-def test_find_required_modules(tmp_path: Path):
-    class options:
-        skip_incompatible = False
-
+def test_find_required_modules(tmp_path: Path) -> None:
+    options = optparse.Values()
+    options.skip_incompatible = False
     options.ignore_reqs = common.ignorer(ignore_cfg=["barfoo"])
 
     fake_requirements_file = tmp_path / "requirements.txt"
@@ -209,12 +226,13 @@ def test_find_required_modules(tmp_path: Path):
     assert reqs == set(["foobar"])
 
 
-def test_find_required_modules_env_markers(tmp_path):
-    class options:
-        skip_incompatible = True
+def test_find_required_modules_env_markers(tmp_path: Path) -> None:
+    def ignore_reqs(modname: str) -> bool:
+        return False
 
-        def ignore_reqs(self, modname):
-            return False
+    options = optparse.Values()
+    options.skip_incompatible = True
+    options.ignore_reqs = ignore_reqs
 
     fake_requirements_file = tmp_path / "requirements.txt"
     fake_requirements_file.write_text(
@@ -222,27 +240,31 @@ def test_find_required_modules_env_markers(tmp_path):
     )
 
     reqs = common.find_required_modules(
-        options=options(),
+        options=options,
         requirements_filename=str(fake_requirements_file),
     )
     assert reqs == {"ham", "eggs"}
 
 
-def test_find_imported_modules_sets_encoding_to_utf8_when_reading(tmp_path):
+def test_find_imported_modules_sets_encoding_to_utf8_when_reading(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+) -> None:
     (tmp_path / "module.py").touch()
 
-    class options:
-        paths = [tmp_path]
+    def ignore_files(filename: str) -> bool:
+        return False
 
-        def ignore_files(*_):
-            return False
+    options = optparse.Values()
+    options.paths = [tmp_path]
+    options.ignore_files = ignore_files
 
     expected_encoding = "utf-8"
     used_encoding = None
 
-    original_open = common.__builtins__["open"]
+    original_open = copy(builtins.open)
 
-    def mocked_open(*args, **kwargs):
+    def mocked_open(*args: Any, **kwargs: Any) -> Any:
         # As of Python 3.9, the args to open() are as follows:
         # file, mode, buffering, encoding, erorrs, newline, closedf, opener
         nonlocal used_encoding
@@ -250,12 +272,11 @@ def test_find_imported_modules_sets_encoding_to_utf8_when_reading(tmp_path):
             used_encoding = kwargs["encoding"]
         return original_open(*args, **kwargs)
 
-    common.__builtins__["open"] = mocked_open
+    monkeypatch.setattr(builtins, "open", mocked_open)
     common.find_imported_modules(options)
-    common.__builtins__["open"] = original_open
 
     assert used_encoding == expected_encoding
 
 
-def test_version_info_shows_version_number():
+def test_version_info_shows_version_number() -> None:
     assert __version__ in common.version_info()

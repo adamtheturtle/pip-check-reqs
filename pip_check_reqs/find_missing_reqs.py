@@ -5,29 +5,32 @@ import optparse
 import os
 import pathlib
 import sys
+from typing import List, Tuple
 
-from packaging.utils import canonicalize_name
+from packaging.utils import NormalizedName, canonicalize_name
 from pip._internal.commands.show import search_packages_info
 from pip._internal.network.session import PipSession
 from pip._internal.req.constructors import install_req_from_line
 from pip._internal.req.req_file import parse_requirements
 
 from pip_check_reqs import common
-from pip_check_reqs.common import version_info
+from pip_check_reqs.common import FoundModule, version_info
 
 log = logging.getLogger(__name__)
 
 
-def find_missing_reqs(options, requirements_filename):
+def find_missing_reqs(
+    options: optparse.Values, requirements_filename: str
+) -> List[Tuple[NormalizedName, List[FoundModule]]]:
     # 1. find files used by imports in the code (as best we can without
     #    executing)
     used_modules = common.find_imported_modules(options)
 
     # 2. find which packages provide which files
     installed_files = {}
-    all_pkgs = (
+    all_pkgs = [
         dist.metadata["Name"] for dist in importlib.metadata.distributions()
-    )
+    ]
 
     for package in search_packages_info(all_pkgs):
         if isinstance(package, dict):  # pragma: no cover
@@ -95,13 +98,15 @@ def find_missing_reqs(options, requirements_filename):
             requirement.requirement,
         ).name
 
+        assert isinstance(requirement_name, str)
         log.debug("found requirement: %s", requirement_name)
         explicit.add(canonicalize_name(requirement_name))
 
-    return [(name, used[name]) for name in used if name not in explicit]
+    result = [(name, used[name]) for name in used if name not in explicit]
+    return result
 
 
-def main():
+def main() -> None:
     usage = "usage: %prog [options] files or directories"
     parser = optparse.OptionParser(usage)
     parser.add_option(

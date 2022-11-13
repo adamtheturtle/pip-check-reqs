@@ -5,6 +5,7 @@ import pathlib
 import optparse
 import os
 import sys
+from typing import List
 
 from packaging.utils import canonicalize_name
 from pip._internal.commands.show import search_packages_info
@@ -14,16 +15,18 @@ from pip_check_reqs.common import version_info
 log = logging.getLogger(__name__)
 
 
-def find_extra_reqs(options, requirements_filename):
+def find_extra_reqs(
+    options: optparse.Values, requirements_filename: str
+) -> List[str]:
     # 1. find files used by imports in the code (as best we can without
     #    executing)
     used_modules = common.find_imported_modules(options)
 
     # 2. find which packages provide which files
     installed_files = {}
-    all_pkgs = (
+    all_pkgs = [
         dist.metadata["Name"] for dist in importlib.metadata.distributions()
-    )
+    ]
 
     for package in search_packages_info(all_pkgs):
         if isinstance(package, dict):  # pragma: no cover
@@ -91,7 +94,7 @@ def find_extra_reqs(options, requirements_filename):
     return [name for name in explicit if name not in used]
 
 
-def main():
+def main() -> None:
     usage = "usage: %prog [options] files or directories"
     parser = optparse.OptionParser(usage)
     parser.add_option(
