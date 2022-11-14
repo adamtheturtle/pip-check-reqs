@@ -109,7 +109,7 @@ def pyfiles(root: str) -> Generator[str, None, None]:
         if ext == ".py":
             yield d
         else:
-            raise ValueError("%s is not a python file or directory" % root)
+            raise ValueError(f"{root} is not a python file or directory")
     for root, dirs, files in os.walk(d):
         for f in files:
             n, ext = os.path.splitext(f)
