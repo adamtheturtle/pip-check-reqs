@@ -1,6 +1,6 @@
 import ast
 import fnmatch
-import imp
+import importlib
 import logging
 import optparse
 import os
@@ -58,17 +58,27 @@ class ImportVisitor(ast.NodeVisitor):
     def _addModule(self, modname: str, lineno: int) -> None:
         if self._options.ignore_mods(modname):
             return
+        path_finder = importlib.machinery.PathFinder()
         path = None
         progress = []
         modpath = last_modpath = None
         for p in modname.split("."):
             try:
-                file, modpath, _ = imp.find_module(p, path)
-            except ImportError:
-                # the component specified at this point is not importable
-                # (is just an attr of the module)
-                # *or* it's not actually installed, so we don't care either
+                find_spec_result = path_finder.find_spec(p, path)
+            except ModuleNotFoundError:  # pragma: no cover
+                # The component specified at this point is not importable.
+                # At this point it is not a package (it is just an attr of a
+                # package).
+                #
+                # This is here because of the "find_spec" docs - we should add
+                # a test which hits it.
                 break
+
+            if find_spec_result is None:
+                # The component specified at this point is not installed.
+                break
+
+            modpath = find_spec_result.origin
 
             # success! we found *something*
             progress.append(p)

@@ -47,7 +47,7 @@ def test_FoundModule() -> None:
         ("import ast, pathlib", ["ast", "pathlib"]),
         ("from pathlib import Path", ["pathlib"]),
         ("from string import hexdigits", ["string"]),
-        ("import distutils.command.check", ["distutils.command.check"]),
+        ("import distutils.command.check", ["distutils"]),
         ("import spam", []),  # don't break because bad programmer
     ],
 )
