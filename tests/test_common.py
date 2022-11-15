@@ -10,7 +10,6 @@ from copy import copy
 from pathlib import Path
 from typing import Any, List, Tuple
 
-import pretend
 import pytest
 from pytest import MonkeyPatch
 
@@ -66,42 +65,34 @@ def test_ImportVisitor(stmt: str, result: List[str]) -> None:
     assert set(finalise_result.keys()) == set(result)
 
 
-def test_pyfiles_file(monkeypatch: MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        os.path, "abspath", pretend.call_recorder(lambda x: "/spam/ham.py")
-    )
-
-    assert list(common.pyfiles("spam")) == ["/spam/ham.py"]
+def test_pyfiles_file(tmp_path: Path) -> None:
+    python_file = tmp_path / "example.py"
+    python_file.touch()
+    assert list(common.pyfiles(root=str(python_file))) == [str(python_file)]
 
 
-def test_pyfiles_file_no_dice(monkeypatch: MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        os.path, "abspath", pretend.call_recorder(lambda x: "/spam/ham")
-    )
+def test_pyfiles_file_no_dice(tmp_path: Path) -> None:
+    not_python_file = tmp_path / "example"
+    not_python_file.touch()
 
     with pytest.raises(ValueError):
-        list(common.pyfiles("spam"))
+        list(common.pyfiles(root=str(not_python_file)))
 
 
-def test_pyfiles_package(monkeypatch: MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        os.path, "abspath", pretend.call_recorder(lambda x: "/spam")
-    )
-    monkeypatch.setattr(
-        os.path, "isdir", pretend.call_recorder(lambda x: True)
-    )
-    walk_results: List[Tuple[str, List[str], List[str]]] = [
-        ("spam", [], ["__init__.py", "spam", "ham.py"]),
-        ("spam/dub", [], ["bass.py", "dropped"]),
-    ]
-    monkeypatch.setattr(
-        os, "walk", pretend.call_recorder(lambda x: walk_results)
-    )
+def test_pyfiles_package(tmp_path: Path) -> None:
+    python_file = tmp_path / "example.py"
+    nested_python_file = tmp_path / "subdir" / "example.py"
+    not_python_file = tmp_path / "example"
 
-    assert list(common.pyfiles("spam")) == [
-        "spam/__init__.py",
-        "spam/ham.py",
-        "spam/dub/bass.py",
+    python_file.touch()
+    nested_python_file.parent.mkdir()
+    nested_python_file.touch()
+
+    not_python_file.touch()
+
+    assert list(common.pyfiles(root=str(tmp_path))) == [
+        str(python_file),
+        str(nested_python_file),
     ]
 
 
