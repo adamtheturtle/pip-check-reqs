@@ -63,7 +63,7 @@ class ImportVisitor(ast.NodeVisitor):
         modpath = last_modpath = None
         for p in modname.split("."):
             try:
-                file, modpath, description = imp.find_module(p, path)
+                file, modpath, _ = imp.find_module(p, path)
             except ImportError:
                 # the component specified at this point is not importable
                 # (is just an attr of the module)
