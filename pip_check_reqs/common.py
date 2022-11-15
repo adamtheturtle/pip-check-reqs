@@ -103,18 +103,15 @@ class ImportVisitor(ast.NodeVisitor):
 
 
 def pyfiles(root: str) -> Generator[str, None, None]:
-    d = os.path.abspath(root)
-    if not os.path.isdir(d):
-        n, ext = os.path.splitext(d)
-        if ext == ".py":
-            yield d
+    root_path = Path(root)
+    if root_path.is_file():
+        if root_path.suffix == ".py":
+            yield str(root_path.absolute())
         else:
-            raise ValueError(f"{root} is not a python file or directory")
-    for root, dirs, files in os.walk(d):
-        for f in files:
-            n, ext = os.path.splitext(f)
-            if ext == ".py":
-                yield os.path.join(root, f)
+            raise ValueError(f"{root_path} is not a python file or directory")
+    elif root_path.is_dir():
+        for item in root_path.rglob("*.py"):
+            yield str(item.absolute())
 
 
 def find_imported_modules(options: optparse.Values) -> Dict[str, FoundModule]:
