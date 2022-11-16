@@ -50,7 +50,7 @@ class ImportVisitor(ast.NodeVisitor):
             # not an actual module
             return
         for alias in node.names:
-            if node.module is None:
+            if node.module is None or node.level != 0:
                 # relative import
                 continue
             self._addModule(node.module + "." + alias.name, node.lineno)

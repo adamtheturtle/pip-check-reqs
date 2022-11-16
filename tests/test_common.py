@@ -49,6 +49,8 @@ def test_FoundModule() -> None:
         ("from string import hexdigits", ["string"]),
         ("import distutils.command.check", ["distutils.command.check"]),
         ("import spam", []),  # don't break because bad programmer
+        ("from .foo import bar", []),  # don't break on relative imports
+        ("from . import baz", []),
     ],
 )
 def test_ImportVisitor(stmt: str, result: List[str]) -> None:
