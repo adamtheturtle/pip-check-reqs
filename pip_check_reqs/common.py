@@ -8,7 +8,7 @@ import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Dict, Generator, List, Optional, Set, Tuple, Union
+from typing import Callable, Dict, Generator, Iterable, List, Optional, Set, Tuple, Union
 
 from packaging.markers import Marker
 from packaging.utils import NormalizedName, canonicalize_name
@@ -114,11 +114,15 @@ def pyfiles(root: str) -> Generator[str, None, None]:
             yield str(item.absolute())
 
 
-def find_imported_modules(options: optparse.Values) -> Dict[str, FoundModule]:
-    vis = ImportVisitor(ignore_modules_function=options.ignore_mods)
-    for path in options.paths:
+def find_imported_modules(
+    paths: Iterable[str],
+    ignore_files_function: Callable[[str], bool],
+    ignore_modules_function: Callable[[str], bool],
+) -> Dict[str, FoundModule]:
+    vis = ImportVisitor(ignore_modules_function=ignore_modules_function)
+    for path in paths:
         for filename in pyfiles(path):
-            if options.ignore_files(filename):
+            if ignore_files_function(filename):
                 log.info("ignoring: %s", os.path.relpath(filename))
                 continue
             log.debug("scanning: %s", os.path.relpath(filename))

@@ -24,7 +24,11 @@ def find_missing_reqs(
 ) -> List[Tuple[NormalizedName, List[FoundModule]]]:
     # 1. find files used by imports in the code (as best we can without
     #    executing)
-    used_modules = common.find_imported_modules(options)
+    used_modules = common.find_imported_modules(
+        paths=options.paths,
+        ignore_files_function=options.ignore_files,
+        ignore_modules_function=options.ignore_mods,
+    )
 
     # 2. find which packages provide which files
     installed_files = {}

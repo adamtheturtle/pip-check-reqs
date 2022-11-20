@@ -156,13 +156,11 @@ def test_find_imported_modules(
             return True
         return False
 
-    options = optparse.Values()
-    options.paths = [str(root)]
-    options.verbose = True
-    options.ignore_files = ignore_files
-    options.ignore_mods = ignore_mods
-
-    result = common.find_imported_modules(options)
+    result = common.find_imported_modules(
+        paths=[str(root)],
+        ignore_files_function=ignore_files,
+        ignore_modules_function=ignore_mods,
+    )
     assert set(result) == set(expect)
     absolute_locations = result["ast"].locations
     relative_locations = [
@@ -248,11 +246,6 @@ def test_find_imported_modules_sets_encoding_to_utf8_when_reading(
     def ignore_mods(modname: str) -> bool:
         return False
 
-    options = optparse.Values()
-    options.paths = [tmp_path]
-    options.ignore_files = ignore_files
-    options.ignore_mods = ignore_mods
-
     expected_encoding = "utf-8"
     used_encoding = None
 
@@ -267,7 +260,11 @@ def test_find_imported_modules_sets_encoding_to_utf8_when_reading(
         return original_open(*args, **kwargs)
 
     monkeypatch.setattr(builtins, "open", mocked_open)
-    common.find_imported_modules(options)
+    common.find_imported_modules(
+        paths=[str(tmp_path)],
+        ignore_files_function=ignore_files,
+        ignore_modules_function=ignore_mods,
+    )
 
     assert used_encoding == expected_encoding
 
