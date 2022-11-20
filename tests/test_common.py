@@ -230,12 +230,6 @@ def test_find_imported_modules_sets_encoding_to_utf8_when_reading(
 ) -> None:
     (tmp_path / "module.py").touch()
 
-    def ignore_files(filename: str) -> bool:
-        return False
-
-    def ignore_mods(modname: str) -> bool:
-        return False
-
     expected_encoding = "utf-8"
     used_encoding = None
 
@@ -252,8 +246,8 @@ def test_find_imported_modules_sets_encoding_to_utf8_when_reading(
     monkeypatch.setattr(builtins, "open", mocked_open)
     common.find_imported_modules(
         paths=[str(tmp_path)],
-        ignore_files_function=ignore_files,
-        ignore_modules_function=ignore_mods,
+        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
 
     assert used_encoding == expected_encoding
