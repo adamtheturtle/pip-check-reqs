@@ -34,11 +34,11 @@ def test_is_package_file(path: str, result: str) -> None:
     assert common.is_package_file(path) == result
 
 
-def test_FoundModule() -> None:
-    fm = common.FoundModule("spam", "ham")
-    assert fm.modname == "spam"
-    assert fm.filename == os.path.realpath("ham")
-    assert fm.locations == []
+def test_found_module() -> None:
+    found_module = common.FoundModule("spam", "ham")
+    assert found_module.modname == "spam"
+    assert found_module.filename == os.path.realpath("ham")
+    assert found_module.locations == []
 
 
 @pytest.mark.parametrize(
@@ -54,11 +54,10 @@ def test_FoundModule() -> None:
         ("from . import baz", []),
     ],
 )
-def test_ImportVisitor(stmt: str, result: List[str]) -> None:
-    def ignore_mods(modname: str) -> bool:
-        return False
-
-    vis = common._ImportVisitor(ignore_modules_function=ignore_mods)
+def test_import_visitor(stmt: str, result: List[str]) -> None:
+    vis = common._ImportVisitor(  # pylint: disable=protected-access
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+    )
     vis.set_location("spam.py")
     vis.visit(ast.parse(stmt))
     finalise_result = vis.finalise()

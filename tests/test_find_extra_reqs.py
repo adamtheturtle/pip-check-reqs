@@ -20,7 +20,9 @@ from pip_check_reqs import common, find_extra_reqs
 @pytest.fixture(name="fake_opts")
 def fixture_fake_opts() -> Any:
     class _FakeOptParse:
-        class _Options:
+        class Options:
+            """Options from the command line."""
+
             requirements_filename = "requirements.txt"
             paths = ["dummy"]
             verbose = False
@@ -31,7 +33,7 @@ def fixture_fake_opts() -> Any:
             ignore_reqs: List[str] = []
             skip_incompatible = False
 
-        given_options = _Options()
+        given_options = Options()
         args = ["ham.py"]
 
         def __init__(self, usage: str) -> None:
@@ -40,7 +42,7 @@ def fixture_fake_opts() -> Any:
         def add_option(self, *args: Any, **kw: Any) -> None:
             pass
 
-        def parse_args(self) -> Tuple[_Options, List[str]]:
+        def parse_args(self) -> Tuple[Options, List[str]]:
             return (self.given_options, self.args)
 
     return _FakeOptParse
@@ -56,9 +58,13 @@ def test_find_extra_reqs(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     )
 
     def fake_find_imported_modules(
-        paths: Iterable[str],
-        ignore_files_function: Callable[[str], bool],
-        ignore_modules_function: Callable[[str], bool],
+        paths: Iterable[str],  # pylint: disable=unused-argument
+        ignore_files_function: Callable[  # pylint: disable=unused-argument
+            [str], bool
+        ],
+        ignore_modules_function: Callable[  # pylint: disable=unused-argument
+            [str], bool
+        ],
     ) -> Dict[str, common.FoundModule]:
         return imported_modules
 
@@ -69,12 +75,12 @@ def test_find_extra_reqs(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     )
 
     @dataclass
-    class FakePathDistribution:
+    class _FakePathDistribution:
         metadata: Dict[str, str]
         name: Optional[str] = None
 
     installed_distributions = map(
-        FakePathDistribution,
+        _FakePathDistribution,
         [{"Name": "spam"}, {"Name": "pass"}],
     )
     monkeypatch.setattr(
@@ -120,15 +126,19 @@ def test_main_failure(
     caplog.set_level(logging.WARN)
 
     def fake_find_extra_reqs(
-        requirements_filename: str,
-        paths: Iterable[str],
-        ignore_files_function: Callable[[str], bool],
-        ignore_modules_function: Callable[[str], bool],
-        ignore_requirements_function: Callable[
+        requirements_filename: str,  # pylint: disable=unused-argument
+        paths: Iterable[str],  # pylint: disable=unused-argument
+        ignore_files_function: Callable[  # pylint: disable=unused-argument
+            [str], bool
+        ],
+        ignore_modules_function: Callable[  # pylint: disable=unused-argument
+            [str], bool
+        ],
+        ignore_requirements_function: Callable[  # noqa: E501 pylint: disable=unused-argument
             [Union[str, ParsedRequirement]],
             bool,
         ],
-        skip_incompatible: bool,
+        skip_incompatible: bool,  # pylint: disable=unused-argument
     ) -> List[str]:
         return ["extra"]
 
@@ -181,7 +191,9 @@ def test_logging_config(
     debug_cfg: bool,
     result: List[str],
 ) -> None:
-    class _Options:
+    class Options:
+        """Options from the command line."""
+
         requirements_filename = ""
         paths = ["dummy"]
         verbose = verbose_cfg
@@ -192,7 +204,7 @@ def test_logging_config(
         ignore_reqs: List[str] = []
         skip_incompatible = False
 
-    given_options = _Options()
+    given_options = Options()
 
     class _FakeOptParse:
         def __init__(self, usage: str) -> None:
@@ -201,20 +213,25 @@ def test_logging_config(
         def add_option(self, *args: Any, **kw: Any) -> None:
             pass
 
-        def parse_args(self) -> Tuple[_Options, List[str]]:
+        @staticmethod
+        def parse_args() -> Tuple[Options, List[str]]:
             return (given_options, ["ham.py"])
 
     monkeypatch.setattr(optparse, "OptionParser", _FakeOptParse)
 
     def fake_find_extra_reqs(
-        requirements_filename: str,
-        paths: Iterable[str],
-        ignore_files_function: Callable[[str], bool],
-        ignore_modules_function: Callable[[str], bool],
-        ignore_requirements_function: Callable[
+        requirements_filename: str,  # pylint: disable=unused-argument
+        paths: Iterable[str],  # pylint: disable=unused-argument
+        ignore_files_function: Callable[  # pylint: disable=unused-argument
+            [str], bool
+        ],
+        ignore_modules_function: Callable[  # pylint: disable=unused-argument
+            [str], bool
+        ],
+        ignore_requirements_function: Callable[  # noqa: E501 pylint: disable=unused-argument
             [Union[str, ParsedRequirement]], bool
         ],
-        skip_incompatible: bool,
+        skip_incompatible: bool,  # pylint: disable=unused-argument
     ) -> List[str]:
         return []
 

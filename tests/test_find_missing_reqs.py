@@ -18,8 +18,10 @@ from pip_check_reqs import common, find_missing_reqs
 
 @pytest.fixture(name="fake_opts")
 def fixture_fake_opts() -> Any:
-    class FakeOptParse:
+    class _FakeOptParse:
         class Options:
+            """Options from the command line."""
+
             requirements_filename = ""
             paths = ["dummy"]
             verbose = False
@@ -41,7 +43,7 @@ def fixture_fake_opts() -> Any:
         def parse_args(self) -> Tuple[Options, List[str]]:
             return (self.given_options, self.args)
 
-    return FakeOptParse
+    return _FakeOptParse
 
 
 def test_find_missing_reqs(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
@@ -54,9 +56,13 @@ def test_find_missing_reqs(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     )
 
     def fake_find_imported_modules(
-        paths: Iterable[str],
-        ignore_files_function: Callable[[str], bool],
-        ignore_modules_function: Callable[[str], bool],
+        paths: Iterable[str],  # pylint: disable=unused-argument
+        ignore_files_function: Callable[  # pylint: disable=unused-argument
+            [str], bool
+        ],
+        ignore_modules_function: Callable[  # pylint: disable=unused-argument
+            [str], bool
+        ],
     ) -> Dict[str, common.FoundModule]:
         return imported_modules
 
@@ -67,12 +73,12 @@ def test_find_missing_reqs(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     )
 
     @dataclass
-    class FakePathDistribution:
+    class _FakePathDistribution:
         metadata: Dict[str, str]
         name: Optional[str] = None
 
     installed_distributions = map(
-        FakePathDistribution,
+        _FakePathDistribution,
         [{"Name": "spam"}, {"Name": "pass"}],
     )
     monkeypatch.setattr(
@@ -116,10 +122,14 @@ def test_main_failure(
     caplog.set_level(logging.WARN)
 
     def fake_find_missing_reqs(
-        requirements_filename: str,
-        paths: Iterable[str],
-        ignore_files_function: Callable[[str], bool],
-        ignore_modules_function: Callable[[str], bool],
+        requirements_filename: str,  # pylint: disable=unused-argument
+        paths: Iterable[str],  # pylint: disable=unused-argument
+        ignore_files_function: Callable[  # pylint: disable=unused-argument
+            [str], bool
+        ],
+        ignore_modules_function: Callable[  # pylint: disable=unused-argument
+            [str], bool
+        ],
     ) -> List[Tuple[str, List[common.FoundModule]]]:
         return [
             (
@@ -187,6 +197,8 @@ def test_logging_config(
     result: List[str],
 ) -> None:
     class Options:
+        """Options from the command line."""
+
         requirements_filename = ""
         paths = ["dummy"]
         verbose = verbose_cfg
@@ -197,23 +209,28 @@ def test_logging_config(
 
     given_options = Options()
 
-    class FakeOptParse:
+    class _FakeOptParse:
         def __init__(self, usage: str) -> None:
             pass
 
         def add_option(self, *args: Any, **kw: Any) -> None:
             pass
 
-        def parse_args(self) -> Tuple[Options, List[str]]:
+        @staticmethod
+        def parse_args() -> Tuple[Options, List[str]]:
             return (given_options, ["ham.py"])
 
-    monkeypatch.setattr(optparse, "OptionParser", FakeOptParse)
+    monkeypatch.setattr(optparse, "OptionParser", _FakeOptParse)
 
     def fake_find_missing_reqs(
-        requirements_filename: str,
-        paths: Iterable[str],
-        ignore_files_function: Callable[[str], bool],
-        ignore_modules_function: Callable[[str], bool],
+        requirements_filename: str,  # pylint: disable=unused-argument
+        paths: Iterable[str],  # pylint: disable=unused-argument
+        ignore_files_function: Callable[  # pylint: disable=unused-argument
+            [str], bool
+        ],
+        ignore_modules_function: Callable[  # pylint: disable=unused-argument
+            [str], bool
+        ],
     ) -> List[Tuple[str, List[common.FoundModule]]]:
         return []
 
