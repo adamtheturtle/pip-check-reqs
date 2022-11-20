@@ -5,7 +5,7 @@ import logging
 import optparse
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 import pretend
 import pytest
@@ -50,10 +50,18 @@ def test_find_extra_reqs(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
         ),
         ignore=common.FoundModule("ignore", "ignore.py", [("ham.py", 2)]),
     )
+
+    def fake_find_imported_modules(
+        paths: Iterable[str],
+        ignore_files_function: Callable[[str], bool],
+        ignore_modules_function: Callable[[str], bool],
+    ) -> Dict[str, common.FoundModule]:
+        return imported_modules
+
     monkeypatch.setattr(
         common,
         "find_imported_modules",
-        pretend.call_recorder(lambda a: imported_modules),
+        pretend.call_recorder(fake_find_imported_modules),
     )
 
     @dataclass
@@ -93,8 +101,11 @@ def test_find_extra_reqs(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
         return False
 
     options = optparse.Values()
-    options.skip_incompatible = False
+    options.paths = []
+    options.ignore_files = common.ignorer(ignore_cfg=[])
+    options.ignore_mods = common.ignorer(ignore_cfg=[])
     options.ignore_reqs = ignore_reqs
+    options.skip_incompatible = False
 
     result = find_extra_reqs.find_extra_reqs(
         options=options,

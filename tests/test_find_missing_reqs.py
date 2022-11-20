@@ -5,7 +5,7 @@ import logging
 import optparse
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 import pretend
 import pytest
@@ -49,10 +49,17 @@ def test_find_missing_reqs(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
         ),
         ignore=common.FoundModule("ignore", "ignore.py", [("ham.py", 2)]),
     )
+    def fake_find_imported_modules(
+        paths: Iterable[str],
+        ignore_files_function: Callable[[str], bool],
+        ignore_modules_function: Callable[[str], bool],
+    ) -> Dict[str, common.FoundModule]:
+        return imported_modules
+
     monkeypatch.setattr(
         common,
         "find_imported_modules",
-        pretend.call_recorder(lambda a: imported_modules),
+        pretend.call_recorder(fake_find_imported_modules),
     )
 
     @dataclass
@@ -89,6 +96,9 @@ def test_find_missing_reqs(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     fake_requirements_file.write_text("spam==1")
 
     options = optparse.Values()
+    options.paths = []
+    options.ignore_files = common.ignorer(ignore_cfg=[])
+    options.ignore_mods = common.ignorer(ignore_cfg=[])
     result = find_missing_reqs.find_missing_reqs(
         options=options,
         requirements_filename=str(fake_requirements_file),

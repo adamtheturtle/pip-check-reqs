@@ -200,35 +200,26 @@ def test_ignorer(
 
 
 def test_find_required_modules(tmp_path: Path) -> None:
-    options = optparse.Values()
-    options.skip_incompatible = False
-    options.ignore_reqs = common.ignorer(ignore_cfg=["barfoo"])
-
     fake_requirements_file = tmp_path / "requirements.txt"
     fake_requirements_file.write_text("foobar==1\nbarfoo==2")
 
     reqs = common.find_required_modules(
-        options=options,
+        ignore_requirements_function=common.ignorer(ignore_cfg=["barfoo"]),
+        skip_incompatible=False,
         requirements_filename=str(fake_requirements_file),
     )
     assert reqs == set(["foobar"])
 
 
 def test_find_required_modules_env_markers(tmp_path: Path) -> None:
-    def ignore_reqs(modname: str) -> bool:
-        return False
-
-    options = optparse.Values()
-    options.skip_incompatible = True
-    options.ignore_reqs = ignore_reqs
-
     fake_requirements_file = tmp_path / "requirements.txt"
     fake_requirements_file.write_text(
         'spam==1; python_version<"2.0"\n' "ham==2;\n" "eggs==3\n"
     )
 
     reqs = common.find_required_modules(
-        options=options,
+        ignore_requirements_function=common.ignorer(ignore_cfg=[]),
+        skip_incompatible=True,
         requirements_filename=str(fake_requirements_file),
     )
     assert reqs == {"ham", "eggs"}

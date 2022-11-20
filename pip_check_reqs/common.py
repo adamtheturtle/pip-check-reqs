@@ -134,7 +134,9 @@ def find_imported_modules(
 
 
 def find_required_modules(
-    options: optparse.Values, requirements_filename: str
+    ignore_requirements_function: Callable[[Union[str, ParsedRequirement]], bool],
+    skip_incompatible: bool,
+    requirements_filename: str,
 ) -> Set[NormalizedName]:
     explicit = set()
     for requirement in parse_requirements(
@@ -145,11 +147,11 @@ def find_required_modules(
         ).name
         assert isinstance(requirement_name, str)
 
-        if options.ignore_reqs(requirement):
+        if ignore_requirements_function(requirement):
             log.debug("ignoring requirement: %s", requirement_name)
             continue
 
-        if options.skip_incompatible:
+        if skip_incompatible:
             requirement_string = requirement.requirement
             if not has_compatible_markers(requirement_string):
                 log.debug(

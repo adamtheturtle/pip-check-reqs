@@ -92,7 +92,8 @@ def find_extra_reqs(
 
     # 4. compare with requirements
     explicit = common.find_required_modules(
-        options=options,
+        ignore_requirements_function=options.ignore_reqs,
+        skip_incompatible=options.skip_incompatible,
         requirements_filename=requirements_filename,
     )
 
