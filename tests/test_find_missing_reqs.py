@@ -1,3 +1,5 @@
+"""Tests for `find_missing_reqs.py`."""
+
 from __future__ import absolute_import
 
 import importlib
@@ -14,10 +16,10 @@ from pytest import MonkeyPatch
 from pip_check_reqs import common, find_missing_reqs
 
 
-@pytest.fixture
-def fake_opts() -> Any:
+@pytest.fixture(name="fake_opts")
+def fixture_fake_opts() -> Any:
     class FakeOptParse:
-        class options:
+        class Options:
             requirements_filename = ""
             paths = ["dummy"]
             verbose = False
@@ -27,16 +29,16 @@ def fake_opts() -> Any:
             ignore_mods: List[str] = []
             ignore_reqs: List[str] = []
 
-        given_options = options()
+        given_options = Options()
         args = ["ham.py"]
 
         def __init__(self, usage: str) -> None:
             pass
 
-        def add_option(*args: Any, **kw: Any) -> None:
+        def add_option(self, *args: Any, **kw: Any) -> None:
             pass
 
-        def parse_args(self) -> Tuple[options, List[str]]:
+        def parse_args(self) -> Tuple[Options, List[str]]:
             return (self.given_options, self.args)
 
     return FakeOptParse
@@ -150,9 +152,7 @@ def test_main_failure(
     )
 
 
-def test_main_no_spec(
-    monkeypatch: MonkeyPatch, caplog: pytest.LogCaptureFixture, fake_opts: Any
-) -> None:
+def test_main_no_spec(monkeypatch: MonkeyPatch, fake_opts: Any) -> None:
     fake_opts.args = []
     monkeypatch.setattr(optparse, "OptionParser", fake_opts)
     monkeypatch.setattr(
@@ -186,7 +186,7 @@ def test_logging_config(
     debug_cfg: bool,
     result: List[str],
 ) -> None:
-    class options:
+    class Options:
         requirements_filename = ""
         paths = ["dummy"]
         verbose = verbose_cfg
@@ -195,16 +195,16 @@ def test_logging_config(
         ignore_files: List[str] = []
         ignore_mods: List[str] = []
 
-    given_options = options()
+    given_options = Options()
 
     class FakeOptParse:
         def __init__(self, usage: str) -> None:
             pass
 
-        def add_option(*args: Any, **kw: Any) -> None:
+        def add_option(self, *args: Any, **kw: Any) -> None:
             pass
 
-        def parse_args(self) -> Tuple[options, List[str]]:
+        def parse_args(self) -> Tuple[Options, List[str]]:
             return (given_options, ["ham.py"])
 
     monkeypatch.setattr(optparse, "OptionParser", FakeOptParse)
@@ -244,7 +244,7 @@ def test_main_version(
     capsys: pytest.CaptureFixture[Any],
     fake_opts: Any,
 ) -> None:
-    fake_opts.options.version = True
+    fake_opts.Options.version = True
     monkeypatch.setattr(optparse, "OptionParser", fake_opts)
 
     with pytest.raises(SystemExit):

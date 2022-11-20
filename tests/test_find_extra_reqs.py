@@ -1,3 +1,5 @@
+"""Tests for `find_extra_reqs.py`."""
+
 from __future__ import absolute_import
 
 import importlib
@@ -15,10 +17,10 @@ from pytest import MonkeyPatch
 from pip_check_reqs import common, find_extra_reqs
 
 
-@pytest.fixture
-def fake_opts() -> Any:
-    class FakeOptParse:
-        class options:
+@pytest.fixture(name="fake_opts")
+def fixture_fake_opts() -> Any:
+    class _FakeOptParse:
+        class _Options:
             requirements_filename = "requirements.txt"
             paths = ["dummy"]
             verbose = False
@@ -29,19 +31,19 @@ def fake_opts() -> Any:
             ignore_reqs: List[str] = []
             skip_incompatible = False
 
-        given_options = options()
+        given_options = _Options()
         args = ["ham.py"]
 
         def __init__(self, usage: str) -> None:
             pass
 
-        def add_option(*args: Any, **kw: Any) -> None:
+        def add_option(self, *args: Any, **kw: Any) -> None:
             pass
 
-        def parse_args(self) -> Tuple[options, List[str]]:
+        def parse_args(self) -> Tuple[_Options, List[str]]:
             return (self.given_options, self.args)
 
-    return FakeOptParse
+    return _FakeOptParse
 
 
 def test_find_extra_reqs(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
@@ -145,9 +147,7 @@ def test_main_failure(
     assert caplog.records[1].message == "extra in requirements.txt"
 
 
-def test_main_no_spec(
-    monkeypatch: MonkeyPatch, caplog: pytest.LogCaptureFixture, fake_opts: Any
-) -> None:
+def test_main_no_spec(monkeypatch: MonkeyPatch, fake_opts: Any) -> None:
     fake_opts.args = []
     monkeypatch.setattr(optparse, "OptionParser", fake_opts)
     monkeypatch.setattr(
@@ -181,7 +181,7 @@ def test_logging_config(
     debug_cfg: bool,
     result: List[str],
 ) -> None:
-    class options:
+    class _Options:
         requirements_filename = ""
         paths = ["dummy"]
         verbose = verbose_cfg
@@ -192,19 +192,19 @@ def test_logging_config(
         ignore_reqs: List[str] = []
         skip_incompatible = False
 
-    given_options = options()
+    given_options = _Options()
 
-    class FakeOptParse:
+    class _FakeOptParse:
         def __init__(self, usage: str) -> None:
             pass
 
-        def add_option(*args: Any, **kw: Any) -> None:
+        def add_option(self, *args: Any, **kw: Any) -> None:
             pass
 
-        def parse_args(self) -> Tuple[options, List[str]]:
+        def parse_args(self) -> Tuple[_Options, List[str]]:
             return (given_options, ["ham.py"])
 
-    monkeypatch.setattr(optparse, "OptionParser", FakeOptParse)
+    monkeypatch.setattr(optparse, "OptionParser", _FakeOptParse)
 
     def fake_find_extra_reqs(
         requirements_filename: str,
@@ -245,7 +245,7 @@ def test_main_version(
     capsys: pytest.CaptureFixture[Any],
     fake_opts: Any,
 ) -> None:
-    fake_opts.options.version = True
+    fake_opts.Options.version = True
     monkeypatch.setattr(optparse, "OptionParser", fake_opts)
 
     with pytest.raises(SystemExit):
