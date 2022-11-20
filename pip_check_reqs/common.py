@@ -1,3 +1,5 @@
+"""Common functions."""
+
 import ast
 import fnmatch
 import imp
@@ -32,6 +34,8 @@ log = logging.getLogger(__name__)
 
 @dataclass
 class FoundModule:
+    """A module with uses in the source."""
+
     modname: str
     filename: str
     locations: List[Tuple[str, int]] = field(default_factory=list)
@@ -40,9 +44,9 @@ class FoundModule:
         self.filename = os.path.realpath(self.filename)
 
 
-class ImportVisitor(ast.NodeVisitor):
+class _ImportVisitor(ast.NodeVisitor):
     def __init__(self, ignore_modules_function: Callable[[str], bool]) -> None:
-        super(ImportVisitor, self).__init__()
+        super().__init__()
         self._ignore_modules_function = ignore_modules_function
         self._modules: Dict[str, FoundModule] = {}
         self._location: Optional[str] = None
@@ -50,11 +54,19 @@ class ImportVisitor(ast.NodeVisitor):
     def set_location(self, location: str) -> None:
         self._location = location
 
-    def visit_Import(self, node: ast.Import) -> None:
+    # Ignore the name error as we are overriding the method.
+    def visit_Import(  # pylint: disable=invalid-name
+        self,
+        node: ast.Import,
+    ) -> None:
         for alias in node.names:
-            self._addModule(alias.name, node.lineno)
+            self._add_module(alias.name, node.lineno)
 
-    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
+    # Ignore the name error as we are overriding the method.
+    def visit_ImportFrom(  # pylint: disable=invalid-name
+        self,
+        node: ast.ImportFrom,
+    ) -> None:
         if node.module == "__future__":
             # not an actual module
             return
@@ -62,30 +74,31 @@ class ImportVisitor(ast.NodeVisitor):
             if node.module is None or node.level != 0:
                 # relative import
                 continue
-            self._addModule(node.module + "." + alias.name, node.lineno)
+            self._add_module(node.module + "." + alias.name, node.lineno)
 
-    def _addModule(self, modname: str, lineno: int) -> None:
+    def _add_module(self, modname: str, lineno: int) -> None:
         if self._ignore_modules_function(modname):
             return
         path = None
         progress = []
         modpath = last_modpath = None
-        for p in modname.split("."):
+        for modname_part in modname.split("."):
             try:
-                file, modpath, description = imp.find_module(p, path)
+                _, modpath, _ = imp.find_module(modname_part, path)
             except ImportError:
                 # the component specified at this point is not importable
-                # (is just an attr of the module)
+                # (is just an attribute of the module)
                 # *or* it's not actually installed, so we don't care either
                 break
 
             # success! we found *something*
-            progress.append(p)
+            progress.append(modname_part)
 
             # we might have previously seen a useful path though...
             if modpath is None:  # pragma: no cover
-                # the sys module will hit this code path, and os will on 3.11+.
-                # possibly others will, but I've not discovered them.
+                # the `sys` module will hit this code path, and `os` will on
+                # 3.11+.
+                # Possibly others will, but I've not discovered them.
                 modpath = last_modpath
                 break
 
@@ -128,15 +141,15 @@ def find_imported_modules(
     ignore_files_function: Callable[[str], bool],
     ignore_modules_function: Callable[[str], bool],
 ) -> Dict[str, FoundModule]:
-    vis = ImportVisitor(ignore_modules_function=ignore_modules_function)
+    vis = _ImportVisitor(ignore_modules_function=ignore_modules_function)
     for path in paths:
         for filename in pyfiles(path):
             if ignore_files_function(filename):
                 log.info("ignoring: %s", os.path.relpath(filename))
                 continue
             log.debug("scanning: %s", os.path.relpath(filename))
-            with open(filename, encoding="utf-8") as f:
-                content = f.read()
+            with open(filename, encoding="utf-8") as file_obj:
+                content = file_obj.read()
             vis.set_location(filename)
             vis.visit(ast.parse(content, filename))
     return vis.finalise()
@@ -193,9 +206,9 @@ def is_package_file(path: str) -> str:
     """Determines whether the path points to a Python package sentinel
     file - the __init__.py or its compiled variants.
     """
-    m = re.search(r"(.+)/__init__\.py[co]?$", path)
-    if m is not None:
-        return m.group(1)
+    search_result = re.search(r"(.+)/__init__\.py[co]?$", path)
+    if search_result is not None:
+        return search_result.group(1)
     return ""
 
 
@@ -203,7 +216,7 @@ def ignorer(ignore_cfg: List[str]) -> Callable[..., bool]:
     if not ignore_cfg:
         return lambda candidate: False
 
-    def f(
+    def ignorer_function(
         candidate: Union[str, ParsedRequirement],
         ignore_cfg: List[str] = ignore_cfg,
     ) -> bool:
@@ -219,16 +232,19 @@ def ignorer(ignore_cfg: List[str]) -> Callable[..., bool]:
 
             if fnmatch.fnmatch(candidate_path, ignore):
                 return True
-            elif fnmatch.fnmatch(os.path.relpath(candidate_path), ignore):
+            if fnmatch.fnmatch(os.path.relpath(candidate_path), ignore):
                 return True
         return False
 
-    return f
+    return ignorer_function
 
 
 def version_info() -> str:
-    return "pip-check-reqs {} from {} (python {})".format(
-        __version__,
-        str((Path(__file__) / "..").resolve()),
-        "{}.{}.{}".format(*sys.version_info),
+    major, minor, patch = sys.version_info[:3]
+    python_version = f"{major}.{minor}.{patch}"
+    parent_directory = Path(__file__).parent.resolve()
+    return (
+        f"pip-check-reqs {__version__} "
+        f"from {parent_directory} "
+        f"(python {python_version})"
     )
