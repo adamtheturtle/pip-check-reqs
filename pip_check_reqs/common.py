@@ -54,11 +54,19 @@ class _ImportVisitor(ast.NodeVisitor):
     def set_location(self, location: str) -> None:
         self._location = location
 
-    def visit_Import(self, node: ast.Import) -> None:
+    # Ignore the name error as we are overriding the method.
+    def visit_Import(  # pylint: disable=invalid-name
+        self,
+        node: ast.Import,
+    ) -> None:
         for alias in node.names:
             self._add_module(alias.name, node.lineno)
 
-    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
+    # Ignore the name error as we are overriding the method.
+    def visit_ImportFrom(  # pylint: disable=invalid-name
+        self,
+        node: ast.ImportFrom,
+    ) -> None:
         if node.module == "__future__":
             # not an actual module
             return
@@ -207,7 +215,7 @@ def ignorer(ignore_cfg: List[str]) -> Callable[..., bool]:
     if not ignore_cfg:
         return lambda candidate: False
 
-    def f(
+    def ignorer_function(
         candidate: Union[str, ParsedRequirement],
         ignore_cfg: List[str] = ignore_cfg,
     ) -> bool:
@@ -227,7 +235,7 @@ def ignorer(ignore_cfg: List[str]) -> Callable[..., bool]:
                 return True
         return False
 
-    return f
+    return ignorer_function
 
 
 def version_info() -> str:
