@@ -52,7 +52,6 @@ jobs:
           #
           # We avoid "--upgrade" as we do version tests for the "pip" dependency.
           python -m pip install --ignore-installed --editable .[dev]
-          python -m pip install isort black flake8 mypy types-setuptools
 
       - name: "Lint"
         run: |
