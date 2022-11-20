@@ -2,13 +2,13 @@ import ast
 import fnmatch
 import imp
 import logging
-import optparse
 import os
 import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Dict, Generator, Iterable, List, Optional, Set, Tuple, Union
+from typing import (Callable, Dict, Generator, Iterable, List, Optional, Set,
+                    Tuple, Union)
 
 from packaging.markers import Marker
 from packaging.utils import NormalizedName, canonicalize_name
@@ -134,7 +134,9 @@ def find_imported_modules(
 
 
 def find_required_modules(
-    ignore_requirements_function: Callable[[Union[str, ParsedRequirement]], bool],
+    ignore_requirements_function: Callable[
+        [Union[str, ParsedRequirement]], bool
+    ],
     skip_incompatible: bool,
     requirements_filename: str,
 ) -> Set[NormalizedName]:

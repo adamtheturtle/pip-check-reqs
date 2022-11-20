@@ -49,6 +49,7 @@ def test_find_missing_reqs(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
         ),
         ignore=common.FoundModule("ignore", "ignore.py", [("ham.py", 2)]),
     )
+
     def fake_find_imported_modules(
         paths: Iterable[str],
         ignore_files_function: Callable[[str], bool],

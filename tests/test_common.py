@@ -3,7 +3,6 @@ from __future__ import absolute_import
 import ast
 import builtins
 import logging
-import optparse
 import os.path
 import textwrap
 from copy import copy
