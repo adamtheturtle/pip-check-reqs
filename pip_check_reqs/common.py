@@ -7,8 +7,17 @@ import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import (Callable, Dict, Generator, Iterable, List, Optional, Set,
-                    Tuple, Union)
+from typing import (
+    Callable,
+    Dict,
+    Generator,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
 
 from packaging.markers import Marker
 from packaging.utils import NormalizedName, canonicalize_name
