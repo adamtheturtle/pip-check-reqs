@@ -34,7 +34,7 @@ class FoundModule:
 class ImportVisitor(ast.NodeVisitor):
     def __init__(self, options: optparse.Values) -> None:
         super(ImportVisitor, self).__init__()
-        self._options = options
+        self._ignore_modules_function = options.ignore_mods
         self._modules: Dict[str, FoundModule] = {}
         self._location: Optional[str] = None
 
@@ -56,7 +56,7 @@ class ImportVisitor(ast.NodeVisitor):
             self._addModule(node.module + "." + alias.name, node.lineno)
 
     def _addModule(self, modname: str, lineno: int) -> None:
-        if self._options.ignore_mods(modname):
+        if self._ignore_modules_function(modname):
             return
         path = None
         progress = []

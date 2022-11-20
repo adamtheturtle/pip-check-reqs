@@ -248,9 +248,13 @@ def test_find_imported_modules_sets_encoding_to_utf8_when_reading(
     def ignore_files(filename: str) -> bool:
         return False
 
+    def ignore_mods(modname: str) -> bool:
+        return False
+
     options = optparse.Values()
     options.paths = [tmp_path]
     options.ignore_files = ignore_files
+    options.ignore_mods = ignore_mods
 
     expected_encoding = "utf-8"
     used_encoding = None
