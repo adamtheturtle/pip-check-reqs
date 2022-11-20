@@ -9,10 +9,10 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 import pretend
 import pytest
+from pip._internal.req.req_file import ParsedRequirement
 from pytest import MonkeyPatch
 
 from pip_check_reqs import common, find_extra_reqs
-from pip._internal.req.req_file import ParsedRequirement
 
 
 @pytest.fixture
@@ -122,7 +122,10 @@ def test_main_failure(
         paths: Iterable[str],
         ignore_files_function: Callable[[str], bool],
         ignore_modules_function: Callable[[str], bool],
-        ignore_requirements_function: Callable[[Union[str, ParsedRequirement]], bool],
+        ignore_requirements_function: Callable[
+            [Union[str, ParsedRequirement]],
+            bool,
+        ],
         skip_incompatible: bool,
     ) -> List[str]:
         return ["extra"]
@@ -208,7 +211,9 @@ def test_logging_config(
         paths: Iterable[str],
         ignore_files_function: Callable[[str], bool],
         ignore_modules_function: Callable[[str], bool],
-        ignore_requirements_function: Callable[[Union[str, ParsedRequirement]], bool],
+        ignore_requirements_function: Callable[
+            [Union[str, ParsedRequirement]], bool
+        ],
         skip_incompatible: bool,
     ) -> List[str]:
         return []

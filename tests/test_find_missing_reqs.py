@@ -25,6 +25,7 @@ def fake_opts() -> Any:
             version = False
             ignore_files: List[str] = []
             ignore_mods: List[str] = []
+            ignore_reqs: List[str] = []
 
         given_options = options()
         args = ["ham.py"]
@@ -96,13 +97,11 @@ def test_find_missing_reqs(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     fake_requirements_file = tmp_path / "requirements.txt"
     fake_requirements_file.write_text("spam==1")
 
-    options = optparse.Values()
-    options.paths = []
-    options.ignore_files = common.ignorer(ignore_cfg=[])
-    options.ignore_mods = common.ignorer(ignore_cfg=[])
     result = find_missing_reqs.find_missing_reqs(
-        options=options,
         requirements_filename=str(fake_requirements_file),
+        paths=[],
+        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
     assert result == [("shrub", [imported_modules["shrub"]])]
 
@@ -115,7 +114,10 @@ def test_main_failure(
     caplog.set_level(logging.WARN)
 
     def fake_find_missing_reqs(
-        options: Any, requirements_filename: str
+        requirements_filename: str,
+        paths: Iterable[str],
+        ignore_files_function: Callable[[str], bool],
+        ignore_modules_function: Callable[[str], bool],
     ) -> List[Tuple[str, List[common.FoundModule]]]:
         return [
             (
@@ -207,10 +209,18 @@ def test_logging_config(
 
     monkeypatch.setattr(optparse, "OptionParser", FakeOptParse)
 
+    def fake_find_missing_reqs(
+        requirements_filename: str,
+        paths: Iterable[str],
+        ignore_files_function: Callable[[str], bool],
+        ignore_modules_function: Callable[[str], bool],
+    ) -> List[Tuple[str, List[common.FoundModule]]]:
+        return []
+
     monkeypatch.setattr(
         find_missing_reqs,
         "find_missing_reqs",
-        lambda options, requirements_filename: [],
+        fake_find_missing_reqs,
     )
     find_missing_reqs.main()
 

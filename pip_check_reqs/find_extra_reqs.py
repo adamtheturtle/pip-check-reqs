@@ -22,7 +22,9 @@ def find_extra_reqs(
     paths: Iterable[str],
     ignore_files_function: Callable[[str], bool],
     ignore_modules_function: Callable[[str], bool],
-    ignore_requirements_function: Callable[[Union[str, ParsedRequirement]], bool],
+    ignore_requirements_function: Callable[
+        [Union[str, ParsedRequirement]], bool
+    ],
     skip_incompatible: bool,
 ) -> List[str]:
     # 1. find files used by imports in the code (as best we can without

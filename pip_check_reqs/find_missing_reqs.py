@@ -5,7 +5,7 @@ import optparse
 import os
 import pathlib
 import sys
-from typing import List, Tuple
+from typing import Callable, Iterable, List, Tuple
 
 from packaging.utils import NormalizedName, canonicalize_name
 from pip._internal.commands.show import search_packages_info
@@ -20,14 +20,17 @@ log = logging.getLogger(__name__)
 
 
 def find_missing_reqs(
-    options: optparse.Values, requirements_filename: str
+    requirements_filename: str,
+    paths: Iterable[str],
+    ignore_files_function: Callable[[str], bool],
+    ignore_modules_function: Callable[[str], bool],
 ) -> List[Tuple[NormalizedName, List[FoundModule]]]:
     # 1. find files used by imports in the code (as best we can without
     #    executing)
     used_modules = common.find_imported_modules(
-        paths=options.paths,
-        ignore_files_function=options.ignore_files,
-        ignore_modules_function=options.ignore_mods,
+        paths=paths,
+        ignore_files_function=ignore_files_function,
+        ignore_modules_function=ignore_modules_function,
     )
 
     # 2. find which packages provide which files
@@ -190,8 +193,10 @@ def main() -> None:
     log.info(version_info())
 
     missing = find_missing_reqs(
-        options=options,
         requirements_filename=options.requirements_filename,
+        paths=options.paths,
+        ignore_files_function=options.ignore_files,
+        ignore_modules_function=options.ignore_mods,
     )
 
     if missing:
