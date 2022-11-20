@@ -2,13 +2,22 @@ import ast
 import fnmatch
 import imp
 import logging
-import optparse
 import os
 import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Dict, Generator, List, Optional, Set, Tuple, Union
+from typing import (
+    Callable,
+    Dict,
+    Generator,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
 
 from packaging.markers import Marker
 from packaging.utils import NormalizedName, canonicalize_name
@@ -32,9 +41,9 @@ class FoundModule:
 
 
 class ImportVisitor(ast.NodeVisitor):
-    def __init__(self, options: optparse.Values) -> None:
+    def __init__(self, ignore_modules_function: Callable[[str], bool]) -> None:
         super(ImportVisitor, self).__init__()
-        self._options = options
+        self._ignore_modules_function = ignore_modules_function
         self._modules: Dict[str, FoundModule] = {}
         self._location: Optional[str] = None
 
@@ -56,7 +65,7 @@ class ImportVisitor(ast.NodeVisitor):
             self._addModule(node.module + "." + alias.name, node.lineno)
 
     def _addModule(self, modname: str, lineno: int) -> None:
-        if self._options.ignore_mods(modname):
+        if self._ignore_modules_function(modname):
             return
         path = None
         progress = []
@@ -114,11 +123,15 @@ def pyfiles(root: str) -> Generator[str, None, None]:
             yield str(item.absolute())
 
 
-def find_imported_modules(options: optparse.Values) -> Dict[str, FoundModule]:
-    vis = ImportVisitor(options)
-    for path in options.paths:
+def find_imported_modules(
+    paths: Iterable[str],
+    ignore_files_function: Callable[[str], bool],
+    ignore_modules_function: Callable[[str], bool],
+) -> Dict[str, FoundModule]:
+    vis = ImportVisitor(ignore_modules_function=ignore_modules_function)
+    for path in paths:
         for filename in pyfiles(path):
-            if options.ignore_files(filename):
+            if ignore_files_function(filename):
                 log.info("ignoring: %s", os.path.relpath(filename))
                 continue
             log.debug("scanning: %s", os.path.relpath(filename))
@@ -130,7 +143,11 @@ def find_imported_modules(options: optparse.Values) -> Dict[str, FoundModule]:
 
 
 def find_required_modules(
-    options: optparse.Values, requirements_filename: str
+    ignore_requirements_function: Callable[
+        [Union[str, ParsedRequirement]], bool
+    ],
+    skip_incompatible: bool,
+    requirements_filename: str,
 ) -> Set[NormalizedName]:
     explicit = set()
     for requirement in parse_requirements(
@@ -141,11 +158,11 @@ def find_required_modules(
         ).name
         assert isinstance(requirement_name, str)
 
-        if options.ignore_reqs(requirement):
+        if ignore_requirements_function(requirement):
             log.debug("ignoring requirement: %s", requirement_name)
             continue
 
-        if options.skip_incompatible:
+        if skip_incompatible:
             requirement_string = requirement.requirement
             if not has_compatible_markers(requirement_string):
                 log.debug(

@@ -3,7 +3,6 @@ from __future__ import absolute_import
 import ast
 import builtins
 import logging
-import optparse
 import os.path
 import textwrap
 from copy import copy
@@ -57,10 +56,7 @@ def test_ImportVisitor(stmt: str, result: List[str]) -> None:
     def ignore_mods(modname: str) -> bool:
         return False
 
-    options = optparse.Values()
-    options.ignore_mods = ignore_mods
-
-    vis = common.ImportVisitor(options)
+    vis = common.ImportVisitor(ignore_modules_function=ignore_mods)
     vis.set_location("spam.py")
     vis.visit(ast.parse(stmt))
     finalise_result = vis.finalise()
@@ -159,13 +155,11 @@ def test_find_imported_modules(
             return True
         return False
 
-    options = optparse.Values()
-    options.paths = [str(root)]
-    options.verbose = True
-    options.ignore_files = ignore_files
-    options.ignore_mods = ignore_mods
-
-    result = common.find_imported_modules(options)
+    result = common.find_imported_modules(
+        paths=[str(root)],
+        ignore_files_function=ignore_files,
+        ignore_modules_function=ignore_mods,
+    )
     assert set(result) == set(expect)
     absolute_locations = result["ast"].locations
     relative_locations = [
@@ -205,35 +199,26 @@ def test_ignorer(
 
 
 def test_find_required_modules(tmp_path: Path) -> None:
-    options = optparse.Values()
-    options.skip_incompatible = False
-    options.ignore_reqs = common.ignorer(ignore_cfg=["barfoo"])
-
     fake_requirements_file = tmp_path / "requirements.txt"
     fake_requirements_file.write_text("foobar==1\nbarfoo==2")
 
     reqs = common.find_required_modules(
-        options=options,
+        ignore_requirements_function=common.ignorer(ignore_cfg=["barfoo"]),
+        skip_incompatible=False,
         requirements_filename=str(fake_requirements_file),
     )
     assert reqs == set(["foobar"])
 
 
 def test_find_required_modules_env_markers(tmp_path: Path) -> None:
-    def ignore_reqs(modname: str) -> bool:
-        return False
-
-    options = optparse.Values()
-    options.skip_incompatible = True
-    options.ignore_reqs = ignore_reqs
-
     fake_requirements_file = tmp_path / "requirements.txt"
     fake_requirements_file.write_text(
         'spam==1; python_version<"2.0"\n' "ham==2;\n" "eggs==3\n"
     )
 
     reqs = common.find_required_modules(
-        options=options,
+        ignore_requirements_function=common.ignorer(ignore_cfg=[]),
+        skip_incompatible=True,
         requirements_filename=str(fake_requirements_file),
     )
     assert reqs == {"ham", "eggs"}
@@ -244,13 +229,6 @@ def test_find_imported_modules_sets_encoding_to_utf8_when_reading(
     tmp_path: Path,
 ) -> None:
     (tmp_path / "module.py").touch()
-
-    def ignore_files(filename: str) -> bool:
-        return False
-
-    options = optparse.Values()
-    options.paths = [tmp_path]
-    options.ignore_files = ignore_files
 
     expected_encoding = "utf-8"
     used_encoding = None
@@ -266,7 +244,11 @@ def test_find_imported_modules_sets_encoding_to_utf8_when_reading(
         return original_open(*args, **kwargs)
 
     monkeypatch.setattr(builtins, "open", mocked_open)
-    common.find_imported_modules(options)
+    common.find_imported_modules(
+        paths=[str(tmp_path)],
+        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+    )
 
     assert used_encoding == expected_encoding
 

@@ -5,10 +5,11 @@ import logging
 import optparse
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 import pretend
 import pytest
+from pip._internal.req.req_file import ParsedRequirement
 from pytest import MonkeyPatch
 
 from pip_check_reqs import common, find_extra_reqs
@@ -26,6 +27,7 @@ def fake_opts() -> Any:
             ignore_files: List[str] = []
             ignore_mods: List[str] = []
             ignore_reqs: List[str] = []
+            skip_incompatible = False
 
         given_options = options()
         args = ["ham.py"]
@@ -50,10 +52,18 @@ def test_find_extra_reqs(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
         ),
         ignore=common.FoundModule("ignore", "ignore.py", [("ham.py", 2)]),
     )
+
+    def fake_find_imported_modules(
+        paths: Iterable[str],
+        ignore_files_function: Callable[[str], bool],
+        ignore_modules_function: Callable[[str], bool],
+    ) -> Dict[str, common.FoundModule]:
+        return imported_modules
+
     monkeypatch.setattr(
         common,
         "find_imported_modules",
-        pretend.call_recorder(lambda a: imported_modules),
+        pretend.call_recorder(fake_find_imported_modules),
     )
 
     @dataclass
@@ -89,16 +99,13 @@ def test_find_extra_reqs(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
     fake_requirements_file = tmp_path / "requirements.txt"
     fake_requirements_file.write_text("foobar==1")
 
-    def ignore_reqs(modname: str) -> bool:
-        return False
-
-    options = optparse.Values()
-    options.skip_incompatible = False
-    options.ignore_reqs = ignore_reqs
-
     result = find_extra_reqs.find_extra_reqs(
-        options=options,
         requirements_filename=str(fake_requirements_file),
+        paths=[],
+        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        ignore_requirements_function=common.ignorer(ignore_cfg=[]),
+        skip_incompatible=False,
     )
     assert result == ["foobar"]
 
@@ -110,10 +117,23 @@ def test_main_failure(
 
     caplog.set_level(logging.WARN)
 
+    def fake_find_extra_reqs(
+        requirements_filename: str,
+        paths: Iterable[str],
+        ignore_files_function: Callable[[str], bool],
+        ignore_modules_function: Callable[[str], bool],
+        ignore_requirements_function: Callable[
+            [Union[str, ParsedRequirement]],
+            bool,
+        ],
+        skip_incompatible: bool,
+    ) -> List[str]:
+        return ["extra"]
+
     monkeypatch.setattr(
         find_extra_reqs,
         "find_extra_reqs",
-        lambda options, requirements_filename: ["extra"],
+        fake_find_extra_reqs,
     )
 
     with pytest.raises(SystemExit) as excinfo:
@@ -170,6 +190,7 @@ def test_logging_config(
         ignore_files: List[str] = []
         ignore_mods: List[str] = []
         ignore_reqs: List[str] = []
+        skip_incompatible = False
 
     given_options = options()
 
@@ -185,10 +206,22 @@ def test_logging_config(
 
     monkeypatch.setattr(optparse, "OptionParser", FakeOptParse)
 
+    def fake_find_extra_reqs(
+        requirements_filename: str,
+        paths: Iterable[str],
+        ignore_files_function: Callable[[str], bool],
+        ignore_modules_function: Callable[[str], bool],
+        ignore_requirements_function: Callable[
+            [Union[str, ParsedRequirement]], bool
+        ],
+        skip_incompatible: bool,
+    ) -> List[str]:
+        return []
+
     monkeypatch.setattr(
         find_extra_reqs,
         "find_extra_reqs",
-        lambda options, requirements_filename: [],
+        fake_find_extra_reqs,
     )
     find_extra_reqs.main()
 

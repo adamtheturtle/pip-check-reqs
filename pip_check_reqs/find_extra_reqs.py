@@ -5,10 +5,11 @@ import optparse
 import os
 import pathlib
 import sys
-from typing import List
+from typing import Callable, Iterable, List, Union
 
 from packaging.utils import canonicalize_name
 from pip._internal.commands.show import search_packages_info
+from pip._internal.req.req_file import ParsedRequirement
 
 from pip_check_reqs import common
 from pip_check_reqs.common import version_info
@@ -17,11 +18,22 @@ log = logging.getLogger(__name__)
 
 
 def find_extra_reqs(
-    options: optparse.Values, requirements_filename: str
+    requirements_filename: str,
+    paths: Iterable[str],
+    ignore_files_function: Callable[[str], bool],
+    ignore_modules_function: Callable[[str], bool],
+    ignore_requirements_function: Callable[
+        [Union[str, ParsedRequirement]], bool
+    ],
+    skip_incompatible: bool,
 ) -> List[str]:
     # 1. find files used by imports in the code (as best we can without
     #    executing)
-    used_modules = common.find_imported_modules(options)
+    used_modules = common.find_imported_modules(
+        paths=paths,
+        ignore_files_function=ignore_files_function,
+        ignore_modules_function=ignore_modules_function,
+    )
 
     # 2. find which packages provide which files
     installed_files = {}
@@ -88,7 +100,8 @@ def find_extra_reqs(
 
     # 4. compare with requirements
     explicit = common.find_required_modules(
-        options=options,
+        ignore_requirements_function=ignore_requirements_function,
+        skip_incompatible=skip_incompatible,
         requirements_filename=requirements_filename,
     )
 
@@ -192,8 +205,12 @@ def main() -> None:
     log.info(version_info())
 
     extras = find_extra_reqs(
-        options=options,
         requirements_filename=options.requirements_filename,
+        paths=options.paths,
+        ignore_files_function=options.ignore_files,
+        ignore_modules_function=options.ignore_mods,
+        ignore_requirements_function=options.ignore_reqs,
+        skip_incompatible=options.skip_incompatible,
     )
 
     if extras:
