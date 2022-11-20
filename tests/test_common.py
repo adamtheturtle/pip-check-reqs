@@ -57,10 +57,7 @@ def test_ImportVisitor(stmt: str, result: List[str]) -> None:
     def ignore_mods(modname: str) -> bool:
         return False
 
-    options = optparse.Values()
-    options.ignore_mods = ignore_mods
-
-    vis = common.ImportVisitor(options)
+    vis = common.ImportVisitor(ignore_modules_function=ignore_mods)
     vis.set_location("spam.py")
     vis.visit(ast.parse(stmt))
     finalise_result = vis.finalise()

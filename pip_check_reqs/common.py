@@ -32,9 +32,9 @@ class FoundModule:
 
 
 class ImportVisitor(ast.NodeVisitor):
-    def __init__(self, options: optparse.Values) -> None:
+    def __init__(self, ignore_modules_function: Callable[[str], bool]) -> None:
         super(ImportVisitor, self).__init__()
-        self._ignore_modules_function = options.ignore_mods
+        self._ignore_modules_function = ignore_modules_function
         self._modules: Dict[str, FoundModule] = {}
         self._location: Optional[str] = None
 
@@ -115,7 +115,7 @@ def pyfiles(root: str) -> Generator[str, None, None]:
 
 
 def find_imported_modules(options: optparse.Values) -> Dict[str, FoundModule]:
-    vis = ImportVisitor(options)
+    vis = ImportVisitor(ignore_modules_function=options.ignore_mods)
     for path in options.paths:
         for filename in pyfiles(path):
             if options.ignore_files(filename):
