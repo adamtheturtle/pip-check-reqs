@@ -1,3 +1,5 @@
+"""Find extra requirements."""
+
 import collections
 import importlib.metadata
 import logging
@@ -216,10 +218,7 @@ def main() -> None:
     if extras:
         log.warning("Extra requirements:")
     for name in extras:
-        message = "{name} in {requirements_filename}".format(
-            name=name,
-            requirements_filename=options.requirements_filename,
-        )
+        message = f"{name} in {options.requirements_filename}"
         log.warning(message)
 
     if extras:

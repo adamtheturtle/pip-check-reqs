@@ -61,6 +61,10 @@
         'duplicate-code',
         # Let isort handle imports
         'wrong-import-order',
+        # It would be nice to add this, but it's too much work
+        "missing-function-docstring",
+        # We will remove this in issue 97
+        "deprecated-module",
     ]
 
     [tool.pylint.'FORMAT']
