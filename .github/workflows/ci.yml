@@ -60,6 +60,7 @@ jobs:
           mypy .
           isort --check-only .
           black --check .
+          pylint pip_check_reqs
           pip-extra-reqs pip_check_reqs
           pip-missing-reqs pip_check_reqs
 

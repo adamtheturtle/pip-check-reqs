@@ -1,3 +1,4 @@
 pretend
+pyenchant
 pytest
 pytest-cov
