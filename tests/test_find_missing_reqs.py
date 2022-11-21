@@ -120,22 +120,13 @@ def test_main_failure(
     )
 
 
-def test_main_no_spec(monkeypatch: MonkeyPatch, fake_opts: Any) -> None:
-    fake_opts.args = []
-    monkeypatch.setattr(optparse, "OptionParser", fake_opts)
-    monkeypatch.setattr(
-        fake_opts,
-        "error",
-        pretend.call_recorder(lambda s, e: None),
-        raising=False,
-    )
-
+def test_main_no_spec(capsys: pytest.CaptureFixture[Any]) -> None:
     with pytest.raises(SystemExit) as excinfo:
-        find_missing_reqs.main()
+        find_missing_reqs.main(arguments=[])
 
     assert excinfo.value.code == 2
-
-    assert fake_opts.error.calls
+    err = capsys.readouterr().err
+    assert err.endswith("error: no source files or directories specified\n")
 
 
 @pytest.mark.parametrize(
@@ -153,32 +144,10 @@ def test_logging_config(
     verbose_cfg: bool,
     debug_cfg: bool,
     result: List[str],
+    tmp_path: Path,
 ) -> None:
-    class Options:
-        """Options from the command line."""
-
-        requirements_filename = ""
-        paths = ["dummy"]
-        verbose = verbose_cfg
-        debug = debug_cfg
-        version = False
-        ignore_files: List[str] = []
-        ignore_mods: List[str] = []
-
-    given_options = Options()
-
-    class _FakeOptParse:
-        def __init__(self, usage: str) -> None:
-            pass
-
-        def add_option(self, *args: Any, **kw: Any) -> None:
-            pass
-
-        @staticmethod
-        def parse_args() -> Tuple[Options, List[str]]:
-            return (given_options, ["ham.py"])
-
-    monkeypatch.setattr(optparse, "OptionParser", _FakeOptParse)
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
 
     def fake_find_missing_reqs(
         requirements_filename: str,  # pylint: disable=unused-argument
@@ -197,7 +166,13 @@ def test_logging_config(
         "find_missing_reqs",
         fake_find_missing_reqs,
     )
-    find_missing_reqs.main()
+    arguments = [str(source_dir)]
+    if verbose_cfg:
+        arguments.append("--verbose")
+    if debug_cfg:
+        arguments.append("--debug")
+
+    find_missing_reqs.main(arguments=arguments)
 
     for event in [
         (logging.DEBUG, "debug"),
