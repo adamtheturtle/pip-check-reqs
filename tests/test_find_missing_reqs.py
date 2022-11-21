@@ -6,11 +6,10 @@ import logging
 import os
 import textwrap
 from pathlib import Path
-from typing import Any, Callable, Iterable, List, Tuple
+from typing import Any, Set
 
 import pretend
 import pytest
-from pytest import MonkeyPatch
 
 from pip_check_reqs import common, find_missing_reqs
 
@@ -115,42 +114,24 @@ def test_main_no_spec(capsys: pytest.CaptureFixture[Any]) -> None:
 
 
 @pytest.mark.parametrize(
-    ["verbose_cfg", "debug_cfg", "result"],
+    ["verbose_cfg", "debug_cfg", "expected_log_levels"],
     [
-        (False, False, ["warn"]),
-        (True, False, ["info", "warn"]),
-        (False, True, ["debug", "info", "warn"]),
-        (True, True, ["debug", "info", "warn"]),
+        (False, False, {logging.WARNING}),
+        (True, False, {logging.INFO, logging.WARNING}),
+        (False, True, {logging.DEBUG, logging.INFO, logging.WARNING}),
+        (True, True, {logging.DEBUG, logging.INFO, logging.WARNING}),
     ],
 )
 def test_logging_config(
-    monkeypatch: MonkeyPatch,
     caplog: pytest.LogCaptureFixture,
     verbose_cfg: bool,
     debug_cfg: bool,
-    result: List[str],
+    expected_log_levels: Set[int],
     tmp_path: Path,
 ) -> None:
     source_dir = tmp_path / "source"
     source_dir.mkdir()
 
-    def fake_find_missing_reqs(
-        requirements_filename: str,  # pylint: disable=unused-argument
-        paths: Iterable[str],  # pylint: disable=unused-argument
-        ignore_files_function: Callable[  # pylint: disable=unused-argument
-            [str], bool
-        ],
-        ignore_modules_function: Callable[  # pylint: disable=unused-argument
-            [str], bool
-        ],
-    ) -> List[Tuple[str, List[common.FoundModule]]]:
-        return []
-
-    monkeypatch.setattr(
-        find_missing_reqs,
-        "find_missing_reqs",
-        fake_find_missing_reqs,
-    )
     arguments = [str(source_dir)]
     if verbose_cfg:
         arguments.append("--verbose")
@@ -166,12 +147,8 @@ def test_logging_config(
     ]:
         find_missing_reqs.log.log(*event)
 
-    messages = [r.message for r in caplog.records]
-    # first message is always the usage message
-    if verbose_cfg or debug_cfg:
-        assert messages[1:] == result
-    else:
-        assert messages == result
+    log_levels = {r.levelno for r in caplog.records}
+    assert log_levels == expected_log_levels
 
 
 def test_main_version(
