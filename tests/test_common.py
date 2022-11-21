@@ -1,3 +1,5 @@
+"""Tests for `common.py`."""
+
 from __future__ import absolute_import
 
 import ast
@@ -32,11 +34,11 @@ def test_is_package_file(path: str, result: str) -> None:
     assert common.is_package_file(path) == result
 
 
-def test_FoundModule() -> None:
-    fm = common.FoundModule("spam", "ham")
-    assert fm.modname == "spam"
-    assert fm.filename == os.path.realpath("ham")
-    assert fm.locations == []
+def test_found_module() -> None:
+    found_module = common.FoundModule("spam", "ham")
+    assert found_module.modname == "spam"
+    assert found_module.filename == os.path.realpath("ham")
+    assert found_module.locations == []
 
 
 @pytest.mark.parametrize(
@@ -52,11 +54,10 @@ def test_FoundModule() -> None:
         ("from . import baz", []),
     ],
 )
-def test_ImportVisitor(stmt: str, result: List[str]) -> None:
-    def ignore_mods(modname: str) -> bool:
-        return False
-
-    vis = common._ImportVisitor(ignore_modules_function=ignore_mods)
+def test_import_visitor(stmt: str, result: List[str]) -> None:
+    vis = common._ImportVisitor(  # pylint: disable=protected-access
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+    )
     vis.set_location("spam.py")
     vis.visit(ast.parse(stmt))
     finalise_result = vis.finalise()
@@ -94,7 +95,7 @@ def test_pyfiles_package(tmp_path: Path) -> None:
     ]
 
 
-# Beware - using "sys" or "os" here can have weird results.
+# Beware - using `sys` or `os` here can have weird results.
 # See the comment in the implementation.
 # We don't mind so much as we only really use this for third party packages.
 @pytest.mark.parametrize(
@@ -188,7 +189,6 @@ def test_find_imported_modules(
 )
 def test_ignorer(
     monkeypatch: MonkeyPatch,
-    tmp_path: Path,
     ignore_cfg: List[str],
     candidate: str,
     result: bool,
@@ -213,7 +213,7 @@ def test_find_required_modules(tmp_path: Path) -> None:
 def test_find_required_modules_env_markers(tmp_path: Path) -> None:
     fake_requirements_file = tmp_path / "requirements.txt"
     fake_requirements_file.write_text(
-        'spam==1; python_version<"2.0"\n' "ham==2;\n" "eggs==3\n"
+        'spam==1; python_version<"2.0"\nham==2;\neggs==3\n',
     )
 
     reqs = common.find_required_modules(
@@ -236,11 +236,8 @@ def test_find_imported_modules_sets_encoding_to_utf8_when_reading(
     original_open = copy(builtins.open)
 
     def mocked_open(*args: Any, **kwargs: Any) -> Any:
-        # As of Python 3.9, the args to open() are as follows:
-        # file, mode, buffering, encoding, erorrs, newline, closedf, opener
         nonlocal used_encoding
-        if "encoding" in kwargs:
-            used_encoding = kwargs["encoding"]
+        used_encoding = kwargs.get("encoding", None)
         return original_open(*args, **kwargs)
 
     monkeypatch.setattr(builtins, "open", mocked_open)
