@@ -177,8 +177,8 @@ def main() -> None:
         parser.error("no source files or directories specified")
         sys.exit(2)
 
-    options.ignore_files = common.ignorer(options.ignore_files)
-    options.ignore_mods = common.ignorer(options.ignore_mods)
+    ignore_files = common.ignorer(options.ignore_files)
+    ignore_mods = common.ignorer(options.ignore_mods)
 
     options.paths = args
 
@@ -197,8 +197,8 @@ def main() -> None:
     missing = find_missing_reqs(
         requirements_filename=options.requirements_filename,
         paths=options.paths,
-        ignore_files_function=options.ignore_files,
-        ignore_modules_function=options.ignore_mods,
+        ignore_files_function=ignore_files,
+        ignore_modules_function=ignore_mods,
     )
 
     if missing:
