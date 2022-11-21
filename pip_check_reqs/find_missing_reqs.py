@@ -1,9 +1,9 @@
 """Find missing requirements."""
 
+import argparse
 import collections
 import importlib.metadata
 import logging
-import optparse
 import os
 import pathlib
 import sys
@@ -117,8 +117,9 @@ def find_missing_reqs(
 
 def main(arguments: Optional[List[str]] = None) -> None:
     usage = "usage: %prog [options] files or directories"
-    parser = optparse.OptionParser(usage)
-    parser.add_option(
+    parser = argparse.ArgumentParser(usage)
+    parser.add_argument("paths", nargs="*")
+    parser.add_argument(
         "--requirements-file",
         dest="requirements_filename",
         metavar="PATH",
@@ -126,7 +127,7 @@ def main(arguments: Optional[List[str]] = None) -> None:
         help="path to the requirements file "
         '(defaults to "requirements.txt")',
     )
-    parser.add_option(
+    parser.add_argument(
         "-f",
         "--ignore-file",
         dest="ignore_files",
@@ -134,7 +135,7 @@ def main(arguments: Optional[List[str]] = None) -> None:
         default=[],
         help="file paths globs to ignore",
     )
-    parser.add_option(
+    parser.add_argument(
         "-m",
         "--ignore-module",
         dest="ignore_mods",
@@ -142,7 +143,7 @@ def main(arguments: Optional[List[str]] = None) -> None:
         default=[],
         help="used module names (globs are ok) to ignore",
     )
-    parser.add_option(
+    parser.add_argument(
         "-v",
         "--verbose",
         dest="verbose",
@@ -150,7 +151,7 @@ def main(arguments: Optional[List[str]] = None) -> None:
         default=False,
         help="be more verbose",
     )
-    parser.add_option(
+    parser.add_argument(
         "-d",
         "--debug",
         dest="debug",
@@ -158,7 +159,7 @@ def main(arguments: Optional[List[str]] = None) -> None:
         default=False,
         help="be *really* verbose",
     )
-    parser.add_option(
+    parser.add_argument(
         "-V",
         "--version",
         dest="version",
@@ -167,24 +168,22 @@ def main(arguments: Optional[List[str]] = None) -> None:
         help="display version information",
     )
 
-    (options, args) = parser.parse_args(arguments)
+    parse_result = parser.parse_args(arguments)
 
-    if options.version:
+    if parse_result.version:
         print(version_info())
         sys.exit(0)
 
-    if not args:
+    if not parse_result.paths:
         parser.error("no source files or directories specified")
 
-    ignore_files = common.ignorer(options.ignore_files)
-    ignore_mods = common.ignorer(options.ignore_mods)
-
-    options.paths = args
+    ignore_files = common.ignorer(parse_result.ignore_files)
+    ignore_mods = common.ignorer(parse_result.ignore_mods)
 
     logging.basicConfig(format="%(message)s")
-    if options.debug:
+    if parse_result.debug:
         level = logging.DEBUG
-    elif options.verbose:
+    elif parse_result.verbose:
         level = logging.INFO
     else:
         level = logging.WARN
@@ -194,8 +193,8 @@ def main(arguments: Optional[List[str]] = None) -> None:
     log.info(version_info())
 
     missing = find_missing_reqs(
-        requirements_filename=options.requirements_filename,
-        paths=options.paths,
+        requirements_filename=parse_result.requirements_filename,
+        paths=parse_result.paths,
         ignore_files_function=ignore_files,
         ignore_modules_function=ignore_mods,
     )
