@@ -6,7 +6,7 @@ import logging
 import os
 import textwrap
 from pathlib import Path
-from typing import Any, Set
+from typing import Set
 
 import pretend
 import pytest
@@ -104,7 +104,7 @@ def test_main_failure(
     )
 
 
-def test_main_no_spec(capsys: pytest.CaptureFixture[Any]) -> None:
+def test_main_no_spec(capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit) as excinfo:
         find_missing_reqs.main(arguments=[])
 
@@ -151,9 +151,7 @@ def test_logging_config(
     assert log_levels == expected_log_levels
 
 
-def test_main_version(
-    capsys: pytest.CaptureFixture[Any],
-) -> None:
+def test_main_version(capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit):
         find_missing_reqs.main(arguments=["--version"])
 
