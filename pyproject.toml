@@ -94,14 +94,6 @@ line-length = 79
 
 strict = true
 
-[[tool.mypy.overrides]]
-
-module = [
-    "pretend",
-]
-
-ignore_missing_imports = true
-
 [tool.isort]
 
 multi_line_output = 3

@@ -2,7 +2,6 @@ black
 flake8
 isort
 mypy
-pretend
 pyenchant
 pylint
 pytest

@@ -7,7 +7,7 @@ import textwrap
 from pathlib import Path
 from typing import Any, Set
 
-import pretend
+import black
 import pytest
 
 from pip_check_reqs import common, find_extra_reqs
@@ -15,7 +15,7 @@ from pip_check_reqs import common, find_extra_reqs
 
 def test_find_extra_reqs(tmp_path: Path) -> None:
     installed_not_imported_required_package = pytest
-    installed_imported_required_package = pretend
+    installed_imported_required_package = black
 
     fake_requirements_file = tmp_path / "requirements.txt"
     fake_requirements_file.write_text(
