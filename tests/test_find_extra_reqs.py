@@ -175,36 +175,10 @@ def test_logging_config(
     verbose_cfg: bool,
     debug_cfg: bool,
     result: List[str],
+    tmp_path: Path,
 ) -> None:
-    class Options:
-        """Options from the command line."""
-
-        requirements_filename = ""
-        paths = ["dummy"]
-        verbose = verbose_cfg
-        debug = debug_cfg
-        version = False
-        ignore_files: List[str] = []
-        ignore_mods: List[str] = []
-        ignore_reqs: List[str] = []
-        skip_incompatible = False
-
-    given_options = Options()
-
-    class _FakeOptParse:
-        def __init__(self, usage: str) -> None:
-            pass
-
-        def add_option(self, *args: Any, **kw: Any) -> None:
-            pass
-
-        @staticmethod
-        def parse_args(
-            arguments: Optional[List[str]], # pylint: disable=unused-argument
-        ) -> Tuple[Options, List[str]]:
-            return (given_options, ["ham.py"])
-
-    monkeypatch.setattr(optparse, "OptionParser", _FakeOptParse)
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
 
     def fake_find_extra_reqs(
         requirements_filename: str,  # pylint: disable=unused-argument
@@ -227,7 +201,13 @@ def test_logging_config(
         "find_extra_reqs",
         fake_find_extra_reqs,
     )
-    find_extra_reqs.main()
+    arguments = [str(source_dir)]
+    if verbose_cfg:
+        arguments.append("--verbose")
+    if debug_cfg:
+        arguments.append("--debug")
+
+    find_extra_reqs.main(arguments=arguments)
 
     for event in [
         (logging.DEBUG, "debug"),
