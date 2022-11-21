@@ -42,7 +42,10 @@ def fixture_fake_opts() -> Any:
         def add_option(self, *args: Any, **kw: Any) -> None:
             pass
 
-        def parse_args(self, arguments: Optional[List[str]]) -> Tuple[Options, List[str]]:
+        def parse_args(
+            self,
+            arguments: Optional[List[str]],  # pylint: disable=unused-argument
+        ) -> Tuple[Options, List[str]]:
             return (self.given_options, self.args)
 
     return _FakeOptParse
@@ -119,42 +122,24 @@ def test_find_extra_reqs(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
 
 
 def test_main_failure(
-    monkeypatch: MonkeyPatch, caplog: pytest.LogCaptureFixture, fake_opts: Any
+    caplog: pytest.LogCaptureFixture,
+    tmp_path: Path,
 ) -> None:
-    monkeypatch.setattr(optparse, "OptionParser", fake_opts)
+    requirements_file = tmp_path / "requirements.txt"
+    requirements_file.write_text("extra")
+
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
 
     caplog.set_level(logging.WARN)
 
-    def fake_find_extra_reqs(
-        requirements_filename: str,  # pylint: disable=unused-argument
-        paths: Iterable[str],  # pylint: disable=unused-argument
-        ignore_files_function: Callable[  # pylint: disable=unused-argument
-            [str], bool
-        ],
-        ignore_modules_function: Callable[  # pylint: disable=unused-argument
-            [str], bool
-        ],
-        ignore_requirements_function: Callable[  # noqa: E501 pylint: disable=unused-argument
-            [Union[str, ParsedRequirement]],
-            bool,
-        ],
-        skip_incompatible: bool,  # pylint: disable=unused-argument
-    ) -> List[str]:
-        return ["extra"]
-
-    monkeypatch.setattr(
-        find_extra_reqs,
-        "find_extra_reqs",
-        fake_find_extra_reqs,
-    )
-
     with pytest.raises(SystemExit) as excinfo:
-        find_extra_reqs.main()
+        find_extra_reqs.main(arguments=["--requirements", str(requirements_file), str(source_dir)])
 
     assert excinfo.value.code == 1
 
     assert caplog.records[0].message == "Extra requirements:"
-    assert caplog.records[1].message == "extra in requirements.txt"
+    assert caplog.records[1].message == f"extra in {requirements_file}"
 
 
 def test_main_no_spec(monkeypatch: MonkeyPatch, fake_opts: Any) -> None:
@@ -214,7 +199,9 @@ def test_logging_config(
             pass
 
         @staticmethod
-        def parse_args(arguments: Optional[List[str]]) -> Tuple[Options, List[str]]:
+        def parse_args(
+            arguments: Optional[List[str]], # pylint: disable=unused-argument
+        ) -> Tuple[Options, List[str]]:
             return (given_options, ["ham.py"])
 
     monkeypatch.setattr(optparse, "OptionParser", _FakeOptParse)
@@ -257,10 +244,7 @@ def test_logging_config(
         assert messages == result
 
 
-def test_main_version(
-    capsys: pytest.CaptureFixture[Any],
-    fake_opts: Any,
-) -> None:
+def test_main_version(capsys: pytest.CaptureFixture[Any]) -> None:
     with pytest.raises(SystemExit):
         find_extra_reqs.main(arguments=["--version"])
 
