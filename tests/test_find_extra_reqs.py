@@ -2,11 +2,10 @@
 
 from __future__ import absolute_import
 
-import importlib
 import logging
-from dataclasses import dataclass
+import textwrap
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, Union
+from typing import Any, Callable, Iterable, List, Union
 
 import pretend
 import pytest
@@ -16,74 +15,48 @@ from pytest import MonkeyPatch
 from pip_check_reqs import common, find_extra_reqs
 
 
-def test_find_extra_reqs(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
-    imported_modules = dict(
-        spam=common.FoundModule("spam", "site-spam/spam.py", [("ham.py", 1)]),
-        shrub=common.FoundModule(
-            "shrub", "site-spam/shrub.py", [("ham.py", 3)]
-        ),
-        ignore=common.FoundModule("ignore", "ignore.py", [("ham.py", 2)]),
-    )
-
-    def fake_find_imported_modules(
-        paths: Iterable[str],  # pylint: disable=unused-argument
-        ignore_files_function: Callable[  # pylint: disable=unused-argument
-            [str], bool
-        ],
-        ignore_modules_function: Callable[  # pylint: disable=unused-argument
-            [str], bool
-        ],
-    ) -> Dict[str, common.FoundModule]:
-        return imported_modules
-
-    monkeypatch.setattr(
-        common,
-        "find_imported_modules",
-        pretend.call_recorder(fake_find_imported_modules),
-    )
-
-    @dataclass
-    class _FakePathDistribution:
-        metadata: Dict[str, str]
-        name: Optional[str] = None
-
-    installed_distributions = map(
-        _FakePathDistribution,
-        [{"Name": "spam"}, {"Name": "pass"}],
-    )
-    monkeypatch.setattr(
-        importlib.metadata,
-        "distributions",
-        pretend.call_recorder(lambda **kwargs: installed_distributions),
-    )
-    packages_info = [
-        dict(
-            name="spam",
-            location="site-spam",
-            files=["spam/__init__.py", "spam/shrub.py"],
-        ),
-        dict(name="shrub", location="site-spam", files=["shrub.py"]),
-        dict(name="pass", location="site-spam", files=["pass.py"]),
-    ]
-
-    monkeypatch.setattr(
-        find_extra_reqs,
-        "search_packages_info",
-        pretend.call_recorder(lambda x: packages_info),
-    )
+def test_find_extra_reqs(tmp_path: Path) -> None:
+    installed_not_imported_required_package = pytest
+    installed_imported_required_package = pretend
 
     fake_requirements_file = tmp_path / "requirements.txt"
-    fake_requirements_file.write_text("foobar==1")
+    fake_requirements_file.write_text(
+        textwrap.dedent(
+            f"""\
+            not_installed_package_12345==1
+            {installed_imported_required_package.__name__}
+            {installed_not_imported_required_package.__name__}
+            """
+        ),
+    )
+
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+
+    source_file = source_dir / "source.py"
+    source_file.write_text(
+        textwrap.dedent(
+            f"""\
+            import pprint
+
+            import {installed_imported_required_package.__name__}
+            """
+        ),
+    )
 
     result = find_extra_reqs.find_extra_reqs(
         requirements_filename=str(fake_requirements_file),
-        paths=[],
+        paths=[str(source_dir)],
         ignore_files_function=common.ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
         ignore_requirements_function=common.ignorer(ignore_cfg=[]),
         skip_incompatible=False,
     )
-    assert result == ["foobar"]
+    expected_result = [
+        "not-installed-package-12345",
+        installed_not_imported_required_package.__name__,
+    ]
+    assert sorted(result) == sorted(expected_result)
 
 
 def test_main_failure(
