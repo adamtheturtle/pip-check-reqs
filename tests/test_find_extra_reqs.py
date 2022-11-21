@@ -7,7 +7,7 @@ import logging
 import optparse
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 import pretend
 import pytest
@@ -15,40 +15,6 @@ from pip._internal.req.req_file import ParsedRequirement
 from pytest import MonkeyPatch
 
 from pip_check_reqs import common, find_extra_reqs
-
-
-@pytest.fixture(name="fake_opts")
-def fixture_fake_opts() -> Any:
-    class _FakeOptParse:
-        class Options:
-            """Options from the command line."""
-
-            requirements_filename = "requirements.txt"
-            paths = ["dummy"]
-            verbose = False
-            debug = False
-            version = False
-            ignore_files: List[str] = []
-            ignore_mods: List[str] = []
-            ignore_reqs: List[str] = []
-            skip_incompatible = False
-
-        given_options = Options()
-        args = ["ham.py"]
-
-        def __init__(self, usage: str) -> None:
-            pass
-
-        def add_option(self, *args: Any, **kw: Any) -> None:
-            pass
-
-        def parse_args(
-            self,
-            arguments: Optional[List[str]],  # pylint: disable=unused-argument
-        ) -> Tuple[Options, List[str]]:
-            return (self.given_options, self.args)
-
-    return _FakeOptParse
 
 
 def test_find_extra_reqs(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
@@ -134,7 +100,13 @@ def test_main_failure(
     caplog.set_level(logging.WARN)
 
     with pytest.raises(SystemExit) as excinfo:
-        find_extra_reqs.main(arguments=["--requirements", str(requirements_file), str(source_dir)])
+        find_extra_reqs.main(
+            arguments=[
+                "--requirements",
+                str(requirements_file),
+                str(source_dir),
+            ],
+        )
 
     assert excinfo.value.code == 1
 
@@ -142,22 +114,20 @@ def test_main_failure(
     assert caplog.records[1].message == f"extra in {requirements_file}"
 
 
-def test_main_no_spec(monkeypatch: MonkeyPatch, fake_opts: Any) -> None:
-    fake_opts.args = []
-    monkeypatch.setattr(optparse, "OptionParser", fake_opts)
+def test_main_no_spec(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(
-        fake_opts,
+        optparse.OptionParser,
         "error",
         pretend.call_recorder(lambda s, e: None),
         raising=False,
     )
 
     with pytest.raises(SystemExit) as excinfo:
-        find_extra_reqs.main()
+        find_extra_reqs.main(arguments=[])
 
     assert excinfo.value.code == 2
 
-    assert fake_opts.error.calls
+    assert optparse.OptionParser.error.calls  # pylint: disable=no-member
 
 
 @pytest.mark.parametrize(
