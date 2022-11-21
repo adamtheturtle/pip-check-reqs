@@ -7,7 +7,7 @@ import optparse
 import os
 import pathlib
 import sys
-from typing import Callable, Iterable, List, Union
+from typing import Callable, Iterable, List, Optional, Union
 
 from packaging.utils import canonicalize_name
 from pip._internal.commands.show import search_packages_info
@@ -110,7 +110,8 @@ def find_extra_reqs(
     return [name for name in explicit if name not in used]
 
 
-def main() -> None:
+def main(arguments: Optional[List[str]] = None) -> None:
+    """Main entry point."""
     usage = "usage: %prog [options] files or directories"
     parser = optparse.OptionParser(usage)
     parser.add_option(
@@ -178,7 +179,7 @@ def main() -> None:
         help="display version information",
     )
 
-    (options, args) = parser.parse_args()
+    (options, args) = parser.parse_args(arguments)
 
     if options.version:
         print(version_info())

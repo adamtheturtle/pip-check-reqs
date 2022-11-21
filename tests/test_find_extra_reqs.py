@@ -42,7 +42,7 @@ def fixture_fake_opts() -> Any:
         def add_option(self, *args: Any, **kw: Any) -> None:
             pass
 
-        def parse_args(self) -> Tuple[Options, List[str]]:
+        def parse_args(self, arguments: Optional[List[str]]) -> Tuple[Options, List[str]]:
             return (self.given_options, self.args)
 
     return _FakeOptParse
@@ -214,7 +214,7 @@ def test_logging_config(
             pass
 
         @staticmethod
-        def parse_args() -> Tuple[Options, List[str]]:
+        def parse_args(arguments: Optional[List[str]]) -> Tuple[Options, List[str]]:
             return (given_options, ["ham.py"])
 
     monkeypatch.setattr(optparse, "OptionParser", _FakeOptParse)
@@ -258,14 +258,10 @@ def test_logging_config(
 
 
 def test_main_version(
-    monkeypatch: MonkeyPatch,
     capsys: pytest.CaptureFixture[Any],
     fake_opts: Any,
 ) -> None:
-    fake_opts.Options.version = True
-    monkeypatch.setattr(optparse, "OptionParser", fake_opts)
-
     with pytest.raises(SystemExit):
-        find_extra_reqs.main()
+        find_extra_reqs.main(arguments=["--version"])
 
     assert capsys.readouterr().out == common.version_info() + "\n"
