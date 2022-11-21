@@ -4,7 +4,6 @@ from __future__ import absolute_import
 
 import importlib
 import logging
-import optparse
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Union
@@ -114,20 +113,13 @@ def test_main_failure(
     assert caplog.records[1].message == f"extra in {requirements_file}"
 
 
-def test_main_no_spec(monkeypatch: MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        optparse.OptionParser,
-        "error",
-        pretend.call_recorder(lambda s, e: None),
-        raising=False,
-    )
-
+def test_main_no_spec(capsys: pytest.CaptureFixture[Any]) -> None:
     with pytest.raises(SystemExit) as excinfo:
         find_extra_reqs.main(arguments=[])
 
     assert excinfo.value.code == 2
-
-    assert optparse.OptionParser.error.calls  # pylint: disable=no-member
+    err = capsys.readouterr().err
+    assert err.endswith("error: no source files or directories specified\n")
 
 
 @pytest.mark.parametrize(
