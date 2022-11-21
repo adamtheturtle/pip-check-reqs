@@ -7,7 +7,7 @@ import optparse
 import os
 import pathlib
 import sys
-from typing import Callable, Iterable, List, Tuple
+from typing import Callable, Iterable, List, Optional, Tuple
 
 from packaging.utils import NormalizedName, canonicalize_name
 from pip._internal.commands.show import search_packages_info
@@ -115,7 +115,7 @@ def find_missing_reqs(
     return result
 
 
-def main() -> None:
+def main(arguments: Optional[List[str]] = None) -> None:
     usage = "usage: %prog [options] files or directories"
     parser = optparse.OptionParser(usage)
     parser.add_option(
@@ -167,7 +167,7 @@ def main() -> None:
         help="display version information",
     )
 
-    (options, args) = parser.parse_args()
+    (options, args) = parser.parse_args(arguments)
 
     if options.version:
         print(version_info())
@@ -175,7 +175,6 @@ def main() -> None:
 
     if not args:
         parser.error("no source files or directories specified")
-        sys.exit(2)
 
     ignore_files = common.ignorer(options.ignore_files)
     ignore_mods = common.ignorer(options.ignore_mods)

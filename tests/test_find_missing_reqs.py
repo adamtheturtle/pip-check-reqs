@@ -4,7 +4,7 @@ from __future__ import absolute_import
 
 import importlib
 import logging
-import optparse
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
@@ -14,36 +14,6 @@ import pytest
 from pytest import MonkeyPatch
 
 from pip_check_reqs import common, find_missing_reqs
-
-
-@pytest.fixture(name="fake_opts")
-def fixture_fake_opts() -> Any:
-    class _FakeOptParse:
-        class Options:
-            """Options from the command line."""
-
-            requirements_filename = ""
-            paths = ["dummy"]
-            verbose = False
-            debug = False
-            version = False
-            ignore_files: List[str] = []
-            ignore_mods: List[str] = []
-            ignore_reqs: List[str] = []
-
-        given_options = Options()
-        args = ["ham.py"]
-
-        def __init__(self, usage: str) -> None:
-            pass
-
-        def add_option(self, *args: Any, **kw: Any) -> None:
-            pass
-
-        def parse_args(self) -> Tuple[Options, List[str]]:
-            return (self.given_options, self.args)
-
-    return _FakeOptParse
 
 
 def test_find_missing_reqs(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
@@ -115,69 +85,48 @@ def test_find_missing_reqs(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
 
 
 def test_main_failure(
-    monkeypatch: MonkeyPatch, caplog: pytest.LogCaptureFixture, fake_opts: Any
+    caplog: pytest.LogCaptureFixture,
+    tmp_path: Path,
 ) -> None:
-    monkeypatch.setattr(optparse, "OptionParser", fake_opts)
+    requirements_file = tmp_path / "requirements.txt"
+    requirements_file.touch()
+
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+
+    source_file = source_dir / "source.py"
+    # We need to import something which is installed.
+    # We choose `pytest` because we know it is installed.
+    source_file.write_text("import pytest")
 
     caplog.set_level(logging.WARN)
 
-    def fake_find_missing_reqs(
-        requirements_filename: str,  # pylint: disable=unused-argument
-        paths: Iterable[str],  # pylint: disable=unused-argument
-        ignore_files_function: Callable[  # pylint: disable=unused-argument
-            [str], bool
-        ],
-        ignore_modules_function: Callable[  # pylint: disable=unused-argument
-            [str], bool
-        ],
-    ) -> List[Tuple[str, List[common.FoundModule]]]:
-        return [
-            (
-                "missing",
-                [
-                    common.FoundModule(
-                        "missing",
-                        "missing.py",
-                        [("location.py", 1)],
-                    )
-                ],
-            )
-        ]
-
-    monkeypatch.setattr(
-        find_missing_reqs,
-        "find_missing_reqs",
-        fake_find_missing_reqs,
-    )
-
     with pytest.raises(SystemExit) as excinfo:
-        find_missing_reqs.main()
+        find_missing_reqs.main(
+            arguments=[
+                "--requirements",
+                str(requirements_file),
+                str(source_dir),
+            ],
+        )
 
     assert excinfo.value.code == 1
 
     assert caplog.records[0].message == "Missing requirements:"
+    relative_source_file = os.path.relpath(source_file, os.getcwd())
     assert (
         caplog.records[1].message
-        == "location.py:1 dist=missing module=missing"
+        == f"{relative_source_file}:1 dist=pytest module=pytest"
     )
 
 
-def test_main_no_spec(monkeypatch: MonkeyPatch, fake_opts: Any) -> None:
-    fake_opts.args = []
-    monkeypatch.setattr(optparse, "OptionParser", fake_opts)
-    monkeypatch.setattr(
-        fake_opts,
-        "error",
-        pretend.call_recorder(lambda s, e: None),
-        raising=False,
-    )
-
+def test_main_no_spec(capsys: pytest.CaptureFixture[Any]) -> None:
     with pytest.raises(SystemExit) as excinfo:
-        find_missing_reqs.main()
+        find_missing_reqs.main(arguments=[])
 
     assert excinfo.value.code == 2
-
-    assert fake_opts.error.calls
+    err = capsys.readouterr().err
+    assert err.endswith("error: no source files or directories specified\n")
 
 
 @pytest.mark.parametrize(
@@ -195,32 +144,10 @@ def test_logging_config(
     verbose_cfg: bool,
     debug_cfg: bool,
     result: List[str],
+    tmp_path: Path,
 ) -> None:
-    class Options:
-        """Options from the command line."""
-
-        requirements_filename = ""
-        paths = ["dummy"]
-        verbose = verbose_cfg
-        debug = debug_cfg
-        version = False
-        ignore_files: List[str] = []
-        ignore_mods: List[str] = []
-
-    given_options = Options()
-
-    class _FakeOptParse:
-        def __init__(self, usage: str) -> None:
-            pass
-
-        def add_option(self, *args: Any, **kw: Any) -> None:
-            pass
-
-        @staticmethod
-        def parse_args() -> Tuple[Options, List[str]]:
-            return (given_options, ["ham.py"])
-
-    monkeypatch.setattr(optparse, "OptionParser", _FakeOptParse)
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
 
     def fake_find_missing_reqs(
         requirements_filename: str,  # pylint: disable=unused-argument
@@ -239,7 +166,13 @@ def test_logging_config(
         "find_missing_reqs",
         fake_find_missing_reqs,
     )
-    find_missing_reqs.main()
+    arguments = [str(source_dir)]
+    if verbose_cfg:
+        arguments.append("--verbose")
+    if debug_cfg:
+        arguments.append("--debug")
+
+    find_missing_reqs.main(arguments=arguments)
 
     for event in [
         (logging.DEBUG, "debug"),
@@ -257,14 +190,9 @@ def test_logging_config(
 
 
 def test_main_version(
-    monkeypatch: MonkeyPatch,
     capsys: pytest.CaptureFixture[Any],
-    fake_opts: Any,
 ) -> None:
-    fake_opts.Options.version = True
-    monkeypatch.setattr(optparse, "OptionParser", fake_opts)
-
     with pytest.raises(SystemExit):
-        find_missing_reqs.main()
+        find_missing_reqs.main(arguments=["--version"])
 
     assert capsys.readouterr().out == common.version_info() + "\n"
