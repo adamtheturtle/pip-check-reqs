@@ -187,7 +187,6 @@ def main(arguments: Optional[List[str]] = None) -> None:
 
     if not args:
         parser.error("no source files or directories specified")
-        sys.exit(2)
 
     ignore_files = common.ignorer(options.ignore_files)
     ignore_mods = common.ignorer(options.ignore_mods)
