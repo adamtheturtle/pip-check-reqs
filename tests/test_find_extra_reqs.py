@@ -43,7 +43,7 @@ def test_find_extra_reqs(tmp_path: Path) -> None:
 
     result = find_extra_reqs.find_extra_reqs(
         requirements_filename=str(fake_requirements_file),
-        paths=[str(source_dir)],
+        paths=[source_dir],
         ignore_files_function=common.ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
         ignore_requirements_function=common.ignorer(ignore_cfg=[]),

@@ -136,13 +136,13 @@ def pyfiles(root: Path) -> Generator[str, None, None]:
 
 
 def find_imported_modules(
-    paths: Iterable[str],
+    paths: Iterable[Path],
     ignore_files_function: Callable[[str], bool],
     ignore_modules_function: Callable[[str], bool],
 ) -> Dict[str, FoundModule]:
     vis = _ImportVisitor(ignore_modules_function=ignore_modules_function)
     for path in paths:
-        for filename in pyfiles(Path(path)):
+        for filename in pyfiles(path):
             if ignore_files_function(filename):
                 log.info("ignoring: %s", os.path.relpath(filename))
                 continue

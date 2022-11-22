@@ -5,8 +5,8 @@ import collections
 import importlib.metadata
 import logging
 import os
-import pathlib
 import sys
+from pathlib import Path
 from typing import Callable, Iterable, List, Optional, Tuple
 
 from packaging.utils import NormalizedName, canonicalize_name
@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 
 def find_missing_reqs(
     requirements_filename: str,
-    paths: Iterable[str],
+    paths: Iterable[Path],
     ignore_files_function: Callable[[str], bool],
     ignore_modules_function: Callable[[str], bool],
 ) -> List[Tuple[NormalizedName, List[FoundModule]]]:
@@ -46,8 +46,8 @@ def find_missing_reqs(
         package_location = package.location
         package_files = []
         for item in package.files or []:
-            here = pathlib.Path(".").resolve()
-            item_location_rel = pathlib.Path(package_location) / item
+            here = Path(".").resolve()
+            item_location_rel = Path(package_location) / item
             item_location = item_location_rel.resolve()
             try:
                 relative_item_location = item_location.relative_to(here)
@@ -113,7 +113,7 @@ def find_missing_reqs(
 def main(arguments: Optional[List[str]] = None) -> None:
     usage = "usage: %prog [options] files or directories"
     parser = argparse.ArgumentParser(usage)
-    parser.add_argument("paths", nargs="*")
+    parser.add_argument("paths", type=Path, nargs="*")
     parser.add_argument(
         "--requirements-file",
         dest="requirements_filename",

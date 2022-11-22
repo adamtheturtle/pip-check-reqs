@@ -156,7 +156,7 @@ def test_find_imported_modules(
         return False
 
     result = common.find_imported_modules(
-        paths=[str(root)],
+        paths=[root],
         ignore_files_function=ignore_files,
         ignore_modules_function=ignore_mods,
     )
@@ -241,7 +241,7 @@ def test_find_imported_modules_sets_encoding_to_utf8_when_reading(
 
     monkeypatch.setattr(builtins, "open", mocked_open)
     common.find_imported_modules(
-        paths=[str(tmp_path)],
+        paths=[tmp_path],
         ignore_files_function=common.ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
