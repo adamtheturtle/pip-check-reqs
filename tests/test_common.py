@@ -204,7 +204,7 @@ def test_find_required_modules(tmp_path: Path) -> None:
     reqs = common.find_required_modules(
         ignore_requirements_function=common.ignorer(ignore_cfg=["barfoo"]),
         skip_incompatible=False,
-        requirements_filename=str(fake_requirements_file),
+        requirements_filename=fake_requirements_file,
     )
     assert reqs == {"foobar"}
 
@@ -218,7 +218,7 @@ def test_find_required_modules_env_markers(tmp_path: Path) -> None:
     reqs = common.find_required_modules(
         ignore_requirements_function=common.ignorer(ignore_cfg=[]),
         skip_incompatible=True,
-        requirements_filename=str(fake_requirements_file),
+        requirements_filename=fake_requirements_file,
     )
     assert reqs == {"ham", "eggs"}
 

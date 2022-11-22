@@ -159,11 +159,11 @@ def find_required_modules(
         [Union[str, ParsedRequirement]], bool
     ],
     skip_incompatible: bool,
-    requirements_filename: str,
+    requirements_filename: Path,
 ) -> Set[NormalizedName]:
     explicit = set()
     for requirement in parse_requirements(
-        requirements_filename, session=PipSession()
+        str(requirements_filename), session=PipSession()
     ):
         requirement_name = install_req_from_line(
             requirement.requirement,

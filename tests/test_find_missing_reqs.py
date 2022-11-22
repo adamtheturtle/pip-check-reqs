@@ -43,7 +43,7 @@ def test_find_missing_reqs(tmp_path: Path) -> None:
     )
 
     result = find_missing_reqs.find_missing_reqs(
-        requirements_filename=str(fake_requirements_file),
+        requirements_filename=fake_requirements_file,
         paths=[source_dir],
         ignore_files_function=common.ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
