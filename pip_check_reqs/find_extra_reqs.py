@@ -5,8 +5,8 @@ import collections
 import importlib.metadata
 import logging
 import os
-import pathlib
 import sys
+from pathlib import Path
 from typing import Callable, Iterable, List, Optional, Union
 
 from packaging.utils import canonicalize_name
@@ -20,8 +20,8 @@ log = logging.getLogger(__name__)
 
 
 def find_extra_reqs(
-    requirements_filename: str,
-    paths: Iterable[str],
+    requirements_filename: Path,
+    paths: Iterable[Path],
     ignore_files_function: Callable[[str], bool],
     ignore_modules_function: Callable[[str], bool],
     ignore_requirements_function: Callable[
@@ -48,8 +48,8 @@ def find_extra_reqs(
         package_location = package.location
         package_files = []
         for item in package.files or []:
-            here = pathlib.Path(".").resolve()
-            item_location_rel = pathlib.Path(package_location) / item
+            here = Path(".").resolve()
+            item_location_rel = Path(package_location) / item
             item_location = item_location_rel.resolve()
             try:
                 relative_item_location = item_location.relative_to(here)
@@ -109,12 +109,13 @@ def main(arguments: Optional[List[str]] = None) -> None:
     """Main entry point."""
     usage = "usage: %prog [options] files or directories"
     parser = argparse.ArgumentParser(usage)
-    parser.add_argument("paths", nargs="*")
+    parser.add_argument("paths", type=Path, nargs="*")
     parser.add_argument(
         "--requirements-file",
         dest="requirements_filename",
+        type=Path,
         metavar="PATH",
-        default="requirements.txt",
+        default=Path("requirements.txt"),
         help="path to the requirements file "
         '(defaults to "requirements.txt")',
     )

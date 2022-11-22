@@ -36,7 +36,7 @@ def test_is_package_file(path: str, result: str) -> None:
 def test_found_module() -> None:
     found_module = common.FoundModule("spam", "ham")
     assert found_module.modname == "spam"
-    assert found_module.filename == os.path.realpath("ham")
+    assert found_module.filename == str(Path("ham").resolve())
     assert found_module.locations == []
 
 
@@ -66,7 +66,7 @@ def test_import_visitor(stmt: str, result: List[str]) -> None:
 def test_pyfiles_file(tmp_path: Path) -> None:
     python_file = tmp_path / "example.py"
     python_file.touch()
-    assert list(common.pyfiles(root=str(python_file))) == [str(python_file)]
+    assert list(common.pyfiles(root=python_file)) == [str(python_file)]
 
 
 def test_pyfiles_file_no_dice(tmp_path: Path) -> None:
@@ -74,7 +74,7 @@ def test_pyfiles_file_no_dice(tmp_path: Path) -> None:
     not_python_file.touch()
 
     with pytest.raises(ValueError):
-        list(common.pyfiles(root=str(not_python_file)))
+        list(common.pyfiles(root=not_python_file))
 
 
 def test_pyfiles_package(tmp_path: Path) -> None:
@@ -88,7 +88,7 @@ def test_pyfiles_package(tmp_path: Path) -> None:
 
     not_python_file.touch()
 
-    assert list(common.pyfiles(root=str(tmp_path))) == [
+    assert list(common.pyfiles(root=tmp_path)) == [
         str(python_file),
         str(nested_python_file),
     ]
@@ -156,7 +156,7 @@ def test_find_imported_modules(
         return False
 
     result = common.find_imported_modules(
-        paths=[str(root)],
+        paths=[root],
         ignore_files_function=ignore_files,
         ignore_modules_function=ignore_mods,
     )
@@ -204,7 +204,7 @@ def test_find_required_modules(tmp_path: Path) -> None:
     reqs = common.find_required_modules(
         ignore_requirements_function=common.ignorer(ignore_cfg=["barfoo"]),
         skip_incompatible=False,
-        requirements_filename=str(fake_requirements_file),
+        requirements_filename=fake_requirements_file,
     )
     assert reqs == {"foobar"}
 
@@ -218,7 +218,7 @@ def test_find_required_modules_env_markers(tmp_path: Path) -> None:
     reqs = common.find_required_modules(
         ignore_requirements_function=common.ignorer(ignore_cfg=[]),
         skip_incompatible=True,
-        requirements_filename=str(fake_requirements_file),
+        requirements_filename=fake_requirements_file,
     )
     assert reqs == {"ham", "eggs"}
 
@@ -241,7 +241,7 @@ def test_find_imported_modules_sets_encoding_to_utf8_when_reading(
 
     monkeypatch.setattr(builtins, "open", mocked_open)
     common.find_imported_modules(
-        paths=[str(tmp_path)],
+        paths=[tmp_path],
         ignore_files_function=common.ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
