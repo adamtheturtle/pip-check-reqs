@@ -1,6 +1,5 @@
 """Tests for `common.py`."""
 
-from __future__ import absolute_import
 
 import ast
 import builtins
@@ -207,7 +206,7 @@ def test_find_required_modules(tmp_path: Path) -> None:
         skip_incompatible=False,
         requirements_filename=str(fake_requirements_file),
     )
-    assert reqs == set(["foobar"])
+    assert reqs == {"foobar"}
 
 
 def test_find_required_modules_env_markers(tmp_path: Path) -> None:
