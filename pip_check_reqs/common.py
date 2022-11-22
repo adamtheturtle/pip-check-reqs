@@ -95,7 +95,7 @@ class _ImportVisitor(ast.NodeVisitor):
             progress.append(modname_part)
 
             # we might have previously seen a useful path though...
-            if modpath is None:  # pragma: no cover
+            if modpath is None:
                 # the `sys` module will hit this code path, and `os` will on
                 # 3.11+.
                 # Possibly others will, but I've not discovered them.
