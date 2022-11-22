@@ -66,7 +66,7 @@ def test_import_visitor(stmt: str, result: List[str]) -> None:
 def test_pyfiles_file(tmp_path: Path) -> None:
     python_file = tmp_path / "example.py"
     python_file.touch()
-    assert list(common.pyfiles(root=python_file)) == [str(python_file)]
+    assert list(common.pyfiles(root=python_file)) == [python_file]
 
 
 def test_pyfiles_file_no_dice(tmp_path: Path) -> None:
@@ -89,8 +89,8 @@ def test_pyfiles_package(tmp_path: Path) -> None:
     not_python_file.touch()
 
     assert list(common.pyfiles(root=tmp_path)) == [
-        str(python_file),
-        str(nested_python_file),
+        python_file,
+        nested_python_file,
     ]
 
 
