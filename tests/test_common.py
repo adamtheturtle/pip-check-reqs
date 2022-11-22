@@ -36,7 +36,7 @@ def test_is_package_file(path: str, result: str) -> None:
 def test_found_module() -> None:
     found_module = common.FoundModule("spam", "ham")
     assert found_module.modname == "spam"
-    assert found_module.filename == os.path.realpath("ham")
+    assert found_module.filename == str(Path("ham").resolve())
     assert found_module.locations == []
 
 
