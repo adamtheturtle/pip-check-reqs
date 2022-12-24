@@ -8,6 +8,7 @@ import os
 import sys
 from pathlib import Path
 from typing import Callable, Iterable, List, Optional, Tuple
+from unittest import mock
 
 from packaging.utils import NormalizedName, canonicalize_name
 from pip._internal.commands.show import search_packages_info
@@ -41,7 +42,13 @@ def find_missing_reqs(
         dist.metadata["Name"] for dist in importlib.metadata.distributions()
     ]
 
-    for package in search_packages_info(all_pkgs):
+    # On Python 3.11 (and maybe higher), setting this environment variable
+    # dramatically improves speeds.
+    # See https://github.com/r1chardj0n3s/pip-check-reqs/issues/123.
+    with mock.patch.dict(os.environ, {"_PIP_USE_IMPORTLIB_METADATA": "False"}):
+        packages_info = list(search_packages_info(all_pkgs))
+
+    for package in packages_info:
         package_name = package.name
         package_location = package.location
         package_files = []

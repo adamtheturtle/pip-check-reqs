@@ -2,6 +2,10 @@
 Release History
 ---------------
 
+2.4.3
+
+- Improves performance on Python 3.11.
+
 2.4.2
 
 - Added support for Python 3.11.
