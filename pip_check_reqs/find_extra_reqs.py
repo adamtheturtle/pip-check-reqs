@@ -25,6 +25,7 @@ log = logging.getLogger(__name__)
 
 
 def find_extra_reqs(
+    *,
     requirements_filename: Path,
     paths: Iterable[Path],
     ignore_files_function: Callable[[str], bool],

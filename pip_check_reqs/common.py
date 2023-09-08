@@ -1,6 +1,8 @@
 
 """Common functions."""
 
+from __future__ import annotations
+
 import ast
 import fnmatch
 import imp
@@ -12,14 +14,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import (
     Callable,
-    Dict,
     Generator,
     Iterable,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Union,
 )
 
 from packaging.markers import Marker
@@ -39,7 +35,7 @@ class FoundModule:
 
     modname: str
     filename: str
-    locations: List[Tuple[str, int]] = field(default_factory=list)
+    locations: list[tuple[str, int]] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         self.filename = os.path.realpath(self.filename)
@@ -49,8 +45,8 @@ class _ImportVisitor(ast.NodeVisitor):
     def __init__(self, ignore_modules_function: Callable[[str], bool]) -> None:
         super().__init__()
         self._ignore_modules_function = ignore_modules_function
-        self._modules: Dict[str, FoundModule] = {}
-        self._location: Optional[str] = None
+        self._modules: dict[str, FoundModule] = {}
+        self._location: str | None = None
 
     def set_location(self, location: str) -> None:
         self._location = location
@@ -120,7 +116,7 @@ class _ImportVisitor(ast.NodeVisitor):
         assert isinstance(self._location, str)
         self._modules[modname].locations.append((self._location, lineno))
 
-    def finalise(self) -> Dict[str, FoundModule]:
+    def finalise(self) -> dict[str, FoundModule]:
         return self._modules
 
 
@@ -140,7 +136,7 @@ def find_imported_modules(
     paths: Iterable[Path],
     ignore_files_function: Callable[[str], bool],
     ignore_modules_function: Callable[[str], bool],
-) -> Dict[str, FoundModule]:
+) -> dict[str, FoundModule]:
     vis = _ImportVisitor(ignore_modules_function=ignore_modules_function)
     for path in paths:
         for filename in pyfiles(path):
@@ -157,11 +153,11 @@ def find_imported_modules(
 
 def find_required_modules(
     ignore_requirements_function: Callable[
-        [Union[str, ParsedRequirement]], bool,
+        [str | ParsedRequirement], bool,
     ],
     skip_incompatible: bool,
     requirements_filename: Path,
-) -> Set[NormalizedName]:
+) -> set[NormalizedName]:
     explicit = set()
     for requirement in parse_requirements(
         str(requirements_filename), session=PipSession(),
@@ -212,13 +208,13 @@ def is_package_file(path: str) -> str:
     return ""
 
 
-def ignorer(ignore_cfg: List[str]) -> Callable[..., bool]:
+def ignorer(ignore_cfg: list[str]) -> Callable[..., bool]:
     if not ignore_cfg:
         return lambda candidate: False
 
     def ignorer_function(
-        candidate: Union[str, ParsedRequirement],
-        ignore_cfg: List[str] = ignore_cfg,
+        candidate: str | ParsedRequirement,
+        ignore_cfg: list[str] = ignore_cfg,
     ) -> bool:
         for ignore in ignore_cfg:
             if isinstance(candidate, str):

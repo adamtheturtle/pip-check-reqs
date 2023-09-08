@@ -1,5 +1,7 @@
 """Find missing requirements."""
 
+from __future__ import annotations
+
 import argparse
 import collections
 import importlib.metadata
@@ -7,7 +9,7 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import Callable, Iterable, List, Optional, Tuple
+from typing import Callable, Iterable
 from unittest import mock
 
 from packaging.utils import NormalizedName, canonicalize_name
@@ -27,7 +29,7 @@ def find_missing_reqs(
     paths: Iterable[Path],
     ignore_files_function: Callable[[str], bool],
     ignore_modules_function: Callable[[str], bool],
-) -> List[Tuple[NormalizedName, List[FoundModule]]]:
+) -> list[tuple[NormalizedName, list[FoundModule]]]:
     # 1. find files used by imports in the code (as best we can without
     #    executing)
     used_modules = common.find_imported_modules(
@@ -70,7 +72,7 @@ def find_missing_reqs(
         )
         for package_file in package_files:
             path = os.path.realpath(
-                os.path.join(package_location, package_file),
+                str(Path(package_location) / package_file),
             )
             installed_files[path] = package_name
             package_path = common.is_package_file(path)
@@ -116,7 +118,7 @@ def find_missing_reqs(
     return [(name, used[name]) for name in used if name not in explicit]
 
 
-def main(arguments: Optional[List[str]] = None) -> None:
+def main(arguments: list[str] | None = None) -> None:
     usage = "usage: %prog [options] files or directories"
     parser = argparse.ArgumentParser(usage)
     parser.add_argument("paths", type=Path, nargs="*")
@@ -173,7 +175,7 @@ def main(arguments: Optional[List[str]] = None) -> None:
     parse_result = parser.parse_args(arguments)
 
     if parse_result.version:
-        print(version_info())
+        sys.stdout.write(version_info() + "\n")
         sys.exit(0)
 
     if not parse_result.paths:

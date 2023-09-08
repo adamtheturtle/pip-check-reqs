@@ -1,5 +1,6 @@
 """Tests for `find_missing_reqs.py`."""
 
+from __future__ import annotations
 
 import logging
 import os
@@ -123,6 +124,7 @@ def test_main_no_spec(capsys: pytest.CaptureFixture[str]) -> None:
     ],
 )
 def test_logging_config(
+    *,
     caplog: pytest.LogCaptureFixture,
     verbose_cfg: bool,
     debug_cfg: bool,
