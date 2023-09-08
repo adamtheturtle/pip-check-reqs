@@ -96,3 +96,11 @@ strict = true
 
 [tool.ruff]
 select = ["ALL"]
+
+ignore = [
+    # Allow 'assert' in tests as it is the standard for pytest.
+    # Also, allow 'assert' in other code as it is the standard for Python type hint
+    # narrowing - see
+    # https://mypy.readthedocs.io/en/stable/type_narrowing.html#type-narrowing-expressions.
+    "S101",
+]
