@@ -1,4 +1,3 @@
-
 """Common functions."""
 
 from __future__ import annotations
@@ -52,7 +51,7 @@ class _ImportVisitor(ast.NodeVisitor):
         self._location = location
 
     # Ignore the name error as we are overriding the method.
-    def visit_Import(  # pylint: disable=invalid-name
+    def visit_Import(  # noqa: N802, pylint: disable=invalid-name
         self,
         node: ast.Import,
     ) -> None:
@@ -60,7 +59,7 @@ class _ImportVisitor(ast.NodeVisitor):
             self._add_module(alias.name, node.lineno)
 
     # Ignore the name error as we are overriding the method.
-    def visit_ImportFrom(  # pylint: disable=invalid-name
+    def visit_ImportFrom(  # noqa: N802, pylint: disable=invalid-name
         self,
         node: ast.ImportFrom,
     ) -> None:
@@ -145,7 +144,6 @@ def find_imported_modules(
                 continue
             log.debug("scanning: %s", os.path.relpath(filename))
             content = filename.read_text(encoding="utf-8")
-            # with open(filename, encoding="utf-8") as file_obj:
             vis.set_location(str(filename))
             vis.visit(ast.parse(content, str(filename)))
     return vis.finalise()
@@ -154,14 +152,16 @@ def find_imported_modules(
 def find_required_modules(
     *,
     ignore_requirements_function: Callable[
-        [str | ParsedRequirement], bool,
+        [str | ParsedRequirement],
+        bool,
     ],
     skip_incompatible: bool,
     requirements_filename: Path,
 ) -> set[NormalizedName]:
     explicit = set()
     for requirement in parse_requirements(
-        str(requirements_filename), session=PipSession(),
+        str(requirements_filename),
+        session=PipSession(),
     ):
         requirement_name = install_req_from_line(
             requirement.requirement,

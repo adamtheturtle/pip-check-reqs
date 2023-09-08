@@ -34,7 +34,7 @@ def test_found_module() -> None:
     found_module = common.FoundModule("spam", "ham")
     assert found_module.modname == "spam"
     assert found_module.filename == str(Path("ham").resolve())
-    assert found_module.locations == []
+    assert not found_module.locations
 
 
 @pytest.mark.parametrize(
@@ -51,7 +51,7 @@ def test_found_module() -> None:
     ],
 )
 def test_import_visitor(stmt: str, result: list[str]) -> None:
-    vis = common._ImportVisitor(  # pylint: disable=protected-access
+    vis = common._ImportVisitor(  # noqa: SLF001,E501, pylint: disable=protected-access
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
     vis.set_location("spam.py")
@@ -188,6 +188,7 @@ def test_find_imported_modules(
     ],
 )
 def test_ignorer(
+    *,
     monkeypatch: pytest.MonkeyPatch,
     ignore_cfg: list[str],
     candidate: str,

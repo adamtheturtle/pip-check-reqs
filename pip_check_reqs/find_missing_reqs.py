@@ -68,7 +68,9 @@ def find_missing_reqs(
             package_files.append(str(relative_item_location))
 
         log.debug(
-            "installed package: %s (at %s)", package_name, package_location,
+            "installed package: %s (at %s)",
+            package_name,
+            package_location,
         )
         for package_file in package_files:
             path = os.path.realpath(

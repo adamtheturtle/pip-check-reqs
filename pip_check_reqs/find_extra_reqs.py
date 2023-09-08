@@ -31,7 +31,8 @@ def find_extra_reqs(
     ignore_files_function: Callable[[str], bool],
     ignore_modules_function: Callable[[str], bool],
     ignore_requirements_function: Callable[
-        [str | ParsedRequirement], bool,
+        [str | ParsedRequirement],
+        bool,
     ],
     skip_incompatible: bool,
 ) -> list[str]:
@@ -73,7 +74,9 @@ def find_extra_reqs(
             package_files.append(str(relative_item_location))
 
         log.debug(
-            "installed package: %s (at %s)", package_name, package_location,
+            "installed package: %s (at %s)",
+            package_name,
+            package_location,
         )
         for package_file in package_files:
             path = os.path.realpath(
