@@ -100,7 +100,7 @@ class _ImportVisitor(ast.NodeVisitor):
                 break
 
             # ... though it might not be a file, so not interesting to us
-            if not os.path.isdir(modpath):
+            if not Path(modpath).is_dir():
                 break
 
             path = [modpath]
@@ -144,14 +144,15 @@ def find_imported_modules(
                 log.info("ignoring: %s", os.path.relpath(filename))
                 continue
             log.debug("scanning: %s", os.path.relpath(filename))
-            with open(filename, encoding="utf-8") as file_obj:
-                content = file_obj.read()
+            content = filename.read_text(encoding="utf-8")
+            # with open(filename, encoding="utf-8") as file_obj:
             vis.set_location(str(filename))
             vis.visit(ast.parse(content, str(filename)))
     return vis.finalise()
 
 
 def find_required_modules(
+    *,
     ignore_requirements_function: Callable[
         [str | ParsedRequirement], bool,
     ],
@@ -199,8 +200,9 @@ def has_compatible_markers(full_requirement: str) -> bool:
 
 
 def is_package_file(path: str) -> str:
-    """Determines whether the path points to a Python package sentinel
-    file - the __init__.py or its compiled variants.
+    """Determine whether the path points to a Python package sentinel file.
+
+    A sentinel file is the __init__.py or its compiled variants.
     """
     search_result = re.search(r"(.+)/__init__\.py[co]?$", path)
     if search_result is not None:
@@ -210,7 +212,7 @@ def is_package_file(path: str) -> str:
 
 def ignorer(ignore_cfg: list[str]) -> Callable[..., bool]:
     if not ignore_cfg:
-        return lambda candidate: False
+        return lambda _: False
 
     def ignorer_function(
         candidate: str | ParsedRequirement,

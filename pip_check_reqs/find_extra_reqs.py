@@ -77,7 +77,7 @@ def find_extra_reqs(
         )
         for package_file in package_files:
             path = os.path.realpath(
-                os.path.join(package_location, package_file),
+                Path(package_location) / package_file,
             )
             installed_files[path] = package_name
             package_path = common.is_package_file(path)
@@ -118,7 +118,7 @@ def find_extra_reqs(
 
 
 def main(arguments: list[str] | None = None) -> None:
-    """Main entry point."""
+    """pip-extra-reqs entry point."""
     usage = "usage: %prog [options] files or directories"
     parser = argparse.ArgumentParser(usage)
     parser.add_argument("paths", type=Path, nargs="*")
@@ -191,7 +191,7 @@ def main(arguments: list[str] | None = None) -> None:
     parse_result = parser.parse_args(arguments)
 
     if parse_result.version:
-        print(version_info())
+        sys.stdout.write(version_info() + "\n")
         sys.exit(0)
 
     if not parse_result.paths:

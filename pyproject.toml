@@ -101,9 +101,20 @@ target-version = "py38"
 select = ["ALL"]
 
 ignore = [
+    # We do not annotate the type of 'self', or 'cls'.
+    "ANN101",
+    # We are missing too many docstrings to quickly fix now.
+    "D100",
+    "D103",
+    "D104",
+    "D105",
+    "D203",
+    "D213",
     # Allow 'assert' in tests as it is the standard for pytest.
     # Also, allow 'assert' in other code as it is the standard for Python type hint
     # narrowing - see
     # https://mypy.readthedocs.io/en/stable/type_narrowing.html#type-narrowing-expressions.
     "S101",
 ]
+
+line-length = 79

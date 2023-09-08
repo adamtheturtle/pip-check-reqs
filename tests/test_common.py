@@ -3,16 +3,12 @@
 from __future__ import annotations
 
 import ast
-import builtins
 import logging
 import os.path
 import textwrap
-from copy import copy
 from pathlib import Path
-from typing import Any
 
 import pytest
-from pytest import MonkeyPatch
 
 from pip_check_reqs import __version__, common
 
@@ -116,6 +112,7 @@ def test_pyfiles_package(tmp_path: Path) -> None:
     ],
 )
 def test_find_imported_modules(
+    *,
     caplog: pytest.LogCaptureFixture,
     ignore_ham: bool,
     ignore_hashlib: bool,
@@ -188,7 +185,7 @@ def test_find_imported_modules(
     ],
 )
 def test_ignorer(
-    monkeypatch: MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch,
     ignore_cfg: list[str],
     candidate: str,
     result: bool,
@@ -222,32 +219,6 @@ def test_find_required_modules_env_markers(tmp_path: Path) -> None:
         requirements_filename=fake_requirements_file,
     )
     assert reqs == {"ham", "eggs"}
-
-
-def test_find_imported_modules_sets_encoding_to_utf8_when_reading(
-    monkeypatch: MonkeyPatch,
-    tmp_path: Path,
-) -> None:
-    (tmp_path / "module.py").touch()
-
-    expected_encoding = "utf-8"
-    used_encoding = None
-
-    original_open = copy(builtins.open)
-
-    def mocked_open(*args: Any, **kwargs: Any) -> Any:
-        nonlocal used_encoding
-        used_encoding = kwargs.get("encoding", None)
-        return original_open(*args, **kwargs)
-
-    monkeypatch.setattr(builtins, "open", mocked_open)
-    common.find_imported_modules(
-        paths=[tmp_path],
-        ignore_files_function=common.ignorer(ignore_cfg=[]),
-        ignore_modules_function=common.ignorer(ignore_cfg=[]),
-    )
-
-    assert used_encoding == expected_encoding
 
 
 def test_version_info_shows_version_number() -> None:

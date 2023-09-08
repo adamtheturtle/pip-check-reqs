@@ -6,7 +6,6 @@ import logging
 import os
 import textwrap
 from pathlib import Path
-from typing import Set
 
 import black
 import pytest
@@ -97,7 +96,7 @@ def test_main_failure(
     assert excinfo.value.code == 1
 
     assert caplog.records[0].message == "Missing requirements:"
-    relative_source_file = os.path.relpath(source_file, os.getcwd())
+    relative_source_file = os.path.relpath(source_file, Path.cwd())
     assert (
         caplog.records[1].message
         == f"{relative_source_file}:1 dist=pytest module=pytest"
@@ -128,7 +127,7 @@ def test_logging_config(
     caplog: pytest.LogCaptureFixture,
     verbose_cfg: bool,
     debug_cfg: bool,
-    expected_log_levels: Set[int],
+    expected_log_levels: set[int],
     tmp_path: Path,
 ) -> None:
     source_dir = tmp_path / "source"
