@@ -70,7 +70,10 @@ def test_pyfiles_file_no_dice(tmp_path: Path) -> None:
     not_python_file = tmp_path / "example"
     not_python_file.touch()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        expected_exception=ValueError,
+        match=f"{not_python_file} is not a python file or directory",
+    ):
         list(common.pyfiles(root=not_python_file))
 
 

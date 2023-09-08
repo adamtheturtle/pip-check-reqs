@@ -110,6 +110,8 @@ ignore = [
     "D105",
     "D203",
     "D213",
+    # Allow functions to take as many arguments as they want.
+    "PLR0913",
     # Allow 'assert' in tests as it is the standard for pytest.
     # Also, allow 'assert' in other code as it is the standard for Python type hint
     # narrowing - see
