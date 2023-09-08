@@ -11,8 +11,7 @@ here = path.abspath(path.dirname(__file__))
 
 
 def _get_dependencies(requirements_file: Path) -> List[str]:
-    """
-    Return requirements from a requirements file.
+    """Return requirements from a requirements file.
     This expects a requirements file with no ``--find-links`` lines.
     """
     lines = requirements_file.read_text().strip().split("\n")

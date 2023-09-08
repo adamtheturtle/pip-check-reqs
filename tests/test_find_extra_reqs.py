@@ -23,7 +23,7 @@ def test_find_extra_reqs(tmp_path: Path) -> None:
             not_installed_package_12345==1
             {installed_imported_required_package.__name__}
             {installed_not_imported_required_package.__name__}
-            """
+            """,
         ),
     )
 
@@ -37,7 +37,7 @@ def test_find_extra_reqs(tmp_path: Path) -> None:
             import pprint
 
             import {installed_imported_required_package.__name__}
-            """
+            """,
         ),
     )
 
@@ -93,7 +93,7 @@ def test_main_no_spec(capsys: pytest.CaptureFixture[str]) -> None:
 
 
 @pytest.mark.parametrize(
-    ["verbose_cfg", "debug_cfg", "expected_log_levels"],
+    ("verbose_cfg", "debug_cfg", "expected_log_levels"),
     [
         (False, False, {logging.WARNING}),
         (True, False, {logging.INFO, logging.WARNING}),

@@ -23,7 +23,7 @@ def test_find_missing_reqs(tmp_path: Path) -> None:
             f"""\
             not_installed_package_12345==1
             {installed_imported_required_package.__name__}
-            """
+            """,
         ),
     )
 
@@ -38,7 +38,7 @@ def test_find_missing_reqs(tmp_path: Path) -> None:
 
             import {installed_imported_not_required_package.__name__}
             import {installed_imported_required_package.__name__}
-            """
+            """,
         ),
     )
 
@@ -56,8 +56,8 @@ def test_find_missing_reqs(tmp_path: Path) -> None:
                     modname=installed_imported_not_required_package.__name__,
                     filename=str(
                         Path(
-                            installed_imported_not_required_package.__file__
-                        ).parent
+                            installed_imported_not_required_package.__file__,
+                        ).parent,
                     ),
                     locations=[(str(source_file), 3)],
                 ),
@@ -113,7 +113,7 @@ def test_main_no_spec(capsys: pytest.CaptureFixture[str]) -> None:
 
 
 @pytest.mark.parametrize(
-    ["verbose_cfg", "debug_cfg", "expected_log_levels"],
+    ("verbose_cfg", "debug_cfg", "expected_log_levels"),
     [
         (False, False, {logging.WARNING}),
         (True, False, {logging.INFO, logging.WARNING}),

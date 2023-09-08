@@ -120,8 +120,7 @@ class _ImportVisitor(ast.NodeVisitor):
         self._modules[modname].locations.append((self._location, lineno))
 
     def finalise(self) -> Dict[str, FoundModule]:
-        result = self._modules
-        return result
+        return self._modules
 
 
 def pyfiles(root: Path) -> Generator[Path, None, None]:
@@ -129,7 +128,8 @@ def pyfiles(root: Path) -> Generator[Path, None, None]:
         if root.suffix == ".py":
             yield root.absolute()
         else:
-            raise ValueError(f"{root} is not a python file or directory")
+            msg = f"{root} is not a python file or directory"
+            raise ValueError(msg)
     elif root.is_dir():
         for item in root.rglob("*.py"):
             yield item.absolute()
@@ -156,14 +156,14 @@ def find_imported_modules(
 
 def find_required_modules(
     ignore_requirements_function: Callable[
-        [Union[str, ParsedRequirement]], bool
+        [Union[str, ParsedRequirement]], bool,
     ],
     skip_incompatible: bool,
     requirements_filename: Path,
 ) -> Set[NormalizedName]:
     explicit = set()
     for requirement in parse_requirements(
-        str(requirements_filename), session=PipSession()
+        str(requirements_filename), session=PipSession(),
     ):
         requirement_name = install_req_from_line(
             requirement.requirement,

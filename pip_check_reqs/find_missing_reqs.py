@@ -53,7 +53,7 @@ def find_missing_reqs(
         package_location = package.location
         package_files = []
         for item in package.files or []:
-            here = Path(".").resolve()
+            here = Path().resolve()
             item_location_rel = Path(package_location) / item
             item_location = item_location_rel.resolve()
             try:
@@ -66,7 +66,7 @@ def find_missing_reqs(
             package_files.append(str(relative_item_location))
 
         log.debug(
-            "installed package: %s (at %s)", package_name, package_location
+            "installed package: %s (at %s)", package_name, package_location,
         )
         for package_file in package_files:
             path = os.path.realpath(
@@ -113,8 +113,7 @@ def find_missing_reqs(
         log.debug("found requirement: %s", requirement_name)
         explicit.add(canonicalize_name(requirement_name))
 
-    result = [(name, used[name]) for name in used if name not in explicit]
-    return result
+    return [(name, used[name]) for name in used if name not in explicit]
 
 
 def main(arguments: Optional[List[str]] = None) -> None:

@@ -26,7 +26,7 @@ def find_extra_reqs(
     ignore_files_function: Callable[[str], bool],
     ignore_modules_function: Callable[[str], bool],
     ignore_requirements_function: Callable[
-        [Union[str, ParsedRequirement]], bool
+        [Union[str, ParsedRequirement]], bool,
     ],
     skip_incompatible: bool,
 ) -> List[str]:
@@ -55,7 +55,7 @@ def find_extra_reqs(
         package_location = package.location
         package_files = []
         for item in package.files or []:
-            here = Path(".").resolve()
+            here = Path().resolve()
             item_location_rel = Path(package_location) / item
             item_location = item_location_rel.resolve()
             try:
@@ -68,7 +68,7 @@ def find_extra_reqs(
             package_files.append(str(relative_item_location))
 
         log.debug(
-            "installed package: %s (at %s)", package_name, package_location
+            "installed package: %s (at %s)", package_name, package_location,
         )
         for package_file in package_files:
             path = os.path.realpath(
@@ -156,7 +156,7 @@ def main(arguments: Optional[List[str]] = None) -> None:
         dest="skip_incompatible",
         action="store_true",
         default=False,
-        help="skip requirements that have incompatible " "environment markers",
+        help="skip requirements that have incompatible environment markers",
     )
     parser.add_argument(
         "-v",

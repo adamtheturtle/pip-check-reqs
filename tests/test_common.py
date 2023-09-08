@@ -17,7 +17,7 @@ from pip_check_reqs import __version__, common
 
 
 @pytest.mark.parametrize(
-    ["path", "result"],
+    ("path", "result"),
     [
         ("/", ""),
         ("__init__.py", ""),  # a top-level file like this has no package name
@@ -41,7 +41,7 @@ def test_found_module() -> None:
 
 
 @pytest.mark.parametrize(
-    ["stmt", "result"],
+    ("stmt", "result"),
     [
         ("import ast", ["ast"]),
         ("import ast, pathlib", ["ast", "pathlib"]),
@@ -98,7 +98,7 @@ def test_pyfiles_package(tmp_path: Path) -> None:
 # See the comment in the implementation.
 # We don't mind so much as we only really use this for third party packages.
 @pytest.mark.parametrize(
-    ["ignore_ham", "ignore_hashlib", "expect", "locs"],
+    ("ignore_ham", "ignore_hashlib", "expect", "locs"),
     [
         (
             False,
@@ -173,7 +173,7 @@ def test_find_imported_modules(
 
 
 @pytest.mark.parametrize(
-    ["ignore_cfg", "candidate", "result"],
+    ("ignore_cfg", "candidate", "result"),
     [
         ([], "spam", False),
         ([], "ham", False),
