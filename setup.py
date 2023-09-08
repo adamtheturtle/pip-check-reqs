@@ -1,28 +1,28 @@
-from codecs import open
-from os import path
+from __future__ import annotations
+
 from pathlib import Path
-from typing import List
 
 from setuptools import setup
 
 from pip_check_reqs import __version__
 
-here = path.abspath(path.dirname(__file__))
+here = Path.resolve(Path(__file__).parent)
 
 
-def _get_dependencies(requirements_file: Path) -> List[str]:
+def _get_dependencies(requirements_file: Path) -> list[str]:
     """Return requirements from a requirements file.
+
     This expects a requirements file with no ``--find-links`` lines.
     """
     lines = requirements_file.read_text().strip().split("\n")
     return [line for line in lines if not line.startswith("#")]
 
 
-with open(path.join(here, "README.rst"), encoding="utf-8") as f:
-    long_description = f.read()
-
-with open(path.join(here, "CHANGELOG.rst"), encoding="utf-8") as f:
-    long_description += f.read()
+readme = here / "README.rst"
+readme_content = readme.read_text(encoding="utf-8")
+changelog = here / "CHANGELOG.rst"
+changelog_content = changelog.read_text(encoding="utf-8")
+long_description = readme_content + "\n\n" + changelog_content
 
 INSTALL_REQUIRES = _get_dependencies(
     requirements_file=Path("requirements.txt"),

@@ -107,7 +107,8 @@ def test_main_no_spec(capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit) as excinfo:
         find_missing_reqs.main(arguments=[])
 
-    assert excinfo.value.code == 2
+    expected_code = 2
+    assert excinfo.value.code == expected_code
     err = capsys.readouterr().err
     assert err.endswith("error: no source files or directories specified\n")
 

@@ -1,5 +1,6 @@
 """Tests for `common.py`."""
 
+from __future__ import annotations
 
 import ast
 import builtins
@@ -8,7 +9,7 @@ import os.path
 import textwrap
 from copy import copy
 from pathlib import Path
-from typing import Any, List, Tuple
+from typing import Any
 
 import pytest
 from pytest import MonkeyPatch
@@ -53,7 +54,7 @@ def test_found_module() -> None:
         ("from . import baz", []),
     ],
 )
-def test_import_visitor(stmt: str, result: List[str]) -> None:
+def test_import_visitor(stmt: str, result: list[str]) -> None:
     vis = common._ImportVisitor(  # pylint: disable=protected-access
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
@@ -118,8 +119,8 @@ def test_find_imported_modules(
     caplog: pytest.LogCaptureFixture,
     ignore_ham: bool,
     ignore_hashlib: bool,
-    expect: List[str],
-    locs: List[Tuple[str, int]],
+    expect: list[str],
+    locs: list[tuple[str, int]],
     tmp_path: Path,
 ) -> None:
     root = tmp_path
@@ -188,7 +189,7 @@ def test_find_imported_modules(
 )
 def test_ignorer(
     monkeypatch: MonkeyPatch,
-    ignore_cfg: List[str],
+    ignore_cfg: list[str],
     candidate: str,
     result: bool,
 ) -> None:

@@ -95,6 +95,9 @@ line-length = 79
 strict = true
 
 [tool.ruff]
+
+target-version = "py38"
+
 select = ["ALL"]
 
 ignore = [

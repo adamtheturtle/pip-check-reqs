@@ -1,3 +1,4 @@
+
 """Common functions."""
 
 import ast
