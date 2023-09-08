@@ -2,7 +2,8 @@
 
 import ast
 import fnmatch
-import imp
+# import imp
+import importlib
 import logging
 import os
 import re
@@ -83,13 +84,13 @@ class _ImportVisitor(ast.NodeVisitor):
         progress = []
         modpath = last_modpath = None
         for modname_part in modname.split("."):
-            try:
-                _, modpath, _ = imp.find_module(modname_part, path)
-            except ImportError:
-                # the component specified at this point is not importable
-                # (is just an attribute of the module)
-                # *or* it's not actually installed, so we don't care either
+            find_spec_result = importlib.util.find_spec(name=modname_part, package=path)
+
+            if find_spec_result is None:
+                # The component specified at this point is not installed.
                 break
+
+            modpath = find_spec_result.origin
 
             # success! we found *something*
             progress.append(modname_part)
@@ -115,7 +116,7 @@ class _ImportVisitor(ast.NodeVisitor):
 
         modname = ".".join(progress)
         if modname not in self._modules:
-            self._modules[modname] = FoundModule(modname, modpath)
+            self._modules[modname] = FoundModule(modname=modname, filename=Path(modpath).parent)
         assert isinstance(self._location, str)
         self._modules[modname].locations.append((self._location, lineno))
 

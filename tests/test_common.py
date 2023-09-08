@@ -47,7 +47,7 @@ def test_found_module() -> None:
         ("import ast, pathlib", ["ast", "pathlib"]),
         ("from pathlib import Path", ["pathlib"]),
         ("from string import hexdigits", ["string"]),
-        ("import distutils.command.check", ["distutils.command.check"]),
+        ("import distutils.command.check", ["distutils"]),
         ("import spam", []),  # don't break because bad programmer
         ("from .foo import bar", []),  # don't break on relative imports
         ("from . import baz", []),
@@ -94,24 +94,21 @@ def test_pyfiles_package(tmp_path: Path) -> None:
     ]
 
 
-# Beware - using `sys` or `os` here can have weird results.
-# See the comment in the implementation.
-# We don't mind so much as we only really use this for third party packages.
 @pytest.mark.parametrize(
     ["ignore_ham", "ignore_hashlib", "expect", "locs"],
     [
         (
             False,
             False,
-            ["ast", "pathlib", "hashlib"],
+            ["ast", "pathlib", "hashlib", "sys"],
             [
                 ("spam.py", 2),
                 ("ham.py", 2),
             ],
         ),
-        (False, True, ["ast", "pathlib"], [("spam.py", 2), ("ham.py", 2)]),
-        (True, False, ["ast"], [("spam.py", 2)]),
-        (True, True, ["ast"], [("spam.py", 2)]),
+        (False, True, ["ast", "pathlib", "sys"], [("spam.py", 2), ("ham.py", 2)]),
+        (True, False, ["ast", "sys"], [("spam.py", 2)]),
+        (True, True, ["ast", "sys"], [("spam.py", 2)]),
     ],
 )
 def test_find_imported_modules(
