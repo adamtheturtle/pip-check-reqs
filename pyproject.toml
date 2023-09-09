@@ -121,6 +121,10 @@ ignore = [
 
 line-length = 79
 
+[tool.coverage.run]
+
+branch = true
+
 [tool.coverage.report]
 
 exclude_lines =  [
