@@ -5,9 +5,9 @@ from __future__ import annotations
 import ast
 import logging
 import os.path
+import sys
 import textwrap
 from pathlib import Path
-import sys
 
 import pytest
 
