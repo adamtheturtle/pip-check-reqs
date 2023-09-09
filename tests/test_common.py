@@ -32,7 +32,7 @@ def test_is_package_file(path: str, result: str) -> None:
 
 
 def test_found_module() -> None:
-    found_module = common.FoundModule("spam", "ham")
+    found_module = common.FoundModule(modname="spam", filename="ham")
     assert found_module.modname == "spam"
     assert found_module.filename == str(Path("ham").resolve())
     assert not found_module.locations
