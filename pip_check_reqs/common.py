@@ -47,7 +47,7 @@ class _ImportVisitor(ast.NodeVisitor):
         self._modules: dict[str, FoundModule] = {}
         self._location: str | None = None
 
-    def set_location(self, location: str) -> None:
+    def set_location(self, *, location: str) -> None:
         self._location = location
 
     # Ignore the name error as we are overriding the method.
@@ -121,6 +121,7 @@ def pyfiles(root: Path) -> Generator[Path, None, None]:
 
 
 def find_imported_modules(
+    *,
     paths: Iterable[Path],
     ignore_files_function: Callable[[str], bool],
     ignore_modules_function: Callable[[str], bool],
@@ -133,7 +134,7 @@ def find_imported_modules(
                 continue
             log.debug("scanning: %s", os.path.relpath(filename))
             content = filename.read_text(encoding="utf-8")
-            vis.set_location(str(filename))
+            vis.set_location(location=str(filename))
             vis.visit(ast.parse(content, str(filename)))
     return vis.finalise()
 
@@ -163,7 +164,7 @@ def find_required_modules(
 
         if skip_incompatible:
             requirement_string = requirement.requirement
-            if not has_compatible_markers(requirement_string):
+            if not has_compatible_markers(full_requirement=requirement_string):
                 log.debug(
                     "ignoring requirement (incompatible environment "
                     "marker): %s",
@@ -177,7 +178,7 @@ def find_required_modules(
     return explicit
 
 
-def has_compatible_markers(full_requirement: str) -> bool:
+def has_compatible_markers(*, full_requirement: str) -> bool:
     if ";" not in full_requirement:
         return True  # No environment marker.
 
@@ -188,7 +189,7 @@ def has_compatible_markers(full_requirement: str) -> bool:
     return Marker(enviroment_marker).evaluate()
 
 
-def is_package_file(path: str) -> str:
+def is_package_file(*, path: str) -> str:
     """Determine whether the path points to a Python package sentinel file.
 
     A sentinel file is the __init__.py or its compiled variants.
@@ -199,7 +200,7 @@ def is_package_file(path: str) -> str:
     return ""
 
 
-def ignorer(ignore_cfg: list[str]) -> Callable[..., bool]:
+def ignorer(*, ignore_cfg: list[str]) -> Callable[..., bool]:
     if not ignore_cfg:
         return lambda _: False
 
