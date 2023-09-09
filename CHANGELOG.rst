@@ -2,9 +2,15 @@
 Release History
 ---------------
 
+2.5.0
+
+- Support Python 3.10.
+- Remove support for Python 3.8.
+- Bump `pip` requirement to 23.2.
+
 2.4.4
 
-- Bump `packaging` requirement to >= 20.5. Older versions of `pip-check-reqs`     may be broken with the previously-specified version requirements.
+- Bump `packaging` requirement to >= 20.5. Older versions of `pip-check-reqs` may be broken with the previously-specified version requirements.
 
 2.4.3
 
