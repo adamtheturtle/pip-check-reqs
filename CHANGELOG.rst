@@ -5,7 +5,7 @@ Release History
 2.5.0
 
 - Support Python 3.10.
-- Bump `pip` requirement to 23.0.
+- Bump `pip` requirement to 23.2.
 
 2.4.4
 
