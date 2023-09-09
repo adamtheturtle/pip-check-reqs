@@ -126,7 +126,7 @@ def pyfiles(root: Path) -> Generator[Path, None, None]:
         else:
             msg = f"{root} is not a python file or directory"
             raise ValueError(msg)
-    elif root.is_dir():
+    else:
         for item in root.rglob("*.py"):
             yield item.absolute()
 
