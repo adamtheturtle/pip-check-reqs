@@ -53,7 +53,8 @@ jobs:
           # We avoid "--upgrade" as we do version tests for the "pip" dependency.
           python -m pip install --ignore-installed --editable .[dev]
 
-      - name: "Lint"
+      # Separate Pylint as it fails on Python 3.12 for unrelated reasons.
+      - name: "Lint without pylint"
         run: |
           mypy .
           ruff .
@@ -61,6 +62,11 @@ jobs:
           pylint pip_check_reqs tests
           pip-extra-reqs pip_check_reqs
           pip-missing-reqs pip_check_reqs
+
+      - name: "Lint pylint"
+        if: matrix.python-version != '3.12-dev'
+        run: |
+          pylint pip_check_reqs tests
 
       - name: "Run tests"
         run: |
