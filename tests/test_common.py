@@ -7,6 +7,7 @@ import logging
 import os.path
 import textwrap
 from pathlib import Path
+import sys
 
 import pytest
 
@@ -60,7 +61,8 @@ def test_import_visitor(stmt: str, result: list[str]) -> None:
     finalise_result = vis.finalise()
     assert set(finalise_result.keys()) == set(result)
     for value in finalise_result.values():
-        assert value.filename != "__init__.py"
+        assert str(value.filename) not in sys.path
+        assert Path(value.filename).name != "__init__.py"
         assert Path(value.filename).is_absolute()
         assert Path(value.filename).exists()
 
