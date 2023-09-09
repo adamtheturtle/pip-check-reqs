@@ -1,5 +1,7 @@
 """Common functions."""
 
+from __future__ import annotations
+
 import ast
 import fnmatch
 import imp
@@ -11,14 +13,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import (
     Callable,
-    Dict,
     Generator,
     Iterable,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Union,
 )
 
 from packaging.markers import Marker
@@ -38,7 +34,7 @@ class FoundModule:
 
     modname: str
     filename: str
-    locations: List[Tuple[str, int]] = field(default_factory=list)
+    locations: list[tuple[str, int]] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         self.filename = os.path.realpath(self.filename)
@@ -48,14 +44,14 @@ class _ImportVisitor(ast.NodeVisitor):
     def __init__(self, ignore_modules_function: Callable[[str], bool]) -> None:
         super().__init__()
         self._ignore_modules_function = ignore_modules_function
-        self._modules: Dict[str, FoundModule] = {}
-        self._location: Optional[str] = None
+        self._modules: dict[str, FoundModule] = {}
+        self._location: str | None = None
 
     def set_location(self, location: str) -> None:
         self._location = location
 
     # Ignore the name error as we are overriding the method.
-    def visit_Import(  # pylint: disable=invalid-name
+    def visit_Import(  # noqa: N802, pylint: disable=invalid-name
         self,
         node: ast.Import,
     ) -> None:
@@ -63,7 +59,7 @@ class _ImportVisitor(ast.NodeVisitor):
             self._add_module(alias.name, node.lineno)
 
     # Ignore the name error as we are overriding the method.
-    def visit_ImportFrom(  # pylint: disable=invalid-name
+    def visit_ImportFrom(  # noqa: N802, pylint: disable=invalid-name
         self,
         node: ast.ImportFrom,
     ) -> None:
@@ -103,7 +99,7 @@ class _ImportVisitor(ast.NodeVisitor):
                 break
 
             # ... though it might not be a file, so not interesting to us
-            if not os.path.isdir(modpath):
+            if not Path(modpath).is_dir():
                 break
 
             path = [modpath]
@@ -119,9 +115,8 @@ class _ImportVisitor(ast.NodeVisitor):
         assert isinstance(self._location, str)
         self._modules[modname].locations.append((self._location, lineno))
 
-    def finalise(self) -> Dict[str, FoundModule]:
-        result = self._modules
-        return result
+    def finalise(self) -> dict[str, FoundModule]:
+        return self._modules
 
 
 def pyfiles(root: Path) -> Generator[Path, None, None]:
@@ -129,7 +124,8 @@ def pyfiles(root: Path) -> Generator[Path, None, None]:
         if root.suffix == ".py":
             yield root.absolute()
         else:
-            raise ValueError(f"{root} is not a python file or directory")
+            msg = f"{root} is not a python file or directory"
+            raise ValueError(msg)
     elif root.is_dir():
         for item in root.rglob("*.py"):
             yield item.absolute()
@@ -139,7 +135,7 @@ def find_imported_modules(
     paths: Iterable[Path],
     ignore_files_function: Callable[[str], bool],
     ignore_modules_function: Callable[[str], bool],
-) -> Dict[str, FoundModule]:
+) -> dict[str, FoundModule]:
     vis = _ImportVisitor(ignore_modules_function=ignore_modules_function)
     for path in paths:
         for filename in pyfiles(path):
@@ -147,23 +143,25 @@ def find_imported_modules(
                 log.info("ignoring: %s", os.path.relpath(filename))
                 continue
             log.debug("scanning: %s", os.path.relpath(filename))
-            with open(filename, encoding="utf-8") as file_obj:
-                content = file_obj.read()
+            content = filename.read_text(encoding="utf-8")
             vis.set_location(str(filename))
             vis.visit(ast.parse(content, str(filename)))
     return vis.finalise()
 
 
 def find_required_modules(
+    *,
     ignore_requirements_function: Callable[
-        [Union[str, ParsedRequirement]], bool
+        [str | ParsedRequirement],
+        bool,
     ],
     skip_incompatible: bool,
     requirements_filename: Path,
-) -> Set[NormalizedName]:
+) -> set[NormalizedName]:
     explicit = set()
     for requirement in parse_requirements(
-        str(requirements_filename), session=PipSession()
+        str(requirements_filename),
+        session=PipSession(),
     ):
         requirement_name = install_req_from_line(
             requirement.requirement,
@@ -202,8 +200,9 @@ def has_compatible_markers(full_requirement: str) -> bool:
 
 
 def is_package_file(path: str) -> str:
-    """Determines whether the path points to a Python package sentinel
-    file - the __init__.py or its compiled variants.
+    """Determine whether the path points to a Python package sentinel file.
+
+    A sentinel file is the __init__.py or its compiled variants.
     """
     search_result = re.search(r"(.+)/__init__\.py[co]?$", path)
     if search_result is not None:
@@ -211,13 +210,13 @@ def is_package_file(path: str) -> str:
     return ""
 
 
-def ignorer(ignore_cfg: List[str]) -> Callable[..., bool]:
+def ignorer(ignore_cfg: list[str]) -> Callable[..., bool]:
     if not ignore_cfg:
-        return lambda candidate: False
+        return lambda _: False
 
     def ignorer_function(
-        candidate: Union[str, ParsedRequirement],
-        ignore_cfg: List[str] = ignore_cfg,
+        candidate: str | ParsedRequirement,
+        ignore_cfg: list[str] = ignore_cfg,
     ) -> bool:
         for ignore in ignore_cfg:
             if isinstance(candidate, str):

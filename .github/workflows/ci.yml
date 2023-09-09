@@ -55,9 +55,8 @@ jobs:
 
       - name: "Lint"
         run: |
-          flake8 *.py pip_check_reqs tests
           mypy .
-          isort --check-only .
+          ruff .
           black --check .
           pylint pip_check_reqs tests
           pip-extra-reqs pip_check_reqs

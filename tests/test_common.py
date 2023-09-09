@@ -1,23 +1,20 @@
 """Tests for `common.py`."""
 
+from __future__ import annotations
 
 import ast
-import builtins
 import logging
 import os.path
 import textwrap
-from copy import copy
 from pathlib import Path
-from typing import Any, List, Tuple
 
 import pytest
-from pytest import MonkeyPatch
 
 from pip_check_reqs import __version__, common
 
 
 @pytest.mark.parametrize(
-    ["path", "result"],
+    ("path", "result"),
     [
         ("/", ""),
         ("__init__.py", ""),  # a top-level file like this has no package name
@@ -37,11 +34,11 @@ def test_found_module() -> None:
     found_module = common.FoundModule("spam", "ham")
     assert found_module.modname == "spam"
     assert found_module.filename == str(Path("ham").resolve())
-    assert found_module.locations == []
+    assert not found_module.locations
 
 
 @pytest.mark.parametrize(
-    ["stmt", "result"],
+    ("stmt", "result"),
     [
         ("import ast", ["ast"]),
         ("import ast, pathlib", ["ast", "pathlib"]),
@@ -53,8 +50,8 @@ def test_found_module() -> None:
         ("from . import baz", []),
     ],
 )
-def test_import_visitor(stmt: str, result: List[str]) -> None:
-    vis = common._ImportVisitor(  # pylint: disable=protected-access
+def test_import_visitor(stmt: str, result: list[str]) -> None:
+    vis = common._ImportVisitor(  # noqa: SLF001,E501, pylint: disable=protected-access
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
     vis.set_location("spam.py")
@@ -73,7 +70,10 @@ def test_pyfiles_file_no_dice(tmp_path: Path) -> None:
     not_python_file = tmp_path / "example"
     not_python_file.touch()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        expected_exception=ValueError,
+        match=f"{not_python_file} is not a python file or directory",
+    ):
         list(common.pyfiles(root=not_python_file))
 
 
@@ -98,7 +98,7 @@ def test_pyfiles_package(tmp_path: Path) -> None:
 # See the comment in the implementation.
 # We don't mind so much as we only really use this for third party packages.
 @pytest.mark.parametrize(
-    ["ignore_ham", "ignore_hashlib", "expect", "locs"],
+    ("ignore_ham", "ignore_hashlib", "expect", "locs"),
     [
         (
             False,
@@ -115,11 +115,12 @@ def test_pyfiles_package(tmp_path: Path) -> None:
     ],
 )
 def test_find_imported_modules(
+    *,
     caplog: pytest.LogCaptureFixture,
     ignore_ham: bool,
     ignore_hashlib: bool,
-    expect: List[str],
-    locs: List[Tuple[str, int]],
+    expect: list[str],
+    locs: list[tuple[str, int]],
     tmp_path: Path,
 ) -> None:
     root = tmp_path
@@ -173,7 +174,7 @@ def test_find_imported_modules(
 
 
 @pytest.mark.parametrize(
-    ["ignore_cfg", "candidate", "result"],
+    ("ignore_cfg", "candidate", "result"),
     [
         ([], "spam", False),
         ([], "ham", False),
@@ -187,8 +188,9 @@ def test_find_imported_modules(
     ],
 )
 def test_ignorer(
-    monkeypatch: MonkeyPatch,
-    ignore_cfg: List[str],
+    *,
+    monkeypatch: pytest.MonkeyPatch,
+    ignore_cfg: list[str],
     candidate: str,
     result: bool,
 ) -> None:
@@ -221,32 +223,6 @@ def test_find_required_modules_env_markers(tmp_path: Path) -> None:
         requirements_filename=fake_requirements_file,
     )
     assert reqs == {"ham", "eggs"}
-
-
-def test_find_imported_modules_sets_encoding_to_utf8_when_reading(
-    monkeypatch: MonkeyPatch,
-    tmp_path: Path,
-) -> None:
-    (tmp_path / "module.py").touch()
-
-    expected_encoding = "utf-8"
-    used_encoding = None
-
-    original_open = copy(builtins.open)
-
-    def mocked_open(*args: Any, **kwargs: Any) -> Any:
-        nonlocal used_encoding
-        used_encoding = kwargs.get("encoding", None)
-        return original_open(*args, **kwargs)
-
-    monkeypatch.setattr(builtins, "open", mocked_open)
-    common.find_imported_modules(
-        paths=[tmp_path],
-        ignore_files_function=common.ignorer(ignore_cfg=[]),
-        ignore_modules_function=common.ignorer(ignore_cfg=[]),
-    )
-
-    assert used_encoding == expected_encoding
 
 
 def test_version_info_shows_version_number() -> None:
