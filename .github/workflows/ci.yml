@@ -15,8 +15,6 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
-
     strategy:
       matrix:
         # These versions match the minimum and maximum versions of pip in
@@ -25,6 +23,9 @@ jobs:
         pip-version: ['==23.2', '']
         # The minimum version should be represented in setup.py.
         python-version: ["3.9", "3.10", "3.11", "3.12-dev"]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
