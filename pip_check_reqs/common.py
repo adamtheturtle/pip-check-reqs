@@ -75,29 +75,18 @@ class _ImportVisitor(ast.NodeVisitor):
     def _add_module(self, modname: str, lineno: int) -> None:
         if self._ignore_modules_function(modname):
             return
-        path = None
-        progress = []
-        modpath = None
-        for modname_part in modname.split("."):
-            find_spec_result = importlib.util.find_spec(
-                name=modname_part,
-                package=path,
-            )
 
-            if find_spec_result is None:
-                # The component specified at this point is not installed.
-                break
-
-            modpath = find_spec_result.origin
-
-            # success! we found *something*
-            progress.append(modname_part)
-
-        if modpath is None:
-            # the module doesn't actually appear to exist on disk
+        find_spec_result = importlib.util.find_spec(
+            name=modname.split(".")[0],
+        )
+        if find_spec_result is None:
+            # The component specified at this point is not installed.
             return
 
-        modname = ".".join(progress)
+        modpath = find_spec_result.origin
+        assert modpath is not None
+        modname = find_spec_result.name
+
         if modname not in self._modules:
             self._modules[modname] = FoundModule(
                 modname=modname,
