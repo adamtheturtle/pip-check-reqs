@@ -77,7 +77,7 @@ def find_missing_reqs(
                 str(Path(package_location) / package_file),
             )
             installed_files[path] = package_name
-            package_path = common.is_package_file(path)
+            package_path = common.is_package_file(path=path)
             if package_path:
                 # we've seen a package file so add the bare package directory
                 # to the installed list as well as we might want to look up
@@ -183,8 +183,8 @@ def main(arguments: list[str] | None = None) -> None:
     if not parse_result.paths:
         parser.error("no source files or directories specified")
 
-    ignore_files = common.ignorer(parse_result.ignore_files)
-    ignore_mods = common.ignorer(parse_result.ignore_mods)
+    ignore_files = common.ignorer(ignore_cfg=parse_result.ignore_files)
+    ignore_mods = common.ignorer(ignore_cfg=parse_result.ignore_mods)
 
     logging.basicConfig(format="%(message)s")
     if parse_result.debug:

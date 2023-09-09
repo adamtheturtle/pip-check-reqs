@@ -28,11 +28,11 @@ from pip_check_reqs import __version__, common
     ],
 )
 def test_is_package_file(path: str, result: str) -> None:
-    assert common.is_package_file(path) == result
+    assert common.is_package_file(path=path) == result
 
 
 def test_found_module() -> None:
-    found_module = common.FoundModule("spam", "ham")
+    found_module = common.FoundModule(modname="spam", filename="ham")
     assert found_module.modname == "spam"
     assert found_module.filename == str(Path("ham").resolve())
     assert not found_module.locations
@@ -56,7 +56,7 @@ def test_import_visitor(stmt: str, result: list[str]) -> None:
     vis = common._ImportVisitor(  # noqa: SLF001,E501, pylint: disable=protected-access
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
-    vis.set_location("spam.py")
+    vis.set_location(location="spam.py")
     vis.visit(ast.parse(stmt))
     finalise_result = vis.finalise()
     assert set(finalise_result.keys()) == set(result)
@@ -204,7 +204,7 @@ def test_ignorer(
     result: bool,
 ) -> None:
     monkeypatch.setattr(os.path, "relpath", lambda s: s.lstrip("/"))
-    ignorer = common.ignorer(ignore_cfg)
+    ignorer = common.ignorer(ignore_cfg=ignore_cfg)
     assert ignorer(candidate) == result
 
 
