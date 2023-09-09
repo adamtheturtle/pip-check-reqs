@@ -106,7 +106,12 @@ def test_pyfiles_package(tmp_path: Path) -> None:
                 ("ham.py", 2),
             ],
         ),
-        (False, True, ["ast", "pathlib", "sys"], [("spam.py", 2), ("ham.py", 2)]),
+        (
+            False,
+            True,
+            ["ast", "pathlib", "sys"],
+            [("spam.py", 2), ("ham.py", 2)],
+        ),
         (True, False, ["ast", "sys"], [("spam.py", 2)]),
         (True, True, ["ast", "sys"], [("spam.py", 2)]),
     ],

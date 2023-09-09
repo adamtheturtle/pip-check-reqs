@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import ast
 import fnmatch
-# import imp
 import importlib
 import logging
 import os
@@ -80,7 +79,10 @@ class _ImportVisitor(ast.NodeVisitor):
         progress = []
         modpath = None
         for modname_part in modname.split("."):
-            find_spec_result = importlib.util.find_spec(name=modname_part, package=path)
+            find_spec_result = importlib.util.find_spec(
+                name=modname_part,
+                package=path,
+            )
 
             if find_spec_result is None:
                 # The component specified at this point is not installed.
@@ -97,7 +99,10 @@ class _ImportVisitor(ast.NodeVisitor):
 
         modname = ".".join(progress)
         if modname not in self._modules:
-            self._modules[modname] = FoundModule(modname=modname, filename=Path(modpath).parent)
+            self._modules[modname] = FoundModule(
+                modname=modname,
+                filename=str(Path(modpath).parent),
+            )
         assert isinstance(self._location, str)
         self._modules[modname].locations.append((self._location, lineno))
 
