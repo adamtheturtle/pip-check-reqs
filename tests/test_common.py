@@ -44,7 +44,7 @@ def test_found_module() -> None:
         ("import ast, pathlib", ["ast", "pathlib"]),
         ("from pathlib import Path", ["pathlib"]),
         ("from string import hexdigits", ["string"]),
-        ("import distutils.command.check", ["distutils"]),
+        ("import urllib.request", ["urllib"]),
         ("import spam", []),  # don't break because bad programmer
         ("from .foo import bar", []),  # don't break on relative imports
         ("from . import baz", []),
