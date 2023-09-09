@@ -78,7 +78,7 @@ class _ImportVisitor(ast.NodeVisitor):
             return
         path = None
         progress = []
-        modpath = last_modpath = None
+        modpath = None
         for modname_part in modname.split("."):
             find_spec_result = importlib.util.find_spec(name=modname_part, package=path)
 
@@ -90,21 +90,6 @@ class _ImportVisitor(ast.NodeVisitor):
 
             # success! we found *something*
             progress.append(modname_part)
-
-            # we might have previously seen a useful path though...
-            if modpath is None:
-                # the `sys` module will hit this code path, and `os` will on
-                # 3.11+.
-                # Possibly others will, but I've not discovered them.
-                modpath = last_modpath
-                break
-
-            # ... though it might not be a file, so not interesting to us
-            if not Path(modpath).is_dir():
-                break
-
-            path = [modpath]
-            last_modpath = modpath
 
         if modpath is None:
             # the module doesn't actually appear to exist on disk
