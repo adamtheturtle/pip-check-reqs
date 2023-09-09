@@ -76,17 +76,17 @@ class _ImportVisitor(ast.NodeVisitor):
         if self._ignore_modules_function(modname):
             return
 
-        find_spec_result = importlib.util.find_spec(
+        module_spec = importlib.util.find_spec(
             name=modname.split(".")[0],
         )
-        if find_spec_result is None:
+        if module_spec is None:
             # The component specified at this point is not installed.
             return
 
-        modpath = find_spec_result.origin
+        modpath = module_spec.origin
         assert modpath is not None
         modpath_path = Path(modpath)
-        modname = find_spec_result.name
+        modname = module_spec.name
 
         if modname not in self._modules:
             if modpath_path.is_file():
