@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast
 import logging
 import os.path
+import sys
 import textwrap
 from pathlib import Path
 
@@ -59,6 +60,11 @@ def test_import_visitor(stmt: str, result: list[str]) -> None:
     vis.visit(ast.parse(stmt))
     finalise_result = vis.finalise()
     assert set(finalise_result.keys()) == set(result)
+    for value in finalise_result.values():
+        assert str(value.filename) not in sys.path
+        assert Path(value.filename).name != "__init__.py"
+        assert Path(value.filename).is_absolute()
+        assert Path(value.filename).exists()
 
 
 def test_pyfiles_file(tmp_path: Path) -> None:
