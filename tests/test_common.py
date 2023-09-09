@@ -59,6 +59,10 @@ def test_import_visitor(stmt: str, result: list[str]) -> None:
     vis.visit(ast.parse(stmt))
     finalise_result = vis.finalise()
     assert set(finalise_result.keys()) == set(result)
+    for value in finalise_result.values():
+        assert value.filename != "__init__.py"
+        assert Path(value.filename).is_absolute()
+        assert Path(value.filename).exists()
 
 
 def test_pyfiles_file(tmp_path: Path) -> None:

@@ -85,12 +85,21 @@ class _ImportVisitor(ast.NodeVisitor):
 
         modpath = find_spec_result.origin
         assert modpath is not None
+        modpath_path = Path(modpath)
         modname = find_spec_result.name
 
         if modname not in self._modules:
+            if modpath_path.is_file():
+                if modpath_path.name == "__init__.py":
+                    modpath_path = modpath_path.parent
+                else:
+                    # We have this empty "else" so that we are
+                    # not tempted to combine the "is file" and "is __init__"
+                    # checks, and to make sure we have coverage for this case.
+                    pass
             self._modules[modname] = FoundModule(
                 modname=modname,
-                filename=str(Path(modpath).parent),
+                filename=str(modpath_path),
             )
         assert isinstance(self._location, str)
         self._modules[modname].locations.append((self._location, lineno))
