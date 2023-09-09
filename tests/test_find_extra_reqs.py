@@ -1,15 +1,18 @@
 """Tests for `find_extra_reqs.py`."""
 
+from __future__ import annotations
 
 import logging
 import textwrap
-from pathlib import Path
-from typing import Set
+from typing import TYPE_CHECKING
 
 import black
 import pytest
 
 from pip_check_reqs import common, find_extra_reqs
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def test_find_extra_reqs(tmp_path: Path) -> None:
@@ -23,7 +26,7 @@ def test_find_extra_reqs(tmp_path: Path) -> None:
             not_installed_package_12345==1
             {installed_imported_required_package.__name__}
             {installed_not_imported_required_package.__name__}
-            """
+            """,
         ),
     )
 
@@ -37,7 +40,7 @@ def test_find_extra_reqs(tmp_path: Path) -> None:
             import pprint
 
             import {installed_imported_required_package.__name__}
-            """
+            """,
         ),
     )
 
@@ -87,26 +90,28 @@ def test_main_no_spec(capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit) as excinfo:
         find_extra_reqs.main(arguments=[])
 
-    assert excinfo.value.code == 2
+    expected_code = 2
+    assert excinfo.value.code == expected_code
     err = capsys.readouterr().err
     assert err.endswith("error: no source files or directories specified\n")
 
 
 @pytest.mark.parametrize(
-    ["verbose_cfg", "debug_cfg", "expected_log_levels"],
+    ("expected_log_levels", "verbose_cfg", "debug_cfg"),
     [
-        (False, False, {logging.WARNING}),
-        (True, False, {logging.INFO, logging.WARNING}),
-        (False, True, {logging.DEBUG, logging.INFO, logging.WARNING}),
-        (True, True, {logging.DEBUG, logging.INFO, logging.WARNING}),
+        ({logging.WARNING}, False, False),
+        ({logging.INFO, logging.WARNING}, True, False),
+        ({logging.DEBUG, logging.INFO, logging.WARNING}, False, True),
+        ({logging.DEBUG, logging.INFO, logging.WARNING}, True, True),
     ],
 )
 def test_logging_config(
     caplog: pytest.LogCaptureFixture,
+    expected_log_levels: set[int],
+    tmp_path: Path,
+    *,
     verbose_cfg: bool,
     debug_cfg: bool,
-    expected_log_levels: Set[int],
-    tmp_path: Path,
 ) -> None:
     source_dir = tmp_path / "source"
     source_dir.mkdir()

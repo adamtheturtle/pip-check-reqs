@@ -27,13 +27,13 @@ jobs:
         python-version: ["3.8", "3.9", "3.10", "3.11"]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: "Set up Python"
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           # This is like the example but we use ``*requirements.txt`` rather
@@ -55,9 +55,8 @@ jobs:
 
       - name: "Lint"
         run: |
-          flake8 *.py pip_check_reqs tests
           mypy .
-          isort --check-only .
+          ruff .
           black --check .
           pylint pip_check_reqs tests
           pip-extra-reqs pip_check_reqs

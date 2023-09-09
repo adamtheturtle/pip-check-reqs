@@ -1,5 +1,7 @@
 """Find extra requirements."""
 
+from __future__ import annotations
+
 import argparse
 import collections
 import importlib.metadata
@@ -7,29 +9,33 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import Callable, Iterable, List, Optional, Union
+from typing import TYPE_CHECKING, Callable, Iterable
 from unittest import mock
 
 from packaging.utils import canonicalize_name
 from pip._internal.commands.show import search_packages_info
-from pip._internal.req.req_file import ParsedRequirement
 
 from pip_check_reqs import common
 from pip_check_reqs.common import version_info
+
+if TYPE_CHECKING:
+    from pip._internal.req.req_file import ParsedRequirement
 
 log = logging.getLogger(__name__)
 
 
 def find_extra_reqs(
+    *,
     requirements_filename: Path,
     paths: Iterable[Path],
     ignore_files_function: Callable[[str], bool],
     ignore_modules_function: Callable[[str], bool],
     ignore_requirements_function: Callable[
-        [Union[str, ParsedRequirement]], bool
+        [str | ParsedRequirement],
+        bool,
     ],
     skip_incompatible: bool,
-) -> List[str]:
+) -> list[str]:
     # 1. find files used by imports in the code (as best we can without
     #    executing)
     used_modules = common.find_imported_modules(
@@ -55,7 +61,7 @@ def find_extra_reqs(
         package_location = package.location
         package_files = []
         for item in package.files or []:
-            here = Path(".").resolve()
+            here = Path().resolve()
             item_location_rel = Path(package_location) / item
             item_location = item_location_rel.resolve()
             try:
@@ -68,11 +74,13 @@ def find_extra_reqs(
             package_files.append(str(relative_item_location))
 
         log.debug(
-            "installed package: %s (at %s)", package_name, package_location
+            "installed package: %s (at %s)",
+            package_name,
+            package_location,
         )
         for package_file in package_files:
             path = os.path.realpath(
-                os.path.join(package_location, package_file),
+                Path(package_location) / package_file,
             )
             installed_files[path] = package_name
             package_path = common.is_package_file(path)
@@ -112,8 +120,8 @@ def find_extra_reqs(
     return [name for name in explicit if name not in used]
 
 
-def main(arguments: Optional[List[str]] = None) -> None:
-    """Main entry point."""
+def main(arguments: list[str] | None = None) -> None:
+    """pip-extra-reqs entry point."""
     usage = "usage: %prog [options] files or directories"
     parser = argparse.ArgumentParser(usage)
     parser.add_argument("paths", type=Path, nargs="*")
@@ -156,7 +164,7 @@ def main(arguments: Optional[List[str]] = None) -> None:
         dest="skip_incompatible",
         action="store_true",
         default=False,
-        help="skip requirements that have incompatible " "environment markers",
+        help="skip requirements that have incompatible environment markers",
     )
     parser.add_argument(
         "-v",
@@ -186,7 +194,7 @@ def main(arguments: Optional[List[str]] = None) -> None:
     parse_result = parser.parse_args(arguments)
 
     if parse_result.version:
-        print(version_info())
+        sys.stdout.write(version_info() + "\n")
         sys.exit(0)
 
     if not parse_result.paths:

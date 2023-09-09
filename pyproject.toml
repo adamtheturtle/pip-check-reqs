@@ -48,9 +48,9 @@
         'too-many-return-statements',
         'too-many-lines',
         'locally-disabled',
-        # Let flake8 handle long lines
+        # Let ruff handle long lines
         'line-too-long',
-        # Let flake8 handle unused imports
+        # Let ruff handle unused imports
         'unused-import',
         # Let isort deal with sorting
         'ungrouped-imports',
@@ -59,7 +59,7 @@
         'missing-return-type-doc',
         # Too difficult to please
         'duplicate-code',
-        # Let isort handle imports
+        # Let ruff handle imports
         'wrong-import-order',
         # It would be nice to add this, but it's too much work
         "missing-function-docstring",
@@ -94,7 +94,40 @@ line-length = 79
 
 strict = true
 
-[tool.isort]
+[tool.ruff]
 
-multi_line_output = 3
-include_trailing_comma = true
+target-version = "py38"
+
+select = ["ALL"]
+
+ignore = [
+    # We do not annotate the type of 'self', or 'cls'.
+    "ANN101",
+    # We are missing too many docstrings to quickly fix now.
+    "D100",
+    "D103",
+    "D104",
+    "D105",
+    "D203",
+    "D213",
+    # Allow functions to take as many arguments as they want.
+    "PLR0913",
+    # Allow 'assert' in tests as it is the standard for pytest.
+    # Also, allow 'assert' in other code as it is the standard for Python type hint
+    # narrowing - see
+    # https://mypy.readthedocs.io/en/stable/type_narrowing.html#type-narrowing-expressions.
+    "S101",
+]
+
+line-length = 79
+
+[tool.coverage.run]
+
+branch = true
+
+[tool.coverage.report]
+
+exclude_lines =  [
+  "pragma: no cover",
+  "if TYPE_CHECKING:",
+]
