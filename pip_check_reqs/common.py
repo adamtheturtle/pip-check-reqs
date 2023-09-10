@@ -37,7 +37,7 @@ class FoundModule:
     locations: list[tuple[str, int]] = field(default_factory=list)
 
     def __post_init__(self) -> None:
-        self.filename = os.path.realpath(self.filename)
+        self.filename = str(Path(self.filename).resolve())
 
 
 class _ImportVisitor(ast.NodeVisitor):
