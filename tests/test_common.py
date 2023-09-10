@@ -193,17 +193,15 @@ def test_find_imported_modules(
         (["spam*"], "spam", True),
         (["spam*"], "spam.ham", True),
         (["spam*"], "eggs", False),
-        (["spam"], "/spam", True),
+        (["spam"], str(Path.cwd() / "spam"), True),
     ],
 )
 def test_ignorer(
     *,
-    monkeypatch: pytest.MonkeyPatch,
     ignore_cfg: list[str],
     candidate: str,
     result: bool,
 ) -> None:
-    monkeypatch.setattr(os.path, "relpath", lambda s: s.lstrip("/"))
     ignorer = common.ignorer(ignore_cfg=ignore_cfg)
     assert ignorer(candidate) == result
 
