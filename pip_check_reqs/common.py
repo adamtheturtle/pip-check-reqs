@@ -76,7 +76,7 @@ class _ImportVisitor(ast.NodeVisitor):
         if self._ignore_modules_function(modname):
             return
 
-        modname_parts_progress = []
+        modname_parts_progress: list[str] = []
         for modname_part in modname.split("."):
             name = ".".join([*modname_parts_progress, modname_part])
             try:
@@ -94,7 +94,10 @@ class _ImportVisitor(ast.NodeVisitor):
 
             if module_spec.origin is None:
                 modname_parts_progress.append(modname_part)
+                continue
+            break
 
+        assert module_spec is not None
         modpath = module_spec.origin
         assert modpath is not None
         modpath_path = Path(modpath)
