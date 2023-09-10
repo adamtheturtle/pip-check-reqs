@@ -138,7 +138,7 @@ def test_find_imported_modules_period(tmp_path: Path) -> None:
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
 
-    assert set(result.keys()) == {"example.period"}
+    assert set(result.keys()) == {"ruamel.yaml"}
 
 @pytest.mark.parametrize(
     ("ignore_ham", "ignore_hashlib", "expect", "locs"),
