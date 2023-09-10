@@ -17,9 +17,10 @@ from pip_check_reqs import __version__, common
 @pytest.mark.parametrize(
     ("path", "result"),
     [
-        ("/", ""),
-        ("__init__.py", ""),  # a top-level file like this has no package name
-        ("/__init__.py", ""),  # no package name
+        ("/", None),
+        # a top-level file like this has no package path
+        ("__init__.py", None),
+        ("/__init__.py", None),  # no package name
         ("spam/__init__.py", "spam"),
         ("spam/__init__.pyc", "spam"),
         ("spam/__init__.pyo", "spam"),
@@ -27,8 +28,8 @@ from pip_check_reqs import __version__, common
         ("/ham/spam/__init__.py", "/ham/spam"),
     ],
 )
-def test_is_package_file(path: str, result: str) -> None:
-    assert common.is_package_file(path=path) == result
+def test_package_path(path: str, result: str) -> None:
+    assert common.package_path(path=path) == result
 
 
 def test_found_module() -> None:
