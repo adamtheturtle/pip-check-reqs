@@ -91,24 +91,17 @@ def test_pyfiles_package(tmp_path: Path) -> None:
 )
 def test_find_imported_modules_simple(
     statement: str,
-    expected_module_names: list[str],
+    expected_module_names: set[str],
     tmp_path: Path,
 ) -> None:
-    pass
     """Test for the basic ability to find imported modules."""
     spam = tmp_path / "spam.py"
     spam.write_text(data=statement)
 
-    def ignore_files(_: str) -> bool:
-        return False
-
-    def ignore_mods(_: str) -> bool:
-        return False
-
     result = common.find_imported_modules(
         paths=[tmp_path],
-        ignore_files_function=ignore_files,
-        ignore_modules_function=ignore_mods,
+        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
 
     assert set(result.keys()) == expected_module_names
@@ -117,6 +110,7 @@ def test_find_imported_modules_simple(
         assert Path(value.filename).name != "__init__.py"
         assert Path(value.filename).is_absolute()
         assert Path(value.filename).exists()
+
 
 @pytest.mark.parametrize(
     ("ignore_ham", "ignore_hashlib", "expect", "locs"),
