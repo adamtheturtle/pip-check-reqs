@@ -142,6 +142,10 @@ def test_find_imported_modules(
         from __future__ import braces
         import ast, sys
         from . import friend
+
+        # __main__ is a special case -  sys.modules["__main__"] has no __spec__
+        # attribute.
+        import __main__
         """,
     )
     ham_file_contents = textwrap.dedent(
