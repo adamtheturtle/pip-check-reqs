@@ -59,7 +59,7 @@ def find_extra_reqs(
     for package in packages_info:
         package_name = package.name
         package_location = package.location
-        package_files = []
+        package_files: list[str] = []
         for item in package.files or []:
             here = Path().resolve()
             item_location_rel = Path(package_location) / item
@@ -79,8 +79,8 @@ def find_extra_reqs(
             package_location,
         )
         for package_file in package_files:
-            path = os.path.realpath(
-                Path(package_location) / package_file,
+            path = str(
+                (Path(package_location) / package_file).resolve(),
             )
             installed_files[path] = package_name
             package_path = common.package_path(path=path)
