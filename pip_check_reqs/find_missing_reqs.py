@@ -30,6 +30,8 @@ def find_missing_reqs(
     ignore_files_function: Callable[[str], bool],
     ignore_modules_function: Callable[[str], bool],
 ) -> list[tuple[NormalizedName, list[FoundModule]]]:
+    import datetime
+    start = datetime.datetime.now()
     # 1. find files used by imports in the code (as best we can without
     #    executing)
     used_modules = common.find_imported_modules(
@@ -38,11 +40,15 @@ def find_missing_reqs(
         ignore_modules_function=ignore_modules_function,
     )
 
+    after_find_imported_modules = datetime.datetime.now()
+
     # 2. find which packages provide which files
     installed_files = {}
     all_pkgs = [
         dist.metadata["Name"] for dist in importlib.metadata.distributions()
     ]
+
+    after_all_pkgs = datetime.datetime.now()
 
     # On Python 3.11 (and maybe higher), setting this environment variable
     # dramatically improves speeds.
@@ -50,10 +56,13 @@ def find_missing_reqs(
     with mock.patch.dict(os.environ, {"_PIP_USE_IMPORTLIB_METADATA": "False"}):
         packages_info = list(search_packages_info(all_pkgs))
 
+    after_search_packages_info = datetime.datetime.now()
+
+
     for package in packages_info:
         package_name = package.name
         package_location = package.location
-        package_files = []
+        package_files: list[str] = []
         for item in package.files or []:
             here = Path().resolve()
             item_location_rel = Path(package_location) / item
@@ -73,8 +82,8 @@ def find_missing_reqs(
             package_location,
         )
         for package_file in package_files:
-            path = os.path.realpath(
-                str(Path(package_location) / package_file),
+            path = str(
+                (Path(package_location) / package_file).resolve(),
             )
             installed_files[path] = package_name
             package_path = common.package_path(path=path)
@@ -83,6 +92,18 @@ def find_missing_reqs(
                 # to the installed list as well as we might want to look up
                 # a package by its directory path later
                 installed_files[package_path] = package_name
+
+    after_loop_packages_info = datetime.datetime.now()
+
+    find_imported_modules_time = after_find_imported_modules - start
+    all_pkgs_time = after_all_pkgs - after_find_imported_modules
+    search_packages_info_time = after_search_packages_info - after_all_pkgs
+    loop_packages_info_time = after_loop_packages_info - after_search_packages_info
+    print(f"{find_imported_modules_time=}")
+    print(f"{all_pkgs_time=}")
+    print(f"{search_packages_info_time=}")
+    print(f"{loop_packages_info_time=}")
+    print(f"{len(packages_info)=}")
 
     # 3. match imported modules against those packages
     used = collections.defaultdict(list)
@@ -220,3 +241,6 @@ def main(arguments: list[str] | None = None) -> None:
 
     if missing:
         sys.exit(1)
+
+if __name__ == "__main__":
+    main()
