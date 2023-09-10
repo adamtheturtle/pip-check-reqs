@@ -8,6 +8,7 @@ import sys
 import textwrap
 from pathlib import Path
 
+import __main__
 import pytest
 
 from pip_check_reqs import __version__, common
@@ -95,6 +96,14 @@ def test_find_imported_modules_simple(
     tmp_path: Path,
 ) -> None:
     """Test for the basic ability to find imported modules."""
+    message = (
+        "This test is only valid if __main__.__spec__ is None. "
+        "That is not the case when running pytest as 'python -m pytest' "
+        "which modifies sys.modules. "
+        "See https://docs.pytest.org/en/7.1.x/how-to/usage.html#calling-pytest-from-python-code"
+    )
+    assert __main__.__spec__ is None, message
+
     spam = tmp_path / "spam.py"
     spam.write_text(data=statement)
 
