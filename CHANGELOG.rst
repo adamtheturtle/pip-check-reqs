@@ -2,6 +2,10 @@
 Release History
 ---------------
 
+2.5.1
+
+- Fix an issue with importing `__main__`.
+
 2.5.0
 
 - Support Python 3.10.

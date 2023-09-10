@@ -76,9 +76,15 @@ class _ImportVisitor(ast.NodeVisitor):
         if self._ignore_modules_function(modname):
             return
 
-        module_spec = importlib.util.find_spec(
-            name=modname.split(".")[0],
-        )
+        try:
+            module_spec = importlib.util.find_spec(
+                name=modname.split(".")[0],
+            )
+        except ValueError:
+            # The module has no __spec__ attribute.
+            # For example, if importing __main__.
+            return
+
         if module_spec is None:
             # The component specified at this point is not installed.
             return
