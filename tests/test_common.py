@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import ast
 import logging
 import os.path
 import sys
@@ -37,35 +36,6 @@ def test_found_module() -> None:
     assert found_module.modname == "spam"
     assert found_module.filename == str(Path("ham").resolve())
     assert not found_module.locations
-
-
-@pytest.mark.parametrize(
-    ("stmt", "result"),
-    [
-        ("import ast", ["ast"]),
-        ("import ast, pathlib", ["ast", "pathlib"]),
-        ("from pathlib import Path", ["pathlib"]),
-        ("from string import hexdigits", ["string"]),
-        ("import urllib.request", ["urllib"]),
-        # don't break because bad programmer imported the file we are in
-        ("import spam", []),
-        ("from .foo import bar", []),  # don't break on relative imports
-        ("from . import baz", []),
-    ],
-)
-def test_import_visitor(stmt: str, result: list[str]) -> None:
-    vis = common._ImportVisitor(  # noqa: SLF001,E501, pylint: disable=protected-access
-        ignore_modules_function=common.ignorer(ignore_cfg=[]),
-    )
-    vis.set_location(location="spam.py")
-    vis.visit(ast.parse(stmt))
-    finalise_result = vis.finalise()
-    assert set(finalise_result.keys()) == set(result)
-    for value in finalise_result.values():
-        assert str(value.filename) not in sys.path
-        assert Path(value.filename).name != "__init__.py"
-        assert Path(value.filename).is_absolute()
-        assert Path(value.filename).exists()
 
 
 def test_pyfiles_file(tmp_path: Path) -> None:
@@ -103,6 +73,52 @@ def test_pyfiles_package(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
+    ("statement", "expected_module_names"),
+    [
+        ("import ast", {"ast"}),
+        ("import ast, pathlib", {"ast", "pathlib"}),
+        ("from pathlib import Path", {"pathlib"}),
+        ("from string import hexdigits", {"string"}),
+        ("import urllib.request", {"urllib"}),
+        # don't break because bad programmer imported the file we are in
+        ("import spam", set()),
+        ("from .foo import bar", set()),  # don't break on relative imports
+        ("from . import baz", set()),
+        # __main__ is a special case -  sys.modules["__main__"] has no __spec__
+        # attribute.
+        ("import __main__", set()),
+    ],
+)
+def test_find_imported_modules_simple(
+    statement: str,
+    expected_module_names: list[str],
+    tmp_path: Path,
+) -> None:
+    pass
+    """Test for the basic ability to find imported modules."""
+    spam = tmp_path / "spam.py"
+    spam.write_text(data=statement)
+
+    def ignore_files(_: str) -> bool:
+        return False
+
+    def ignore_mods(_: str) -> bool:
+        return False
+
+    result = common.find_imported_modules(
+        paths=[tmp_path],
+        ignore_files_function=ignore_files,
+        ignore_modules_function=ignore_mods,
+    )
+
+    assert set(result.keys()) == expected_module_names
+    for value in result.values():
+        assert str(value.filename) not in sys.path
+        assert Path(value.filename).name != "__init__.py"
+        assert Path(value.filename).is_absolute()
+        assert Path(value.filename).exists()
+
+@pytest.mark.parametrize(
     ("ignore_ham", "ignore_hashlib", "expect", "locs"),
     [
         (
@@ -124,7 +140,7 @@ def test_pyfiles_package(tmp_path: Path) -> None:
         (True, True, ["ast", "sys"], [("spam.py", 2)]),
     ],
 )
-def test_find_imported_modules(
+def test_find_imported_modules_advanced(
     *,
     caplog: pytest.LogCaptureFixture,
     ignore_ham: bool,
@@ -142,10 +158,6 @@ def test_find_imported_modules(
         from __future__ import braces
         import ast, sys
         from . import friend
-
-        # __main__ is a special case -  sys.modules["__main__"] has no __spec__
-        # attribute.
-        import __main__
         """,
     )
     ham_file_contents = textwrap.dedent(
