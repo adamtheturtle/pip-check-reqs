@@ -32,11 +32,11 @@ class FoundModule:
     """A module with uses in the source."""
 
     modname: str
-    filename: str
+    filename: Path
     locations: list[tuple[str, int]] = field(default_factory=list)
 
     def __post_init__(self) -> None:
-        self.filename = str(Path(self.filename).resolve())
+        self.filename = Path(self.filename).resolve()
 
 
 class _ImportVisitor(ast.NodeVisitor):
@@ -111,7 +111,7 @@ class _ImportVisitor(ast.NodeVisitor):
                         pass
                 self._modules[modname] = FoundModule(
                     modname=modname,
-                    filename=str(modpath_path),
+                    filename=modpath_path,
                 )
             assert isinstance(self._location, str)
             self._modules[modname].locations.append((self._location, lineno))
@@ -201,7 +201,7 @@ def has_compatible_markers(*, full_requirement: str) -> bool:
     return Marker(enviroment_marker).evaluate()
 
 
-def package_path(*, path: Path) -> str | None:
+def package_path(*, path: Path) -> Path | None:
     """Return the package path for a given Python package sentinel file.
 
     Return None if the path is not a sentinel file.
@@ -214,7 +214,7 @@ def package_path(*, path: Path) -> str | None:
     if path.name not in ("__init__.py", "__init__.pyc", "__init__.pyo"):
         return None
 
-    return str(path.parent)
+    return path.parent
 
 
 def ignorer(*, ignore_cfg: list[str]) -> Callable[..., bool]:

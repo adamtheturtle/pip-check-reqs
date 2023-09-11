@@ -91,7 +91,7 @@ def find_missing_reqs(
                 # we've seen a package file so add the bare package directory
                 # to the installed list as well as we might want to look up
                 # a package by its directory path later
-                installed_files[str(package_path)] = package_name
+                installed_files[package_path] = package_name
 
     # 3. match imported modules against those packages
     used = collections.defaultdict(list)
