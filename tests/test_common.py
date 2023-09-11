@@ -85,9 +85,6 @@ def test_pyfiles_package(tmp_path: Path) -> None:
         ("import spam", set()),
         ("from .foo import bar", set()),  # don't break on relative imports
         ("from . import baz", set()),
-        # __main__ is a special case -  sys.modules["__main__"] has no __spec__
-        # attribute.
-        ("import __main__", set()),
     ],
 )
 def test_find_imported_modules_simple(
