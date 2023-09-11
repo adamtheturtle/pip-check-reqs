@@ -7,7 +7,6 @@ import fnmatch
 import importlib
 import logging
 import os
-import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -209,10 +208,13 @@ def package_path(*, path: Path) -> str | None:
 
     A sentinel file is the __init__.py or its compiled variants.
     """
-    search_result = re.search(r"(.+)/__init__\.py[co]?$", str(path))
-    if search_result is not None:
-        return search_result.group(1)
-    return None
+    if path.parent == path.parent.parent:
+        return None
+
+    if path.name not in ("__init__.py", "__init__.pyc", "__init__.pyo"):
+        return None
+
+    return str(path.parent)
 
 
 def ignorer(*, ignore_cfg: list[str]) -> Callable[..., bool]:
