@@ -92,7 +92,7 @@ If your project uses `pyproject.toml` instead of `requirements.txt`, you can
 use an external tool like `pdm` to convert it to `requirements.txt`::
 
     # requires `pip install pdm`
-    pdm export --pyproject > requirements.txt
+    pdm export --pyproject
 
 Then you can use `pip-missing-reqs` and `pip-extra-reqs` as usual.
 
