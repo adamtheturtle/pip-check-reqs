@@ -85,8 +85,8 @@ check by name (or glob pattern) using `--ignore-module` (shorthand is `-m`)::
     pip-missing-reqs --ignore-module=spam --ignore-module=spam.* sample
 
 
-Using `pyproject.toml` instead of `requirements.txt`
-----------------------------------------------------
+Using pyproject.toml instead of requirements.txt
+------------------------------------------------
 
 If your project uses `pyproject.toml` instead of `requirements.txt`, you can
 use an external tool like `pdm` to convert it to `requirements.txt`::

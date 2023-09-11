@@ -121,6 +121,11 @@ ignore = [
 
 line-length = 79
 
+# Do not automatically remove commented out code.
+# We comment out code during development, and with VSCode auto-save, this code
+# is sometimes annoyingly removed.
+unfixable = ["ERA001"]
+
 [tool.coverage.run]
 
 branch = true
