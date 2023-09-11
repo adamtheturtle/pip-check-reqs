@@ -63,7 +63,7 @@ def find_missing_reqs(
     for package in packages_info:
         package_name = package.name
         package_location = package.location
-        package_files = []
+        package_files: list[str] = []
         for item in package.files or []:
             item_location_rel = Path(package_location) / item
             item_location = item_location_rel.resolve()
@@ -82,11 +82,11 @@ def find_missing_reqs(
             package_location,
         )
         for package_file in package_files:
-            path = os.path.realpath(
-                str(Path(package_location) / package_file),
-            )
+            path = Path(package_location) / package_file
+            path = path.resolve()
+
             installed_files[path] = package_name
-            package_path = common.package_path(path=Path(path))
+            package_path = common.package_path(path=path)
             if package_path:
                 # we've seen a package file so add the bare package directory
                 # to the installed list as well as we might want to look up
