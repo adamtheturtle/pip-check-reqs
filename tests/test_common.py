@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import os.path
 import sys
 import textwrap
 from pathlib import Path
@@ -231,7 +230,7 @@ def test_find_imported_modules_advanced(
     assert sorted(relative_locations) == sorted(locs)
 
     if ignore_ham:
-        assert caplog.records[0].message == f"ignoring: {os.path.relpath(ham)}"
+        assert caplog.records[0].message == f"ignoring: {ham}"
 
 
 @pytest.mark.parametrize(
