@@ -7,7 +7,7 @@ Release process
 * Update the CHANGELOG on the master branch
 * Update ``__version__`` in ``pip_check_reqs/__init__.py`` on the master branch.
 
-Run the following steps:
+Run the following steps, entering a PyPI API token when prompted:
 
 .. code:: sh
 
@@ -18,4 +18,4 @@ Run the following steps:
    rm -rf build dist && \
    git status # There should be no uncommitted changes.  && \
    python setup.py sdist bdist_wheel  && \
-   twine upload -r pypi dist/*
+   twine upload --username=__token__ -r pypi dist/*
