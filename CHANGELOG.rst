@@ -2,6 +2,10 @@
 Release History
 ---------------
 
+2.5.2
+
+- Performance improvements.
+
 2.5.1
 
 - Fix an issue with importing `__main__`.

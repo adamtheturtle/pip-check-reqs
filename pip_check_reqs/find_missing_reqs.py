@@ -50,12 +50,13 @@ def find_missing_reqs(
     with mock.patch.dict(os.environ, {"_PIP_USE_IMPORTLIB_METADATA": "False"}):
         packages_info = list(search_packages_info(all_pkgs))
 
+    here = Path().resolve()
+
     for package in packages_info:
         package_name = package.name
         package_location = package.location
         package_files = []
         for item in package.files or []:
-            here = Path().resolve()
             item_location_rel = Path(package_location) / item
             item_location = item_location_rel.resolve()
             try:
