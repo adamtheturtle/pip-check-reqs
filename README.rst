@@ -48,18 +48,6 @@ requirements.txt that are then unused in the project::
 This would find anything that is listed in requirements.txt but that is not
 imported by sample.
 
-Sample tox.ini configuration
-----------------------------
-
-To make your life easier, copy something like this into your tox.ini::
-
-    [testenv:pip-check-reqs]
-    deps=-rrequirements.txt
-    commands=
-        pip-missing-reqs --ignore-file=sample/tests/* sample
-        pip-extra-reqs --ignore-file=sample/tests/* sample
-
-
 Excluding test files (or others) from this check
 ------------------------------------------------
 
