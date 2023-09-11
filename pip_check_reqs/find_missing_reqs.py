@@ -8,12 +8,13 @@ import importlib.metadata
 import logging
 import os
 import sys
+from functools import cache
 from pathlib import Path
 from typing import Callable, Iterable
 from unittest import mock
 
 from packaging.utils import NormalizedName, canonicalize_name
-from pip._internal.commands.show import search_packages_info
+from pip._internal.commands.show import _PackageInfo, search_packages_info
 from pip._internal.network.session import PipSession
 from pip._internal.req.constructors import install_req_from_line
 from pip._internal.req.req_file import parse_requirements
@@ -22,6 +23,19 @@ from pip_check_reqs import common
 from pip_check_reqs.common import FoundModule, version_info
 
 log = logging.getLogger(__name__)
+
+
+@cache
+def get_packages_info() -> list[_PackageInfo]:
+    all_pkgs = [
+        dist.metadata["Name"] for dist in importlib.metadata.distributions()
+    ]
+
+    # On Python 3.11 (and maybe higher), setting this environment variable
+    # dramatically improves speeds.
+    # See https://github.com/r1chardj0n3s/pip-check-reqs/issues/123.
+    with mock.patch.dict(os.environ, {"_PIP_USE_IMPORTLIB_METADATA": "False"}):
+        return list(search_packages_info(query=all_pkgs))
 
 
 def find_missing_reqs(
@@ -44,27 +58,20 @@ def find_missing_reqs(
 
     # 2. find which packages provide which files
     installed_files = {}
-    all_pkgs = [
-        dist.metadata["Name"] for dist in importlib.metadata.distributions()
-    ]
 
     after_all_pkgs = datetime.datetime.now()
 
-    # On Python 3.11 (and maybe higher), setting this environment variable
-    # dramatically improves speeds.
-    # See https://github.com/r1chardj0n3s/pip-check-reqs/issues/123.
-    with mock.patch.dict(os.environ, {"_PIP_USE_IMPORTLIB_METADATA": "False"}):
-        packages_info = list(search_packages_info(all_pkgs))
+    packages_info = get_packages_info()
 
     after_search_packages_info = datetime.datetime.now()
 
+    here = Path().resolve()
 
     for package in packages_info:
         package_name = package.name
         package_location = package.location
         package_files: list[str] = []
         for item in package.files or []:
-            here = Path().resolve()
             item_location_rel = Path(package_location) / item
             item_location = item_location_rel.resolve()
             try:
@@ -99,10 +106,10 @@ def find_missing_reqs(
     all_pkgs_time = after_all_pkgs - after_find_imported_modules
     search_packages_info_time = after_search_packages_info - after_all_pkgs
     loop_packages_info_time = after_loop_packages_info - after_search_packages_info
-    print(f"{find_imported_modules_time=}")
-    print(f"{all_pkgs_time=}")
-    print(f"{search_packages_info_time=}")
-    print(f"{loop_packages_info_time=}")
+    print(f"{round(find_imported_modules_time.microseconds * 0.000001, 3)=}")
+    print(f"{round(all_pkgs_time.microseconds * 0.000001, 3)=}")
+    print(f"{round(search_packages_info_time.microseconds * 0.000001, 3)=}")
+    print(f"{round(loop_packages_info_time.microseconds * 0.000001, 3)=}")
     print(f"{len(packages_info)=}")
 
     # 3. match imported modules against those packages
