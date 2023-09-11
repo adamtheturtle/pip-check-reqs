@@ -221,7 +221,7 @@ def main(arguments: list[str] | None = None) -> None:
             for filename, lineno in use.locations:
                 log.warning(
                     "%s:%s dist=%s module=%s",
-                    os.path.relpath(filename),
+                    filename,
                     lineno,
                     name,
                     use.modname,

@@ -143,9 +143,9 @@ def find_imported_modules(
     for path in paths:
         for filename in pyfiles(path):
             if ignore_files_function(str(filename)):
-                log.info("ignoring: %s", os.path.relpath(filename))
+                log.info("ignoring: %s", filename)
                 continue
-            log.debug("scanning: %s", os.path.relpath(filename))
+            log.debug("scanning: %s", filename)
             content = filename.read_text(encoding="utf-8")
             vis.set_location(location=str(filename))
             vis.visit(ast.parse(content, str(filename)))
