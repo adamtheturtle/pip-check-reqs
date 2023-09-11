@@ -5,7 +5,7 @@ Release History
 2.5.1
 
 - Fix an issue with importing `__main__`.
-- Fix an issue with importing packages with `.`s in their names.
+- Fix an issue with importing packages with periods in their names.
 
 2.5.0
 
