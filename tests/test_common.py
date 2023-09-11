@@ -16,18 +16,18 @@ from pip_check_reqs import __version__, common
 @pytest.mark.parametrize(
     ("path", "result"),
     [
-        ("/", None),
+        (Path("/"), None),
         # a top-level file like this has no package path
-        ("__init__.py", None),
-        ("/__init__.py", None),  # no package name
-        ("spam/__init__.py", "spam"),
-        ("spam/__init__.pyc", "spam"),
-        ("spam/__init__.pyo", "spam"),
-        ("ham/spam/__init__.py", "ham/spam"),
-        ("/ham/spam/__init__.py", "/ham/spam"),
+        (Path("__init__.py"), None),
+        (Path("/__init__.py"), None),  # no package name
+        (Path("spam/__init__.py"), "spam"),
+        (Path("spam/__init__.pyc"), "spam"),
+        (Path("spam/__init__.pyo"), "spam"),
+        (Path("ham/spam/__init__.py"), "ham/spam"),
+        (Path("/ham/spam/__init__.py"), "/ham/spam"),
     ],
 )
-def test_package_path(path: str, result: str) -> None:
+def test_package_path(path: Path, result: str) -> None:
     assert common.package_path(path=path) == result
 
 
