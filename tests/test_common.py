@@ -53,7 +53,9 @@ def test_pyfiles_file_no_dice(tmp_path: Path) -> None:
 
     with pytest.raises(
         expected_exception=ValueError,
-        match=re.escape(f"{not_python_file} is not a python file or directory"),
+        match=re.escape(
+            f"{not_python_file} is not a python file or directory",
+        ),
     ):
         list(common.pyfiles(root=not_python_file))
 
