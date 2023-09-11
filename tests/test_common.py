@@ -23,21 +23,21 @@ from pip_check_reqs import __version__, common
         # a top-level file like this has no package path
         (Path("__init__.py"), None),
         (Path("/__init__.py"), None),  # no package name
-        (Path("spam/__init__.py"), "spam"),
-        (Path("spam/__init__.pyc"), "spam"),
-        (Path("spam/__init__.pyo"), "spam"),
-        (Path("ham/spam/__init__.py"), "ham/spam"),
-        (Path("/ham/spam/__init__.py"), "/ham/spam"),
+        (Path("spam/__init__.py"), Path("spam")),
+        (Path("spam/__init__.pyc"), Path("spam")),
+        (Path("spam/__init__.pyo"), Path("spam")),
+        (Path("ham/spam/__init__.py"), Path("ham/spam")),
+        (Path("/ham/spam/__init__.py"), Path("/ham/spam")),
     ],
 )
-def test_package_path(path: Path, result: str) -> None:
+def test_package_path(path: Path, result: Path) -> None:
     assert common.package_path(path=path) == result, path
 
 
 def test_found_module() -> None:
-    found_module = common.FoundModule(modname="spam", filename="ham")
+    found_module = common.FoundModule(modname="spam", filename=Path("ham"))
     assert found_module.modname == "spam"
-    assert found_module.filename == str(Path("ham").resolve())
+    assert found_module.filename == Path("ham").resolve()
     assert not found_module.locations
 
 
