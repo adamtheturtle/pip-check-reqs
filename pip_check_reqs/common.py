@@ -76,7 +76,7 @@ class _ImportVisitor(ast.NodeVisitor):
         if self._ignore_modules_function(modname):
             return
 
-        modname_parts_progress = []
+        modname_parts_progress: list[str] = []
         for modname_part in modname.split("."):
             name = ".".join([*modname_parts_progress, modname_part])
             try:
@@ -94,27 +94,28 @@ class _ImportVisitor(ast.NodeVisitor):
 
             if module_spec.origin is None:
                 modname_parts_progress.append(modname_part)
+                continue
 
-        modpath = module_spec.origin
-        assert modpath is not None
-        modpath_path = Path(modpath)
-        modname = module_spec.name
+            modpath = module_spec.origin
+            modpath_path = Path(modpath)
+            modname = module_spec.name
 
-        if modname not in self._modules:
-            if modpath_path.is_file():
-                if modpath_path.name == "__init__.py":
-                    modpath_path = modpath_path.parent
-                else:
-                    # We have this empty "else" so that we are
-                    # not tempted to combine the "is file" and "is __init__"
-                    # checks, and to make sure we have coverage for this case.
-                    pass
-            self._modules[modname] = FoundModule(
-                modname=modname,
-                filename=str(modpath_path),
-            )
-        assert isinstance(self._location, str)
-        self._modules[modname].locations.append((self._location, lineno))
+            if modname not in self._modules:
+                if modpath_path.is_file():
+                    if modpath_path.name == "__init__.py":
+                        modpath_path = modpath_path.parent
+                    else:
+                        # We have this empty "else" so that we are
+                        # not tempted to combine the "is file" and "is
+                        # __init__" checks, and to make sure we have coverage
+                        # for this case.
+                        pass
+                self._modules[modname] = FoundModule(
+                    modname=modname,
+                    filename=str(modpath_path),
+                )
+            assert isinstance(self._location, str)
+            self._modules[modname].locations.append((self._location, lineno))
 
     def finalise(self) -> dict[str, FoundModule]:
         return self._modules

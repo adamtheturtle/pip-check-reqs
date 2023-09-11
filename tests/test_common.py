@@ -120,13 +120,14 @@ def test_find_imported_modules_simple(
         assert Path(value.filename).is_absolute()
         assert Path(value.filename).exists()
 
+
 def test_find_imported_modules_period(tmp_path: Path) -> None:
     """Imported modules are found if the package name contains a period.
 
-    An example of this is the module name "ruamel.yaml".
+    An example of this is the module name `"ruamel.yaml"`.
     https://pypi.org/project/ruamel.yaml/
 
-    In particular, ruamel.yaml is in sys.modules with a period in the name.
+    In particular, `ruamel.yaml` is in `sys.modules` with a period in the name.
     """
     spam = tmp_path / "spam.py"
     statement = "import ruamel.yaml"
@@ -139,6 +140,7 @@ def test_find_imported_modules_period(tmp_path: Path) -> None:
     )
 
     assert set(result.keys()) == {"ruamel.yaml"}
+
 
 @pytest.mark.parametrize(
     ("ignore_ham", "ignore_hashlib", "expect", "locs"),
