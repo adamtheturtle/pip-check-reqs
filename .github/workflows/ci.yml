@@ -20,7 +20,7 @@ jobs:
         # These versions match the minimum and maximum versions of pip in
         # requirements.txt.
         # An empty string here represents the latest version.
-        pip-version: ['==23.2', '']
+        pip-version: ['']
         # The minimum version should be represented in setup.py.
         python-version: ["3.9", "3.10", "3.11", "3.12-dev"]
         os: [ubuntu-latest, windows-latest]
