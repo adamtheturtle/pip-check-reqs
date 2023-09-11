@@ -92,7 +92,7 @@ def find_extra_reqs(
                 (Path(package_location) / package_file).resolve(),
             )
             installed_files[path] = package_name
-            package_path = common.package_path(path=path)
+            package_path = common.package_path(path=Path(path))
             if package_path:
                 # we've seen a package file so add the bare package directory
                 # to the installed list as well as we might want to look up

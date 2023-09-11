@@ -202,14 +202,14 @@ def has_compatible_markers(*, full_requirement: str) -> bool:
     return Marker(enviroment_marker).evaluate()
 
 
-def package_path(*, path: str) -> str | None:
+def package_path(*, path: Path) -> str | None:
     """Return the package path for a given Python package sentinel file.
 
     Return None if the path is not a sentinel file.
 
     A sentinel file is the __init__.py or its compiled variants.
     """
-    search_result = re.search(r"(.+)/__init__\.py[co]?$", path)
+    search_result = re.search(r"(.+)/__init__\.py[co]?$", str(path))
     if search_result is not None:
         return search_result.group(1)
     return None
