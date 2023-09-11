@@ -67,6 +67,8 @@ def find_missing_reqs(
 
     here = Path().resolve()
 
+    here = Path().resolve()
+
     for package in packages_info:
         package_name = package.name
         package_location = package.location
