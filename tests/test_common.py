@@ -96,14 +96,6 @@ def test_find_imported_modules_simple(
     tmp_path: Path,
 ) -> None:
     """Test for the basic ability to find imported modules."""
-    message = (
-        "This test is only valid if __main__.__spec__ is None. "
-        "That is not the case when running pytest as 'python -m pytest' "
-        "which modifies sys.modules. "
-        "See https://docs.pytest.org/en/7.1.x/how-to/usage.html#calling-pytest-from-python-code"
-    )
-    assert __main__.__spec__ is None, message
-
     spam = tmp_path / "spam.py"
     spam.write_text(data=statement)
 
@@ -119,6 +111,28 @@ def test_find_imported_modules_simple(
         assert Path(value.filename).name != "__init__.py"
         assert Path(value.filename).is_absolute()
         assert Path(value.filename).exists()
+
+
+def test_find_imported_modules_main(tmp_path: Path) -> None:
+    spam = tmp_path / "spam.py"
+    statement = "import __main__"
+    spam.write_text(data=statement)
+
+    message = (
+        "This test is only valid if __main__.__spec__ is None. "
+        "That is not the case when running pytest as 'python -m pytest' "
+        "which modifies sys.modules. "
+        "See https://docs.pytest.org/en/7.1.x/how-to/usage.html#calling-pytest-from-python-code"
+    )
+    assert __main__.__spec__ is None, message
+
+    result = common.find_imported_modules(
+        paths=[tmp_path],
+        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+    )
+
+    assert set(result.keys()) == set()
 
 
 def test_find_imported_modules_period(tmp_path: Path) -> None:
