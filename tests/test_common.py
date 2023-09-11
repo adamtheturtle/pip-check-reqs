@@ -18,6 +18,8 @@ from pip_check_reqs import __version__, common
     ("path", "result"),
     [
         (Path("/"), None),
+        (Path("/ham/spam/other.py"), None),
+        (Path("/ham/spam"), None),
         # a top-level file like this has no package path
         (Path("__init__.py"), None),
         (Path("/__init__.py"), None),  # no package name
@@ -29,7 +31,7 @@ from pip_check_reqs import __version__, common
     ],
 )
 def test_package_path(path: Path, result: str) -> None:
-    assert common.package_path(path=path) == result
+    assert common.package_path(path=path) == result, path
 
 
 def test_found_module() -> None:
