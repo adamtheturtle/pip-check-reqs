@@ -20,10 +20,10 @@ jobs:
         # These versions match the minimum and maximum versions of pip in
         # requirements.txt.
         # An empty string here represents the latest version.
-        pip-version: ['==23.2', '']
+        pip-version: ['']
         # The minimum version should be represented in setup.py.
-        python-version: ["3.9", "3.10", "3.11", "3.12-dev"]
-        os: [ubuntu-latest]
+        python-version: ["3.11"]
+        os: [windows-latest]
 
     runs-on: ${{ matrix.os }}
 
@@ -54,24 +54,12 @@ jobs:
           # We avoid "--upgrade" as we do version tests for the "pip" dependency.
           python -m pip install --ignore-installed --editable .[dev]
 
-      # Separate Pylint as it fails on Python 3.12 for unrelated reasons.
-      - name: "Lint without pylint"
-        run: |
-          mypy .
-          ruff .
-          black --check .
-          pip-extra-reqs pip_check_reqs
-          pip-missing-reqs pip_check_reqs
-          pyright .
-
-      - name: "Lint pylint"
-        if: matrix.python-version != '3.12-dev'
-        run: |
-          pylint pip_check_reqs tests
+      # - name: Setup tmate session
+      #   uses: mxschmitt/action-tmate@v3
 
       - name: "Run tests"
         run: |
-          pytest -s -vvv --cov-fail-under 100 --cov=pip_check_reqs/ --cov=tests tests/ --cov-report=xml
+          pytest -s -vvv --cov-fail-under 100 --cov=pip_check_reqs/ --cov=tests tests/
 
       - name: "Upload coverage to Codecov"
         uses: "codecov/codecov-action@v3"

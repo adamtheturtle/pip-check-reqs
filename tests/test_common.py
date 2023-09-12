@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import logging
+import platform
 import re
 import sys
 import textwrap
+import types
+import uuid
 from pathlib import Path
 
 import __main__
@@ -155,7 +158,15 @@ def test_find_imported_modules_frozen(
     assert set(result.keys()) == set()
 
 
-def test_find_imported_modules_main(tmp_path: Path) -> None:
+@pytest.mark.skipif(
+    condition=platform.system() == "Windows",
+    reason=(
+        "Test not supported on Windows, where __main__.__spec__ is not None"
+    ),
+)
+def test_find_imported_modules_main(
+    tmp_path: Path,
+) -> None:  # pragma: no cover
     spam = tmp_path / "spam.py"
     statement = "import __main__"
     spam.write_text(data=statement)
@@ -174,6 +185,35 @@ def test_find_imported_modules_main(tmp_path: Path) -> None:
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
 
+    assert set(result.keys()) == set()
+
+
+def test_find_imported_modules_no_spec(tmp_path: Path) -> None:
+    """Modules without a __spec__ are not included in the result.
+
+    This is often __main__.
+    However, it is also possible to create a module without a __spec__.
+    We prefer to test with a realistic case, but on Windows under `pytest`,
+    `__main__.__spec__` is not None as `__main__` is replaced by pytest.
+
+    Therefore we need this test to create a module without a __spec__.
+    """
+    spam = tmp_path / "spam.py"
+    name = "a" + uuid.uuid4().hex
+    statement = f"import {name}"
+    spam.write_text(data=statement)
+    module = types.ModuleType(name=name)
+    module.__spec__ = None
+    sys.modules[name] = module
+
+    try:
+        result = common.find_imported_modules(
+            paths=[tmp_path],
+            ignore_files_function=common.ignorer(ignore_cfg=[]),
+            ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        )
+    finally:
+        del sys.modules[name]
     assert set(result.keys()) == set()
 
 

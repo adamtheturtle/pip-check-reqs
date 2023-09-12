@@ -2,6 +2,10 @@
 Release History
 ---------------
 
+2.5.3
+
+- Add preliminary support for Windows.
+
 2.5.2
 
 - Performance improvements.

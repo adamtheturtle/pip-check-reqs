@@ -1,5 +1,6 @@
 cli
 pragma
 pyright
+pytest
 reportPrivateUsage
 reqs
