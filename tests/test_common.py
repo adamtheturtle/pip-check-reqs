@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import platform
 import re
 import sys
 import textwrap
@@ -155,7 +156,15 @@ def test_find_imported_modules_frozen(
     assert set(result.keys()) == set()
 
 
-def test_find_imported_modules_main(tmp_path: Path) -> None:
+@pytest.mark.skipif(
+    condition=platform.system() == "Windows",
+    reason=(
+        "Test not supported on Windows, where __main__.__spec__ is not None"
+    ),
+)
+def test_find_imported_modules_main(
+    tmp_path: Path,
+) -> None:  # pragma: no cover
     spam = tmp_path / "spam.py"
     statement = "import __main__"
     spam.write_text(data=statement)
