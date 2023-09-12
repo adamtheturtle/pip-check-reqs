@@ -78,17 +78,16 @@ def test_pyfiles_package(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
-    ("statement", "expected_module_names"),
-    [
-        ("import ast", {"ast"}),
-        ("import ast, pathlib", {"ast", "pathlib"}),
-        ("from pathlib import Path", {"pathlib"}),
-        ("from string import hexdigits", {"string"}),
-        ("import urllib.request", {"urllib"}),
-        # don't break because bad programmer imported the file we are in
-        ("import spam", set()),
-        ("from .foo import bar", set()),  # don't break on relative imports
-        ("from . import baz", set()),
+    argnames=("statement", "expected_module_names"),
+    argvalues=[
+        pytest.param("import ast", {"ast"}),
+        pytest.param("import ast, pathlib", {"ast", "pathlib"}),
+        pytest.param("from pathlib import Path", {"pathlib"}),
+        pytest.param("from string import hexdigits", {"string"}),
+        pytest.param("import urllib.request", {"urllib"}),
+        pytest.param("import spam", set[str](), id="The file we are in"),
+        pytest.param("from .foo import bar", set[str](), id="Relative import"),
+        pytest.param("from . import baz", set[str]()),
     ],
 )
 def test_find_imported_modules_simple(

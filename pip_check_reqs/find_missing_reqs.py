@@ -14,7 +14,10 @@ from typing import Callable, Iterable
 from unittest import mock
 
 from packaging.utils import NormalizedName, canonicalize_name
-from pip._internal.commands.show import _PackageInfo, search_packages_info
+from pip._internal.commands.show import (
+    _PackageInfo,  # pyright: ignore[reportPrivateUsage]
+    search_packages_info,
+)
 from pip._internal.network.session import PipSession
 from pip._internal.req.constructors import install_req_from_line
 from pip._internal.req.req_file import parse_requirements
@@ -56,7 +59,7 @@ def find_missing_reqs(
         ignore_modules_function=ignore_modules_function,
     )
 
-    installed_files = {}
+    installed_files: dict[Path, str] = {}
     packages_info = get_packages_info()
     here = Path().resolve()
 
@@ -94,11 +97,14 @@ def find_missing_reqs(
                 installed_files[package_path] = package_name
 
     # 3. match imported modules against those packages
-    used = collections.defaultdict(list)
+    used: collections.defaultdict[
+        NormalizedName,
+        list[common.FoundModule],
+    ] = collections.defaultdict(list)
     for modname, info in used_modules.items():
         # probably standard library if it's not in the files list
         if info.filename in installed_files:
-            used_name = canonicalize_name(installed_files[info.filename])
+            used_name = canonicalize_name(name=installed_files[info.filename])
             log.debug(
                 "used module: %s (from package %s)",
                 modname,
@@ -113,7 +119,7 @@ def find_missing_reqs(
             )
 
     # 4. compare with requirements
-    explicit = set()
+    explicit: set[NormalizedName] = set()
     for requirement in parse_requirements(
         str(requirements_filename),
         session=PipSession(),

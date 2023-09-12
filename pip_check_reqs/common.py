@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import ast
 import fnmatch
-import importlib
 import logging
 import os
 import sys
 from dataclasses import dataclass, field
+from importlib.util import find_spec
 from pathlib import Path
 from typing import (
     Callable,
@@ -79,9 +79,7 @@ class _ImportVisitor(ast.NodeVisitor):
         for modname_part in modname.split("."):
             name = ".".join([*modname_parts_progress, modname_part])
             try:
-                module_spec = importlib.util.find_spec(
-                    name=name,
-                )
+                module_spec = find_spec(name=name)
             except ValueError:
                 # The module has no __spec__ attribute.
                 # For example, if importing __main__.
@@ -160,7 +158,7 @@ def find_required_modules(
     skip_incompatible: bool,
     requirements_filename: Path,
 ) -> set[NormalizedName]:
-    explicit = set()
+    explicit: set[NormalizedName] = set()
     for requirement in parse_requirements(
         str(requirements_filename),
         session=PipSession(),

@@ -62,6 +62,7 @@ jobs:
           black --check .
           pip-extra-reqs pip_check_reqs
           pip-missing-reqs pip_check_reqs
+          pyright .
 
       - name: "Lint pylint"
         if: matrix.python-version != '3.12-dev'
