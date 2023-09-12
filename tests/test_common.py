@@ -88,6 +88,16 @@ def test_pyfiles_package(tmp_path: Path) -> None:
         pytest.param("import spam", set[str](), id="The file we are in"),
         pytest.param("from .foo import bar", set[str](), id="Relative import"),
         pytest.param("from . import baz", set[str]()),
+        pytest.param(
+            "import re",
+            {"re"},
+            id="Useful to confirm that the next test is valid",
+        ),
+        pytest.param(
+            "import typing.re",
+            {"typing"},
+            id="Submodule has same name as a top-level module",
+        ),
     ],
 )
 def test_find_imported_modules_simple(
@@ -108,9 +118,41 @@ def test_find_imported_modules_simple(
     assert set(result.keys()) == expected_module_names
     for value in result.values():
         assert str(value.filename) not in sys.path
-        assert Path(value.filename).name != "__init__.py"
-        assert Path(value.filename).is_absolute()
-        assert Path(value.filename).exists()
+        assert value.filename.name != "__init__.py"
+        assert value.filename.is_absolute()
+        assert value.filename.exists()
+
+
+def test_find_imported_modules_frozen(
+    tmp_path: Path,
+) -> None:
+    """Frozen modules are not included in the result."""
+    frozen_item_names: list[str] = []
+    sys_module_items = list(sys.modules.items())
+    for name, value in sys_module_items:
+        try:
+            spec = value.__spec__
+        except AttributeError:
+            continue
+
+        if spec is not None and spec.origin == "frozen":
+            frozen_item_names.append(name)
+
+    assert (
+        frozen_item_names
+    ), "This test is only valid if there are frozen modules in sys.modules"
+
+    spam = tmp_path / "spam.py"
+    statement = f"import {frozen_item_names[0]}"
+    spam.write_text(data=statement)
+
+    result = common.find_imported_modules(
+        paths=[tmp_path],
+        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+    )
+
+    assert set(result.keys()) == set()
 
 
 def test_find_imported_modules_main(tmp_path: Path) -> None:
