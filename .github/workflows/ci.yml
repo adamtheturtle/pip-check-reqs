@@ -54,8 +54,8 @@ jobs:
           # We avoid "--upgrade" as we do version tests for the "pip" dependency.
           python -m pip install --ignore-installed --editable .[dev]
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
+      # - name: Setup tmate session
+      #   uses: mxschmitt/action-tmate@v3
 
       - name: "Run tests"
         run: |
