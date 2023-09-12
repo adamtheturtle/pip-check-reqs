@@ -199,10 +199,10 @@ def test_find_imported_modules_no_spec(tmp_path: Path) -> None:
     Therefore we need this test to create a module without a __spec__.
     """
     spam = tmp_path / "spam.py"
-    statement = "import __main__"
-    spam.write_text(data=statement)
     name = "a" + uuid.uuid4().hex
-    module = types.ModuleType(name)
+    statement = f"import {name}"
+    spam.write_text(data=statement)
+    module = types.ModuleType(name=name)
     module.__spec__ = None
     sys.modules[name] = module
 
