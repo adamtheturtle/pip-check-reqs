@@ -13,8 +13,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Iterable
 from unittest import mock
 
-from packaging.utils import canonicalize_name
-from pip._internal.commands.show import _PackageInfo, search_packages_info
+from packaging.utils import NormalizedName, canonicalize_name
+from pip._internal.commands.show import (
+    _PackageInfo,  # pyright: ignore[reportPrivateUsage]
+    search_packages_info,
+)
 
 from pip_check_reqs import common
 from pip_check_reqs.common import version_info
@@ -62,7 +65,7 @@ def find_extra_reqs(
         ignore_modules_function=ignore_modules_function,
     )
 
-    installed_files = {}
+    installed_files: dict[Path, str] = {}
     packages_info = get_packages_info()
     here = Path().resolve()
 
@@ -100,7 +103,10 @@ def find_extra_reqs(
                 installed_files[package_path] = package_name
 
     # 3. match imported modules against those packages
-    used = collections.defaultdict(list)
+    used: collections.defaultdict[
+        NormalizedName,
+        list[common.FoundModule],
+    ] = collections.defaultdict(list)
 
     for modname, info in used_modules.items():
         # probably standard library if it's not in the files list

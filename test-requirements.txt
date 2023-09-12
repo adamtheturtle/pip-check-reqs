@@ -3,6 +3,7 @@ ruff
 mypy
 pyenchant
 pylint
+pyright
 pytest
 pytest-cov
 types-setuptools

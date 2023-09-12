@@ -1,3 +1,5 @@
 cli
 pragma
+pyright
+reportPrivateUsage
 reqs
