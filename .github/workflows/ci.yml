@@ -54,6 +54,9 @@ jobs:
           # We avoid "--upgrade" as we do version tests for the "pip" dependency.
           python -m pip install --ignore-installed --editable .[dev]
 
+      - name: Setup upterm session
+        uses: lhotari/action-upterm@v1
+
       - name: "Run tests"
         run: |
           pytest -s -vvv --cov-fail-under 100 --cov=pip_check_reqs/ --cov=tests tests/ --cov-report=xml
