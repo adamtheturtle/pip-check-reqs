@@ -78,8 +78,8 @@ def test_pyfiles_package(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
-    ("statement", "expected_module_names"),
-    [
+    argnames=("statement", "expected_module_names"),
+    argvalues=[
         ("import ast", {"ast"}),
         ("import ast, pathlib", {"ast", "pathlib"}),
         ("from pathlib import Path", {"pathlib"}),

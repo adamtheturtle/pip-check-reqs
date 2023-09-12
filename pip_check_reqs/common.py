@@ -158,7 +158,7 @@ def find_required_modules(
     skip_incompatible: bool,
     requirements_filename: Path,
 ) -> set[NormalizedName]:
-    explicit = set()
+    explicit: set[NormalizedName] = set()
     for requirement in parse_requirements(
         str(requirements_filename),
         session=PipSession(),
