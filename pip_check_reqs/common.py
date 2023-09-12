@@ -94,6 +94,13 @@ class _ImportVisitor(ast.NodeVisitor):
                 continue
 
             modpath = module_spec.origin
+
+            if modpath == "frozen":
+                # Frozen modules are modules written in Python whose compiled
+                # byte-code object is incorporated into a custom-built Python
+                # interpreter by Python's freeze utility.
+                continue
+
             modpath_path = Path(modpath)
             modname = module_spec.name
 
@@ -113,6 +120,7 @@ class _ImportVisitor(ast.NodeVisitor):
                 )
             assert isinstance(self._location, str)
             self._modules[modname].locations.append((self._location, lineno))
+            return
 
     def finalise(self) -> dict[str, FoundModule]:
         return self._modules
