@@ -88,6 +88,14 @@ def test_pyfiles_package(tmp_path: Path) -> None:
         pytest.param("import spam", set[str](), id="The file we are in"),
         pytest.param("from .foo import bar", set[str](), id="Relative import"),
         pytest.param("from . import baz", set[str]()),
+        pytest.param(
+            "import abc", {"abc"}, id="Useful to confirm that the next test is valid",
+        ),
+        pytest.param(
+            "import collections.abc",
+            {"collections"},
+            id="Submodule has same name as a top-level module",
+        ),
     ],
 )
 def test_find_imported_modules_simple(

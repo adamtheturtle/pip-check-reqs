@@ -113,6 +113,7 @@ class _ImportVisitor(ast.NodeVisitor):
                 )
             assert isinstance(self._location, str)
             self._modules[modname].locations.append((self._location, lineno))
+            return
 
     def finalise(self) -> dict[str, FoundModule]:
         return self._modules
