@@ -131,7 +131,7 @@ def test_find_imported_modules_simple(
 def test_find_imported_modules_frozen(
     tmp_path: Path,
 ) -> None:
-    """Test for the basic ability to find imported modules."""
+    """Frozen modules are not included in the result."""
     frozen_item_names: list[str] = []
     sys_module_items = [(name, value) for name, value in sys.modules.items()]
     for value in sys_module_items:
