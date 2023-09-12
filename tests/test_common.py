@@ -7,6 +7,8 @@ import platform
 import re
 import sys
 import textwrap
+import types
+import uuid
 from pathlib import Path
 
 import __main__
@@ -183,6 +185,35 @@ def test_find_imported_modules_main(
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
 
+    assert set(result.keys()) == set()
+
+
+def test_find_imported_modules_no_spec(tmp_path: Path) -> None:
+    """Modules without a __spec__ are not included in the result.
+
+    This is often __main__.
+    However, it is also possible to create a module without a __spec__.
+    We prefer to test with a realistic case, but on Windows under `pytest`,
+    `__main__.__spec__` is not None as `__main__` is replaced by pytest.
+
+    Therefore we need this test to create a module without a __spec__.
+    """
+    spam = tmp_path / "spam.py"
+    statement = "import __main__"
+    spam.write_text(data=statement)
+    name = "a" + uuid.uuid4().hex
+    module = types.ModuleType(name)
+    module.__spec__ = None
+    sys.modules[name] = module
+
+    try:
+        result = common.find_imported_modules(
+            paths=[tmp_path],
+            ignore_files_function=common.ignorer(ignore_cfg=[]),
+            ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        )
+    finally:
+        del sys.modules[name]
     assert set(result.keys()) == set()
 
 
