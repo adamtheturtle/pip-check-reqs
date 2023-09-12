@@ -89,11 +89,18 @@ def test_pyfiles_package(tmp_path: Path) -> None:
         pytest.param("from .foo import bar", set[str](), id="Relative import"),
         pytest.param("from . import baz", set[str]()),
         pytest.param(
-            "import abc", {"abc"}, id="Useful to confirm that the next test is valid",
+            "import abc",
+            set[str](),
+            id="Useful to confirm that the next test is valid",
         ),
         pytest.param(
-            "import collections.abc",
-            {"collections"},
+            "import re",
+            {"re"},
+            id="Useful to confirm that the next test is valid",
+        ),
+        pytest.param(
+            "import typing.re",
+            {"typing"},
             id="Submodule has same name as a top-level module",
         ),
     ],
@@ -116,9 +123,9 @@ def test_find_imported_modules_simple(
     assert set(result.keys()) == expected_module_names
     for value in result.values():
         assert str(value.filename) not in sys.path
-        assert Path(value.filename).name != "__init__.py"
-        assert Path(value.filename).is_absolute()
-        assert Path(value.filename).exists()
+        assert value.filename.name != "__init__.py"
+        assert value.filename.is_absolute()
+        assert value.filename.exists()
 
 
 def test_find_imported_modules_main(tmp_path: Path) -> None:
