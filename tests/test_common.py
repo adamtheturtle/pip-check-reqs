@@ -91,7 +91,7 @@ def test_pyfiles_package(tmp_path: Path) -> None:
         pytest.param(
             "import abc",
             set[str](),
-            id="Useful to confirm that the next test is valid",
+            id="Frozen module, at least in some Python implementations",
         ),
         pytest.param(
             "import re",
@@ -127,6 +127,17 @@ def test_find_imported_modules_simple(
         assert value.filename.is_absolute()
         assert value.filename.exists()
 
+
+def test_find_imported_modules_frozen(
+    tmp_path: Path,
+) -> None:
+    """Test for the basic ability to find imported modules."""
+    frozen_item_names: list[str] = []
+    sys_module_items = [(name, value) for name, value in sys.modules.items()]
+    for value in sys_module_items:
+        if value.__spec__ is not None and value.__spec__.origin == "frozen":
+            frozen_item_names.append(name)
+            pass
 
 def test_find_imported_modules_main(tmp_path: Path) -> None:
     spam = tmp_path / "spam.py"

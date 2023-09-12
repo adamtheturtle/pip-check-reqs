@@ -94,7 +94,10 @@ class _ImportVisitor(ast.NodeVisitor):
                 continue
 
             modpath = module_spec.origin
-            if modpath == "frozen":
+
+            # We do not cover this branch as we cannot guarantee that we can
+            # have a frozen module in our test environment.
+            if modpath == "frozen":  # pragma: no cover
                 # Frozen modules are modules written in Python whose compiled
                 # byte-code object is incorporated into a custom-built Python
                 # interpreter by Python's freeze utility.
