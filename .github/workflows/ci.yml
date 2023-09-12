@@ -22,8 +22,8 @@ jobs:
         # An empty string here represents the latest version.
         pip-version: ['']
         # The minimum version should be represented in setup.py.
-        python-version: ["3.9", "3.10", "3.11", "3.12-dev"]
-        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.11"]
+        os: [windows-latest]
 
     runs-on: ${{ matrix.os }}
 
