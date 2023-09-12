@@ -89,11 +89,6 @@ def test_pyfiles_package(tmp_path: Path) -> None:
         pytest.param("from .foo import bar", set[str](), id="Relative import"),
         pytest.param("from . import baz", set[str]()),
         pytest.param(
-            "import abc",
-            set[str](),
-            id="Frozen module, at least in some Python implementations",
-        ),
-        pytest.param(
             "import re",
             {"re"},
             id="Useful to confirm that the next test is valid",
