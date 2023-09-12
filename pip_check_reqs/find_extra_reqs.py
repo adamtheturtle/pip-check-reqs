@@ -14,7 +14,10 @@ from typing import TYPE_CHECKING, Callable, Iterable
 from unittest import mock
 
 from packaging.utils import NormalizedName, canonicalize_name
-from pip._internal.commands.show import _PackageInfo, search_packages_info
+from pip._internal.commands.show import (
+    _PackageInfo,  # pyright: ignore[reportPrivateUsage]
+    search_packages_info,
+)
 
 from pip_check_reqs import common
 from pip_check_reqs.common import version_info
@@ -101,7 +104,8 @@ def find_extra_reqs(
 
     # 3. match imported modules against those packages
     used: collections.defaultdict[
-        NormalizedName, list[common.FoundModule],
+        NormalizedName,
+        list[common.FoundModule],
     ] = collections.defaultdict(list)
 
     for modname, info in used_modules.items():

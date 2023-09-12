@@ -14,7 +14,10 @@ from typing import Callable, Iterable
 from unittest import mock
 
 from packaging.utils import NormalizedName, canonicalize_name
-from pip._internal.commands.show import _PackageInfo, search_packages_info
+from pip._internal.commands.show import (
+    _PackageInfo,  # pyright: ignore[reportPrivateUsage]
+    search_packages_info,
+)
 from pip._internal.network.session import PipSession
 from pip._internal.req.constructors import install_req_from_line
 from pip._internal.req.req_file import parse_requirements
