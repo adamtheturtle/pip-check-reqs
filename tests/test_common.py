@@ -128,7 +128,7 @@ def test_find_imported_modules_frozen(
 ) -> None:
     """Frozen modules are not included in the result."""
     frozen_item_names: list[str] = []
-    sys_module_items = [(name, value) for name, value in sys.modules.items()]
+    sys_module_items = list(sys.modules.items())
     for name, value in sys_module_items:
         try:
             spec = value.__spec__
