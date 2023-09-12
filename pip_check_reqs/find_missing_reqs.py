@@ -95,7 +95,8 @@ def find_missing_reqs(
 
     # 3. match imported modules against those packages
     used: collections.defaultdict[
-        NormalizedName, list[common.FoundModule],
+        NormalizedName,
+        list[common.FoundModule],
     ] = collections.defaultdict(list)
     for modname, info in used_modules.items():
         # probably standard library if it's not in the files list
