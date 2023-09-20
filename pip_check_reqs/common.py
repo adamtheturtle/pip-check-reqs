@@ -4,12 +4,11 @@ from __future__ import annotations
 
 import ast
 import fnmatch
-import importlib
 import logging
 import os
-import re
 import sys
 from dataclasses import dataclass, field
+from importlib.util import find_spec
 from pathlib import Path
 from typing import (
     Callable,
@@ -33,11 +32,11 @@ class FoundModule:
     """A module with uses in the source."""
 
     modname: str
-    filename: str
+    filename: Path
     locations: list[tuple[str, int]] = field(default_factory=list)
 
     def __post_init__(self) -> None:
-        self.filename = str(Path(self.filename).resolve())
+        self.filename = Path(self.filename).resolve()
 
 
 class _ImportVisitor(ast.NodeVisitor):
@@ -80,9 +79,7 @@ class _ImportVisitor(ast.NodeVisitor):
         for modname_part in modname.split("."):
             name = ".".join([*modname_parts_progress, modname_part])
             try:
-                module_spec = importlib.util.find_spec(
-                    name=name,
-                )
+                module_spec = find_spec(name=name)
             except ValueError:
                 # The module has no __spec__ attribute.
                 # For example, if importing __main__.
@@ -97,6 +94,13 @@ class _ImportVisitor(ast.NodeVisitor):
                 continue
 
             modpath = module_spec.origin
+
+            if modpath == "frozen":
+                # Frozen modules are modules written in Python whose compiled
+                # byte-code object is incorporated into a custom-built Python
+                # interpreter by Python's freeze utility.
+                continue
+
             modpath_path = Path(modpath)
             modname = module_spec.name
 
@@ -112,10 +116,11 @@ class _ImportVisitor(ast.NodeVisitor):
                         pass
                 self._modules[modname] = FoundModule(
                     modname=modname,
-                    filename=str(modpath_path),
+                    filename=modpath_path,
                 )
             assert isinstance(self._location, str)
             self._modules[modname].locations.append((self._location, lineno))
+            return
 
     def finalise(self) -> dict[str, FoundModule]:
         return self._modules
@@ -143,9 +148,9 @@ def find_imported_modules(
     for path in paths:
         for filename in pyfiles(path):
             if ignore_files_function(str(filename)):
-                log.info("ignoring: %s", os.path.relpath(filename))
+                log.info("ignoring: %s", filename)
                 continue
-            log.debug("scanning: %s", os.path.relpath(filename))
+            log.debug("scanning: %s", filename)
             content = filename.read_text(encoding="utf-8")
             vis.set_location(location=str(filename))
             vis.visit(ast.parse(content, str(filename)))
@@ -161,7 +166,7 @@ def find_required_modules(
     skip_incompatible: bool,
     requirements_filename: Path,
 ) -> set[NormalizedName]:
-    explicit = set()
+    explicit: set[NormalizedName] = set()
     for requirement in parse_requirements(
         str(requirements_filename),
         session=PipSession(),
@@ -202,17 +207,20 @@ def has_compatible_markers(*, full_requirement: str) -> bool:
     return Marker(enviroment_marker).evaluate()
 
 
-def package_path(*, path: str) -> str | None:
+def package_path(*, path: Path) -> Path | None:
     """Return the package path for a given Python package sentinel file.
 
     Return None if the path is not a sentinel file.
 
     A sentinel file is the __init__.py or its compiled variants.
     """
-    search_result = re.search(r"(.+)/__init__\.py[co]?$", path)
-    if search_result is not None:
-        return search_result.group(1)
-    return None
+    if path.parent == path.parent.parent:
+        return None
+
+    if path.name not in ("__init__.py", "__init__.pyc", "__init__.pyo"):
+        return None
+
+    return path.parent
 
 
 def ignorer(*, ignore_cfg: list[str]) -> Callable[..., bool]:

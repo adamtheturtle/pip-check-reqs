@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import logging
-import os.path
+import platform
+import re
 import sys
 import textwrap
+import types
+import uuid
 from pathlib import Path
 
 import __main__
@@ -17,25 +20,27 @@ from pip_check_reqs import __version__, common
 @pytest.mark.parametrize(
     ("path", "result"),
     [
-        ("/", None),
+        (Path("/"), None),
+        (Path("/ham/spam/other.py"), None),
+        (Path("/ham/spam"), None),
         # a top-level file like this has no package path
-        ("__init__.py", None),
-        ("/__init__.py", None),  # no package name
-        ("spam/__init__.py", "spam"),
-        ("spam/__init__.pyc", "spam"),
-        ("spam/__init__.pyo", "spam"),
-        ("ham/spam/__init__.py", "ham/spam"),
-        ("/ham/spam/__init__.py", "/ham/spam"),
+        (Path("__init__.py"), None),
+        (Path("/__init__.py"), None),  # no package name
+        (Path("spam/__init__.py"), Path("spam")),
+        (Path("spam/__init__.pyc"), Path("spam")),
+        (Path("spam/__init__.pyo"), Path("spam")),
+        (Path("ham/spam/__init__.py"), Path("ham/spam")),
+        (Path("/ham/spam/__init__.py"), Path("/ham/spam")),
     ],
 )
-def test_package_path(path: str, result: str) -> None:
-    assert common.package_path(path=path) == result
+def test_package_path(path: Path, result: Path) -> None:
+    assert common.package_path(path=path) == result, path
 
 
 def test_found_module() -> None:
-    found_module = common.FoundModule(modname="spam", filename="ham")
+    found_module = common.FoundModule(modname="spam", filename=Path("ham"))
     assert found_module.modname == "spam"
-    assert found_module.filename == str(Path("ham").resolve())
+    assert found_module.filename == Path("ham").resolve()
     assert not found_module.locations
 
 
@@ -51,7 +56,9 @@ def test_pyfiles_file_no_dice(tmp_path: Path) -> None:
 
     with pytest.raises(
         expected_exception=ValueError,
-        match=f"{not_python_file} is not a python file or directory",
+        match=re.escape(
+            f"{not_python_file} is not a python file or directory",
+        ),
     ):
         list(common.pyfiles(root=not_python_file))
 
@@ -74,20 +81,26 @@ def test_pyfiles_package(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
-    ("statement", "expected_module_names"),
-    [
-        ("import ast", {"ast"}),
-        ("import ast, pathlib", {"ast", "pathlib"}),
-        ("from pathlib import Path", {"pathlib"}),
-        ("from string import hexdigits", {"string"}),
-        ("import urllib.request", {"urllib"}),
-        # don't break because bad programmer imported the file we are in
-        ("import spam", set()),
-        ("from .foo import bar", set()),  # don't break on relative imports
-        ("from . import baz", set()),
-        # __main__ is a special case -  sys.modules["__main__"] has no __spec__
-        # attribute.
-        ("import __main__", set()),
+    argnames=("statement", "expected_module_names"),
+    argvalues=[
+        pytest.param("import ast", {"ast"}),
+        pytest.param("import ast, pathlib", {"ast", "pathlib"}),
+        pytest.param("from pathlib import Path", {"pathlib"}),
+        pytest.param("from string import hexdigits", {"string"}),
+        pytest.param("import urllib.request", {"urllib"}),
+        pytest.param("import spam", set[str](), id="The file we are in"),
+        pytest.param("from .foo import bar", set[str](), id="Relative import"),
+        pytest.param("from . import baz", set[str]()),
+        pytest.param(
+            "import re",
+            {"re"},
+            id="Useful to confirm that the next test is valid",
+        ),
+        pytest.param(
+            "import typing.re",
+            {"typing"},
+            id="Submodule has same name as a top-level module",
+        ),
     ],
 )
 def test_find_imported_modules_simple(
@@ -96,14 +109,6 @@ def test_find_imported_modules_simple(
     tmp_path: Path,
 ) -> None:
     """Test for the basic ability to find imported modules."""
-    message = (
-        "This test is only valid if __main__.__spec__ is None. "
-        "That is not the case when running pytest as 'python -m pytest' "
-        "which modifies sys.modules. "
-        "See https://docs.pytest.org/en/7.1.x/how-to/usage.html#calling-pytest-from-python-code"
-    )
-    assert __main__.__spec__ is None, message
-
     spam = tmp_path / "spam.py"
     spam.write_text(data=statement)
 
@@ -116,9 +121,100 @@ def test_find_imported_modules_simple(
     assert set(result.keys()) == expected_module_names
     for value in result.values():
         assert str(value.filename) not in sys.path
-        assert Path(value.filename).name != "__init__.py"
-        assert Path(value.filename).is_absolute()
-        assert Path(value.filename).exists()
+        assert value.filename.name != "__init__.py"
+        assert value.filename.is_absolute()
+        assert value.filename.exists()
+
+
+def test_find_imported_modules_frozen(
+    tmp_path: Path,
+) -> None:
+    """Frozen modules are not included in the result."""
+    frozen_item_names: list[str] = []
+    sys_module_items = list(sys.modules.items())
+    for name, value in sys_module_items:
+        try:
+            spec = value.__spec__
+        except AttributeError:
+            continue
+
+        if spec is not None and spec.origin == "frozen":
+            frozen_item_names.append(name)
+
+    assert (
+        frozen_item_names
+    ), "This test is only valid if there are frozen modules in sys.modules"
+
+    spam = tmp_path / "spam.py"
+    statement = f"import {frozen_item_names[0]}"
+    spam.write_text(data=statement)
+
+    result = common.find_imported_modules(
+        paths=[tmp_path],
+        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+    )
+
+    assert set(result.keys()) == set()
+
+
+@pytest.mark.skipif(
+    condition=platform.system() == "Windows",
+    reason=(
+        "Test not supported on Windows, where __main__.__spec__ is not None"
+    ),
+)
+def test_find_imported_modules_main(
+    tmp_path: Path,
+) -> None:  # pragma: no cover
+    spam = tmp_path / "spam.py"
+    statement = "import __main__"
+    spam.write_text(data=statement)
+
+    message = (
+        "This test is only valid if __main__.__spec__ is None. "
+        "That is not the case when running pytest as 'python -m pytest' "
+        "which modifies sys.modules. "
+        "See https://docs.pytest.org/en/7.1.x/how-to/usage.html#calling-pytest-from-python-code"
+    )
+    assert __main__.__spec__ is None, message
+
+    result = common.find_imported_modules(
+        paths=[tmp_path],
+        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+    )
+
+    assert set(result.keys()) == set()
+
+
+def test_find_imported_modules_no_spec(tmp_path: Path) -> None:
+    """Modules without a __spec__ are not included in the result.
+
+    This is often __main__.
+    However, it is also possible to create a module without a __spec__.
+    We prefer to test with a realistic case, but on Windows under `pytest`,
+    `__main__.__spec__` is not None as `__main__` is replaced by pytest.
+
+    Therefore we need this test to create a module without a __spec__.
+    """
+    spam = tmp_path / "spam.py"
+    name = "a" + uuid.uuid4().hex
+    statement = f"import {name}"
+    spam.write_text(data=statement)
+    module = types.ModuleType(name=name)
+    module.__spec__ = None
+    sys.modules[name] = module
+
+    try:
+        result = common.find_imported_modules(
+            paths=[tmp_path],
+            ignore_files_function=common.ignorer(ignore_cfg=[]),
+            ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        )
+    finally:
+        del sys.modules[name]
+    assert set(result.keys()) == set()
 
 
 def test_find_imported_modules_period(tmp_path: Path) -> None:
@@ -220,7 +316,7 @@ def test_find_imported_modules_advanced(
     assert sorted(relative_locations) == sorted(locs)
 
     if ignore_ham:
-        assert caplog.records[0].message == f"ignoring: {os.path.relpath(ham)}"
+        assert caplog.records[0].message == f"ignoring: {ham}"
 
 
 @pytest.mark.parametrize(

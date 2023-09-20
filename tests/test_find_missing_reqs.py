@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import os
 import textwrap
 from pathlib import Path
 
@@ -54,11 +53,9 @@ def test_find_missing_reqs(tmp_path: Path) -> None:
             [
                 common.FoundModule(
                     modname=installed_imported_not_required_package.__name__,
-                    filename=str(
-                        Path(
-                            installed_imported_not_required_package.__file__,
-                        ).parent,
-                    ),
+                    filename=Path(
+                        installed_imported_not_required_package.__file__,
+                    ).parent,
                     locations=[(str(source_file), 3)],
                 ),
             ],
@@ -96,10 +93,9 @@ def test_main_failure(
     assert excinfo.value.code == 1
 
     assert caplog.records[0].message == "Missing requirements:"
-    relative_source_file = os.path.relpath(source_file, Path.cwd())
     assert (
         caplog.records[1].message
-        == f"{relative_source_file}:1 dist=pytest module=pytest"
+        == f"{source_file}:1 dist=pytest module=pytest"
     )
 
 

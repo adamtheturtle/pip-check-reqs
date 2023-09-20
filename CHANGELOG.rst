@@ -5,6 +5,7 @@ Release History
 2.5.2
 
 - Performance improvements.
+- Add preliminary support for Windows.
 
 2.5.1
 

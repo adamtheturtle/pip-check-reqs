@@ -14,7 +14,10 @@ from typing import Callable, Iterable
 from unittest import mock
 
 from packaging.utils import NormalizedName, canonicalize_name
-from pip._internal.commands.show import _PackageInfo, search_packages_info
+from pip._internal.commands.show import (
+    _PackageInfo,  # pyright: ignore[reportPrivateUsage]
+    search_packages_info,
+)
 from pip._internal.network.session import PipSession
 from pip._internal.req.constructors import install_req_from_line
 from pip._internal.req.req_file import parse_requirements
@@ -25,6 +28,10 @@ from pip_check_reqs.common import FoundModule, version_info
 log = logging.getLogger(__name__)
 
 
+# This is a slow operation.
+# It only happens once when calling the CLI, but it is hit many times in
+# tests.
+# We cache the result to speed up tests.
 @cache
 def get_packages_info() -> list[_PackageInfo]:
     all_pkgs = [
@@ -91,9 +98,9 @@ def find_missing_reqs(
             package_location,
         )
         for package_file in package_files:
-            path = str(
-                (Path(package_location) / package_file).resolve(),
-            )
+            path = Path(package_location) / package_file
+            path = path.resolve()
+
             installed_files[path] = package_name
             package_path = common.package_path(path=path)
             if package_path:
@@ -115,11 +122,14 @@ def find_missing_reqs(
     print(f"{len(packages_info)=}")
 
     # 3. match imported modules against those packages
-    used = collections.defaultdict(list)
+    used: collections.defaultdict[
+        NormalizedName,
+        list[common.FoundModule],
+    ] = collections.defaultdict(list)
     for modname, info in used_modules.items():
         # probably standard library if it's not in the files list
         if info.filename in installed_files:
-            used_name = canonicalize_name(installed_files[info.filename])
+            used_name = canonicalize_name(name=installed_files[info.filename])
             log.debug(
                 "used module: %s (from package %s)",
                 modname,
@@ -134,7 +144,7 @@ def find_missing_reqs(
             )
 
     # 4. compare with requirements
-    explicit = set()
+    explicit: set[NormalizedName] = set()
     for requirement in parse_requirements(
         str(requirements_filename),
         session=PipSession(),
@@ -242,7 +252,7 @@ def main(arguments: list[str] | None = None) -> None:
             for filename, lineno in use.locations:
                 log.warning(
                     "%s:%s dist=%s module=%s",
-                    os.path.relpath(filename),
+                    filename,
                     lineno,
                     name,
                     use.modname,
