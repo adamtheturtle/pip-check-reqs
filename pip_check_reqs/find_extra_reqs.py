@@ -27,18 +27,6 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
-@cache
-def get_packages_info() -> list[_PackageInfo]:
-    all_pkgs = [
-        dist.metadata["Name"] for dist in importlib.metadata.distributions()
-    ]
-
-    # On Python 3.11 (and maybe higher), setting this environment variable
-    # dramatically improves speeds.
-    # See https://github.com/r1chardj0n3s/pip-check-reqs/issues/123.
-    with mock.patch.dict(os.environ, {"_PIP_USE_IMPORTLIB_METADATA": "False"}):
-        return list(search_packages_info(query=all_pkgs))
-
 
 # This is a slow operation.
 # It only happens once when calling the CLI, but it is hit many times in
