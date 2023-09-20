@@ -136,8 +136,7 @@ def find_missing_reqs(
 
 
 def main(arguments: list[str] | None = None) -> None:
-    usage = "usage: %prog [options] files or directories"
-    parser = argparse.ArgumentParser(usage)
+    parser = argparse.ArgumentParser()
     parser.add_argument("paths", type=Path, nargs="*")
     parser.add_argument(
         "--requirements-file",
