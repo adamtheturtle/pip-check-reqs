@@ -6,7 +6,7 @@ import logging
 import textwrap
 from pathlib import Path
 
-import black
+import pip  # This happens to be installed in the test environment.
 import pytest
 
 from pip_check_reqs import common, find_missing_reqs
@@ -14,7 +14,7 @@ from pip_check_reqs import common, find_missing_reqs
 
 def test_find_missing_reqs(tmp_path: Path) -> None:
     installed_imported_not_required_package = pytest
-    installed_imported_required_package = black
+    installed_imported_required_package = pip
 
     fake_requirements_file = tmp_path / "requirements.txt"
     fake_requirements_file.write_text(

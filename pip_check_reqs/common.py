@@ -10,11 +10,7 @@ import sys
 from dataclasses import dataclass, field
 from importlib.util import find_spec
 from pathlib import Path
-from typing import (
-    Callable,
-    Generator,
-    Iterable,
-)
+from typing import TYPE_CHECKING, Callable
 
 from packaging.markers import Marker
 from packaging.utils import NormalizedName, canonicalize_name
@@ -23,6 +19,9 @@ from pip._internal.req.constructors import install_req_from_line
 from pip._internal.req.req_file import ParsedRequirement, parse_requirements
 
 from . import __version__
+
+if TYPE_CHECKING:
+    from collections.abc import Generator, Iterable
 
 log = logging.getLogger(__name__)
 
