@@ -10,7 +10,7 @@ import os
 import sys
 from functools import cache
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Iterable
+from typing import TYPE_CHECKING, Callable
 from unittest import mock
 
 from packaging.utils import NormalizedName, canonicalize_name
@@ -23,6 +23,8 @@ from pip_check_reqs import common
 from pip_check_reqs.common import version_info
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from pip._internal.req.req_file import ParsedRequirement
 
 log = logging.getLogger(__name__)
