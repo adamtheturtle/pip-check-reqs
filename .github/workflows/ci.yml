@@ -58,7 +58,7 @@ jobs:
         run: |
           mypy .
           ruff .
-          black --check .
+          ruff format --check .
           pip-extra-reqs pip_check_reqs
           pip-missing-reqs pip_check_reqs
           pylint pip_check_reqs tests

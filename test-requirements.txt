@@ -1,4 +1,3 @@
-black
 ruff
 mypy
 pyenchant

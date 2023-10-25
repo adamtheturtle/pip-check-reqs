@@ -86,17 +86,13 @@
     # --spelling-private-dict-file option instead of raising a message.
     spelling-store-unknown-words = 'no'
 
-[tool.black]
-
-line-length = 79
-
 [tool.mypy]
 
 strict = true
 
 [tool.ruff]
 
-target-version = "py38"
+target-version = "py39"
 
 select = ["ALL"]
 
