@@ -11,9 +11,9 @@ import types
 import uuid
 from pathlib import Path
 
-import __main__
 import pytest
 
+import __main__
 from pip_check_reqs import __version__, common
 
 
