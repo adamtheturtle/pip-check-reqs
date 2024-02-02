@@ -226,7 +226,7 @@ def main(arguments: list[str] | None = None) -> None:
     elif parse_result.verbose:
         level = logging.INFO
     else:
-        level = logging.WARN
+        level = logging.WARNING
     log.setLevel(level)
     common.log.setLevel(level)
 

@@ -79,7 +79,7 @@ def test_main_failure(
     # We choose `pytest` because we know it is installed.
     source_file.write_text("import pytest")
 
-    caplog.set_level(logging.WARN)
+    caplog.set_level(logging.WARNING)
 
     with pytest.raises(SystemExit) as excinfo:
         find_missing_reqs.main(
@@ -140,7 +140,7 @@ def test_logging_config(
     for event in [
         (logging.DEBUG, "debug"),
         (logging.INFO, "info"),
-        (logging.WARN, "warn"),
+        (logging.WARNING, "warn"),
     ]:
         find_missing_reqs.log.log(*event)
 

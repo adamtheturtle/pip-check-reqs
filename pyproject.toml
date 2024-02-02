@@ -92,7 +92,10 @@ strict = true
 
 [tool.ruff]
 
+line-length = 79
 target-version = "py39"
+
+[tool.ruff.lint]
 
 select = ["ALL"]
 
@@ -114,8 +117,6 @@ ignore = [
     # https://mypy.readthedocs.io/en/stable/type_narrowing.html#type-narrowing-expressions.
     "S101",
 ]
-
-line-length = 79
 
 # Do not automatically remove commented out code.
 # We comment out code during development, and with VSCode auto-save, this code

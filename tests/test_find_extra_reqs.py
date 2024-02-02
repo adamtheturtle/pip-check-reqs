@@ -69,7 +69,7 @@ def test_main_failure(
     source_dir = tmp_path / "source"
     source_dir.mkdir()
 
-    caplog.set_level(logging.WARN)
+    caplog.set_level(logging.WARNING)
 
     with pytest.raises(SystemExit) as excinfo:
         find_extra_reqs.main(
@@ -130,7 +130,7 @@ def test_logging_config(
     for event in [
         (logging.DEBUG, "debug"),
         (logging.INFO, "info"),
-        (logging.WARN, "warn"),
+        (logging.WARNING, "warn"),
     ]:
         find_extra_reqs.log.log(*event)
 
