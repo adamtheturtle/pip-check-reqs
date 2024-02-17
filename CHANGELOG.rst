@@ -2,6 +2,10 @@
 Release History
 ---------------
 
+2.6.0
+
+- Performance improvements.
+- Drop support for Python 3.9.
 2.5.2
 
 - Performance improvements.
