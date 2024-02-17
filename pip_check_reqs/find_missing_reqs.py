@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import argparse
 import collections
+import datetime
 import importlib.metadata
 import logging
 import os
 import sys
-from functools import cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable
 from unittest import mock
@@ -30,12 +30,14 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
+MICROSECONDS_IN_SECOND = 1000000
+
 
 # This is a slow operation.
 # It only happens once when calling the CLI, but it is hit many times in
 # tests.
 # We cache the result to speed up tests.
-@cache
+# @cache
 def get_packages_info() -> list[_PackageInfo]:
     all_pkgs = [
         dist.metadata["Name"] for dist in importlib.metadata.distributions()
@@ -54,7 +56,6 @@ def find_missing_reqs(
     ignore_files_function: Callable[[str], bool],
     ignore_modules_function: Callable[[str], bool],
 ) -> list[tuple[NormalizedName, list[FoundModule]]]:
-    import datetime
     start = datetime.datetime.now()
     # 1. find files used by imports in the code (as best we can without
     #    executing)
@@ -114,15 +115,6 @@ def find_missing_reqs(
 
     after_loop_packages_info = datetime.datetime.now()
 
-    find_imported_modules_time = after_find_imported_modules - start
-    all_pkgs_time = after_all_pkgs - after_find_imported_modules
-    search_packages_info_time = after_search_packages_info - after_all_pkgs
-    loop_packages_info_time = after_loop_packages_info - after_search_packages_info
-    print(f"{round(find_imported_modules_time.microseconds * 0.000001, 3)=}")
-    print(f"{round(all_pkgs_time.microseconds * 0.000001, 3)=}")
-    print(f"{round(search_packages_info_time.microseconds * 0.000001, 3)=}")
-    print(f"{round(loop_packages_info_time.microseconds * 0.000001, 3)=}")
-    print(f"{len(packages_info)=}")
 
     # 3. match imported modules against those packages
     used: collections.defaultdict[
@@ -146,6 +138,8 @@ def find_missing_reqs(
                 info.filename,
             )
 
+    after_match_used = datetime.datetime.now()
+
     # 4. compare with requirements
     explicit: set[NormalizedName] = set()
     for requirement in parse_requirements(
@@ -160,6 +154,21 @@ def find_missing_reqs(
         log.debug("found requirement: %s", requirement_name)
         explicit.add(canonicalize_name(requirement_name))
 
+    after_set_explicit = datetime.datetime.now()
+
+    find_imported_modules_time = after_find_imported_modules - start
+    all_pkgs_time = after_all_pkgs - after_find_imported_modules
+    search_packages_info_time = after_search_packages_info - after_all_pkgs
+    loop_packages_info_time = after_loop_packages_info - after_search_packages_info
+    match_used_time = after_match_used - after_loop_packages_info
+    set_explicit_time = after_set_explicit - after_match_used
+    print(f"{find_imported_modules_time.total_seconds()=}")
+    print(f"{all_pkgs_time.total_seconds()=}")
+    print(f"{search_packages_info_time.total_seconds()=}")
+    print(f"{loop_packages_info_time.total_seconds()=}")
+    print(f"{match_used_time.total_seconds()=}")
+    print(f"{set_explicit_time.total_seconds()=}")
+    print(f"{len(packages_info)=}")
     return [(name, used[name]) for name in used if name not in explicit]
 
 
@@ -240,12 +249,18 @@ def main(arguments: list[str] | None = None) -> None:
 
     log.info(version_info())
 
+    before_find_missing_reqs = datetime.datetime.now()
     missing = find_missing_reqs(
         requirements_filename=parse_result.requirements_filename,
         paths=parse_result.paths,
         ignore_files_function=ignore_files,
         ignore_modules_function=ignore_mods,
     )
+
+    after_find_missing_reqs = datetime.datetime.now()
+
+    find_missing_reqs_time = after_find_missing_reqs - before_find_missing_reqs
+    print(f"{find_missing_reqs_time.total_seconds()=}")
 
     if missing:
         log.warning("Missing requirements:")
