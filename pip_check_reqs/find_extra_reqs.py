@@ -20,7 +20,6 @@ from pip._internal.commands.show import (
 )
 
 from pip_check_reqs import common
-from pip_check_reqs.common import version_info
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -210,7 +209,7 @@ def main(arguments: list[str] | None = None) -> None:
     parse_result = parser.parse_args(arguments)
 
     if parse_result.version:
-        sys.stdout.write(version_info() + "\n")
+        sys.stdout.write(common.version_info() + "\n")
         sys.exit(0)
 
     if not parse_result.paths:
@@ -230,7 +229,7 @@ def main(arguments: list[str] | None = None) -> None:
     log.setLevel(level)
     common.log.setLevel(level)
 
-    log.info(version_info())
+    log.info(common.version_info())
 
     extras = find_extra_reqs(
         requirements_filename=parse_result.requirements_filename,

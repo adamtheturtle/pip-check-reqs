@@ -23,7 +23,6 @@ from pip._internal.req.constructors import install_req_from_line
 from pip._internal.req.req_file import parse_requirements
 
 from pip_check_reqs import common
-from pip_check_reqs.common import FoundModule, version_info
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -53,7 +52,7 @@ def find_missing_reqs(
     paths: Iterable[Path],
     ignore_files_function: Callable[[str], bool],
     ignore_modules_function: Callable[[str], bool],
-) -> list[tuple[NormalizedName, list[FoundModule]]]:
+) -> list[tuple[NormalizedName, list[common.FoundModule]]]:
     # 1. find files used by imports in the code (as best we can without
     #    executing)
     used_modules = common.find_imported_modules(
@@ -102,7 +101,7 @@ def find_missing_reqs(
     # 3. match imported modules against those packages
     used: collections.defaultdict[
         NormalizedName,
-        list[common.FoundModule],
+        list[common.common.FoundModule],
     ] = collections.defaultdict(list)
     for modname, info in used_modules.items():
         # probably standard library if it's not in the files list
@@ -194,7 +193,7 @@ def main(arguments: list[str] | None = None) -> None:
     parse_result = parser.parse_args(arguments)
 
     if parse_result.version:
-        sys.stdout.write(version_info() + "\n")
+        sys.stdout.write(common.version_info() + "\n")
         sys.exit(0)
 
     if not parse_result.paths:
@@ -213,7 +212,7 @@ def main(arguments: list[str] | None = None) -> None:
     log.setLevel(level)
     common.log.setLevel(level)
 
-    log.info(version_info())
+    log.info(common.version_info())
 
     missing = find_missing_reqs(
         requirements_filename=parse_result.requirements_filename,
