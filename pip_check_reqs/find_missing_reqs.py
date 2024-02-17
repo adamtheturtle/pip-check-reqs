@@ -4,26 +4,17 @@ from __future__ import annotations
 
 import argparse
 import collections
-import importlib.metadata
 import logging
-import os
 import sys
-from functools import cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable
-from unittest import mock
 
 from packaging.utils import NormalizedName, canonicalize_name
-from pip._internal.commands.show import (
-    _PackageInfo,  # pyright: ignore[reportPrivateUsage]
-    search_packages_info,
-)
 from pip._internal.network.session import PipSession
 from pip._internal.req.constructors import install_req_from_line
 from pip._internal.req.req_file import parse_requirements
 
 from pip_check_reqs import common
-from pip_check_reqs.common import FoundModule, version_info
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -31,29 +22,12 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-# This is a slow operation.
-# It only happens once when calling the CLI, but it is hit many times in
-# tests.
-# We cache the result to speed up tests.
-@cache
-def get_packages_info() -> list[_PackageInfo]:
-    all_pkgs = [
-        dist.metadata["Name"] for dist in importlib.metadata.distributions()
-    ]
-
-    # On Python 3.11 (and maybe higher), setting this environment variable
-    # dramatically improves speeds.
-    # See https://github.com/r1chardj0n3s/pip-check-reqs/issues/123.
-    with mock.patch.dict(os.environ, {"_PIP_USE_IMPORTLIB_METADATA": "False"}):
-        return list(search_packages_info(query=all_pkgs))
-
-
 def find_missing_reqs(
     requirements_filename: Path,
     paths: Iterable[Path],
     ignore_files_function: Callable[[str], bool],
     ignore_modules_function: Callable[[str], bool],
-) -> list[tuple[NormalizedName, list[FoundModule]]]:
+) -> list[tuple[NormalizedName, list[common.FoundModule]]]:
     # 1. find files used by imports in the code (as best we can without
     #    executing)
     used_modules = common.find_imported_modules(
@@ -63,7 +37,7 @@ def find_missing_reqs(
     )
 
     installed_files: dict[Path, str] = {}
-    packages_info = get_packages_info()
+    packages_info = common.get_packages_info()
     here = Path().resolve()
 
     for package in packages_info:
@@ -194,7 +168,7 @@ def main(arguments: list[str] | None = None) -> None:
     parse_result = parser.parse_args(arguments)
 
     if parse_result.version:
-        sys.stdout.write(version_info() + "\n")
+        sys.stdout.write(common.version_info() + "\n")
         sys.exit(0)
 
     if not parse_result.paths:
@@ -213,7 +187,7 @@ def main(arguments: list[str] | None = None) -> None:
     log.setLevel(level)
     common.log.setLevel(level)
 
-    log.info(version_info())
+    log.info(common.version_info())
 
     missing = find_missing_reqs(
         requirements_filename=parse_result.requirements_filename,

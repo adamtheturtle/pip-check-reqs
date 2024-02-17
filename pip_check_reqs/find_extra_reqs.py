@@ -4,23 +4,14 @@ from __future__ import annotations
 
 import argparse
 import collections
-import importlib.metadata
 import logging
-import os
 import sys
-from functools import cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable
-from unittest import mock
 
 from packaging.utils import NormalizedName, canonicalize_name
-from pip._internal.commands.show import (
-    _PackageInfo,  # pyright: ignore[reportPrivateUsage]
-    search_packages_info,
-)
 
 from pip_check_reqs import common
-from pip_check_reqs.common import version_info
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -28,23 +19,6 @@ if TYPE_CHECKING:
     from pip._internal.req.req_file import ParsedRequirement
 
 log = logging.getLogger(__name__)
-
-
-# This is a slow operation.
-# It only happens once when calling the CLI, but it is hit many times in
-# tests.
-# We cache the result to speed up tests.
-@cache
-def get_packages_info() -> list[_PackageInfo]:
-    all_pkgs = [
-        dist.metadata["Name"] for dist in importlib.metadata.distributions()
-    ]
-
-    # On Python 3.11 (and maybe higher), setting this environment variable
-    # dramatically improves speeds.
-    # See https://github.com/r1chardj0n3s/pip-check-reqs/issues/123.
-    with mock.patch.dict(os.environ, {"_PIP_USE_IMPORTLIB_METADATA": "False"}):
-        return list(search_packages_info(query=all_pkgs))
 
 
 def find_extra_reqs(
@@ -68,7 +42,7 @@ def find_extra_reqs(
     )
 
     installed_files: dict[Path, str] = {}
-    packages_info = get_packages_info()
+    packages_info = common.get_packages_info()
     here = Path().resolve()
 
     for package in packages_info:
@@ -210,7 +184,7 @@ def main(arguments: list[str] | None = None) -> None:
     parse_result = parser.parse_args(arguments)
 
     if parse_result.version:
-        sys.stdout.write(version_info() + "\n")
+        sys.stdout.write(common.version_info() + "\n")
         sys.exit(0)
 
     if not parse_result.paths:
@@ -230,7 +204,7 @@ def main(arguments: list[str] | None = None) -> None:
     log.setLevel(level)
     common.log.setLevel(level)
 
-    log.info(version_info())
+    log.info(common.version_info())
 
     extras = find_extra_reqs(
         requirements_filename=parse_result.requirements_filename,
