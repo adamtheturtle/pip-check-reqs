@@ -4,20 +4,12 @@ from __future__ import annotations
 
 import argparse
 import collections
-import importlib.metadata
 import logging
-import os
 import sys
-from functools import cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable
-from unittest import mock
 
 from packaging.utils import NormalizedName, canonicalize_name
-from pip._internal.commands.show import (
-    _PackageInfo,  # pyright: ignore[reportPrivateUsage]
-    search_packages_info,
-)
 from pip._internal.network.session import PipSession
 from pip._internal.req.constructors import install_req_from_line
 from pip._internal.req.req_file import parse_requirements
@@ -28,23 +20,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
 log = logging.getLogger(__name__)
-
-
-# This is a slow operation.
-# It only happens once when calling the CLI, but it is hit many times in
-# tests.
-# We cache the result to speed up tests.
-@cache
-def get_packages_info() -> list[_PackageInfo]:
-    all_pkgs = [
-        dist.metadata["Name"] for dist in importlib.metadata.distributions()
-    ]
-
-    # On Python 3.11 (and maybe higher), setting this environment variable
-    # dramatically improves speeds.
-    # See https://github.com/r1chardj0n3s/pip-check-reqs/issues/123.
-    with mock.patch.dict(os.environ, {"_PIP_USE_IMPORTLIB_METADATA": "False"}):
-        return list(search_packages_info(query=all_pkgs))
 
 
 def find_missing_reqs(
@@ -62,7 +37,7 @@ def find_missing_reqs(
     )
 
     installed_files: dict[Path, str] = {}
-    packages_info = get_packages_info()
+    packages_info = common.get_packages_info()
     here = Path().resolve()
 
     for package in packages_info:
@@ -101,7 +76,7 @@ def find_missing_reqs(
     # 3. match imported modules against those packages
     used: collections.defaultdict[
         NormalizedName,
-        list[common.common.FoundModule],
+        list[common.FoundModule],
     ] = collections.defaultdict(list)
     for modname, info in used_modules.items():
         # probably standard library if it's not in the files list
