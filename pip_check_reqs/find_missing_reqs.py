@@ -10,7 +10,7 @@ import os
 import sys
 from functools import cache
 from pathlib import Path
-from typing import Callable, Iterable
+from typing import TYPE_CHECKING, Callable
 from unittest import mock
 
 from packaging.utils import NormalizedName, canonicalize_name
@@ -24,6 +24,9 @@ from pip._internal.req.req_file import parse_requirements
 
 from pip_check_reqs import common
 from pip_check_reqs.common import FoundModule, version_info
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 log = logging.getLogger(__name__)
 
@@ -161,8 +164,7 @@ def find_missing_reqs(
 
 
 def main(arguments: list[str] | None = None) -> None:
-    usage = "usage: %prog [options] files or directories"
-    parser = argparse.ArgumentParser(usage)
+    parser = argparse.ArgumentParser()
     parser.add_argument("paths", type=Path, nargs="*")
     parser.add_argument(
         "--requirements-file",
@@ -232,7 +234,7 @@ def main(arguments: list[str] | None = None) -> None:
     elif parse_result.verbose:
         level = logging.INFO
     else:
-        level = logging.WARN
+        level = logging.WARNING
     log.setLevel(level)
     common.log.setLevel(level)
 

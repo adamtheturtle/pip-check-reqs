@@ -86,17 +86,16 @@
     # --spelling-private-dict-file option instead of raising a message.
     spelling-store-unknown-words = 'no'
 
-[tool.black]
-
-line-length = 79
-
 [tool.mypy]
 
 strict = true
 
 [tool.ruff]
 
-target-version = "py38"
+line-length = 79
+target-version = "py39"
+
+[tool.ruff.lint]
 
 select = ["ALL"]
 
@@ -118,8 +117,6 @@ ignore = [
     # https://mypy.readthedocs.io/en/stable/type_narrowing.html#type-narrowing-expressions.
     "S101",
 ]
-
-line-length = 79
 
 # Do not automatically remove commented out code.
 # We comment out code during development, and with VSCode auto-save, this code

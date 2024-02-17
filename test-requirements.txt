@@ -1,5 +1,4 @@
-black
-ruff
+ruff==0.2.1
 mypy
 pyenchant
 pylint

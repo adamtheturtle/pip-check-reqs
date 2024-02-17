@@ -6,7 +6,7 @@ import logging
 import textwrap
 from typing import TYPE_CHECKING
 
-import black
+import pip  # This happens to be installed in the test environment.
 import pytest
 
 from pip_check_reqs import common, find_extra_reqs
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 def test_find_extra_reqs(tmp_path: Path) -> None:
     installed_not_imported_required_package = pytest
-    installed_imported_required_package = black
+    installed_imported_required_package = pip
 
     fake_requirements_file = tmp_path / "requirements.txt"
     fake_requirements_file.write_text(
@@ -69,7 +69,7 @@ def test_main_failure(
     source_dir = tmp_path / "source"
     source_dir.mkdir()
 
-    caplog.set_level(logging.WARN)
+    caplog.set_level(logging.WARNING)
 
     with pytest.raises(SystemExit) as excinfo:
         find_extra_reqs.main(
@@ -130,7 +130,7 @@ def test_logging_config(
     for event in [
         (logging.DEBUG, "debug"),
         (logging.INFO, "info"),
-        (logging.WARN, "warn"),
+        (logging.WARNING, "warn"),
     ]:
         find_extra_reqs.log.log(*event)
 
