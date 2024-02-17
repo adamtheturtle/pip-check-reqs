@@ -68,4 +68,9 @@ jobs:
           pytest -s -vvv --cov-fail-under 100 --cov=pip_check_reqs/ --cov=tests tests/
 
       - name: "Upload coverage to Codecov"
-        uses: "codecov/codecov-action@v4"
+        # The original maintainer of this project is the one with access to the
+        # Codecov token and GitHub settings which will allow us to bump to the
+        # v4 action.
+        uses: "codecov/codecov-action@v3"
+        with:
+          fail_ci_if_error: true
