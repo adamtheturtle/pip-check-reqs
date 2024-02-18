@@ -35,7 +35,6 @@ jobs:
         run: |
           pip install --upgrade uv
           uv venv ../.venv
-          echo "../.venv/bin" >> "$GITHUB_PATH"
 
       - name: "Install dependencies"
         run: |
@@ -43,6 +42,8 @@ jobs:
 
       - name: "Lint"
         run: |
+          PATH="../.venv/bin:$PATH"
+
           mypy .
           ruff check .
           ruff format --check .
@@ -56,6 +57,8 @@ jobs:
 
       - name: "Run tests"
         run: |
+          PATH="../.venv/bin:$PATH"
+
           pytest -s -vvv --cov-fail-under 100 --cov=pip_check_reqs/ --cov=tests tests/
 
       - name: "Upload coverage to Codecov"
