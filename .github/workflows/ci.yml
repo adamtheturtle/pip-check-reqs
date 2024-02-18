@@ -31,11 +31,14 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - run: echo "VIRTUAL_ENV=${Python_ROOT_DIR}" >> "$GITHUB_ENV"
+      - name: "Create virtual environment"
+        run: |
+          pip install --upgrade uv
+          uv venv ../.venv
+          echo "VIRTUAL_ENV=../.venv" >> "$GITHUB_ENV"
 
       - name: "Install dependencies"
         run: |
-          pip install uv
           uv pip install --resolution=${{ matrix.uv-resolution }} --upgrade --editable .[dev]
 
       - name: "Lint"
