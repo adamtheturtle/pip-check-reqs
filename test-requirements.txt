@@ -1,9 +1,11 @@
-ruff==0.2.1
 mypy
 pyenchant
 pylint
+pyproject-fmt
 pyright
+pyroma
 pytest
 pytest-cov
-types-setuptools
 ruamel.yaml
+ruff==0.2.1
+types-setuptools

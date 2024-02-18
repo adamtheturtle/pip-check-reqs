@@ -62,6 +62,8 @@ jobs:
           pip-extra-reqs pip_check_reqs
           pip-missing-reqs pip_check_reqs
           pylint pip_check_reqs tests
+          pyroma --min=10 .
+          pyproject-fmt --check --keep-full-version .
           pyright .
 
       - name: "Run tests"
