@@ -32,18 +32,27 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: "Create virtual environment"
+        id: venv
         run: |
           pip install --upgrade uv
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            uv venv C:/Users/runner/.venv
+            echo "activate=C:/Users/runner/.venv/Scripts/Activate.ps1" >> "$GITHUB_OUTPUT"
+          else
+            uv venv /home/runner/.venv
+            echo "activate=source /home/runner/.venv/bin/activate" >> "$GITHUB_OUTPUT"
+          fi
+
           uv venv ../.venv
 
       - name: "Install dependencies"
         run: |
+          ${{ steps.venv.outputs.activate }}
           uv pip install --resolution=${{ matrix.uv-resolution }} --upgrade --editable .[dev]
 
       - name: "Lint"
         run: |
-          PATH="../.venv/bin:$PATH"
-
+          ${{ steps.venv.outputs.activate }}
           mypy .
           ruff check .
           ruff format --check .
@@ -57,8 +66,7 @@ jobs:
 
       - name: "Run tests"
         run: |
-          PATH="../.venv/bin:$PATH"
-
+          ${{ steps.venv.outputs.activate }}
           pytest -s -vvv --cov-fail-under 100 --cov=pip_check_reqs/ --cov=tests tests/
 
       - name: "Upload coverage to Codecov"
