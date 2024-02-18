@@ -1,3 +1,4 @@
+actionlint-py
 mypy
 pyenchant
 pylint
