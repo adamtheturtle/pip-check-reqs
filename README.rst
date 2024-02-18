@@ -88,13 +88,36 @@ check by name (or glob pattern) using `--ignore-module` (shorthand is `-m`)::
 Using pyproject.toml instead of requirements.txt
 ------------------------------------------------
 
-If your project uses `pyproject.toml` instead of `requirements.txt`, you can
-use an external tool like `pdm` to convert it to `requirements.txt`::
+If your project uses `pyproject.toml`, there are multiple ways to use `pip-check-reqs` with it.
+
+One way is to use an external tool to convert `pyproject.toml` to `requirements.txt`::
 
     # requires `pip install pdm`
     pdm export --pyproject > requirements.txt
 
+    # or, if you prefer uv, `pip install uv`
+    uv pip compile --no-deps pyproject.toml > requirements.txt
+
 Then you can use `pip-missing-reqs` and `pip-extra-reqs` as usual.
+
+Another way is to use a `requirements.txt` file within your `pyproject.toml` file,
+for example with the `setuptools` build backend:
+
+.. code:: toml
+
+    [build-system]
+    build-backend = "setuptools.build_meta"
+    requires = [
+    "setuptools",
+    ]
+
+    [project]
+    ...
+    dynamic = ["dependencies"]
+
+    [tool.setuptools.dynamic]
+    dependencies = { file = "requirements.txt" }
+
 
 With Thanks To
 --------------
