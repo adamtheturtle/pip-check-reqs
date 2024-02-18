@@ -1,3 +1,36 @@
+[tool.ruff]
+
+line-length = 79
+target-version = "py39"
+
+[tool.ruff.lint]
+
+select = ["ALL"]
+
+ignore = [
+    # We do not annotate the type of 'self', or 'cls'.
+    "ANN101",
+    # We are missing too many docstrings to quickly fix now.
+    "D100",
+    "D103",
+    "D104",
+    "D105",
+    "D203",
+    "D213",
+    # Allow functions to take as many arguments as they want.
+    "PLR0913",
+    # Allow 'assert' in tests as it is the standard for pytest.
+    # Also, allow 'assert' in other code as it is the standard for Python type hint
+    # narrowing - see
+    # https://mypy.readthedocs.io/en/stable/type_narrowing.html#type-narrowing-expressions.
+    "S101",
+]
+
+# Do not automatically remove commented out code.
+# We comment out code during development, and with VSCode auto-save, this code
+# is sometimes annoyingly removed.
+unfixable = ["ERA001"]
+
 [tool.pylint]
 
     [tool.pylint.'MASTER']
@@ -86,43 +119,6 @@
     # --spelling-private-dict-file option instead of raising a message.
     spelling-store-unknown-words = 'no'
 
-[tool.mypy]
-
-strict = true
-
-[tool.ruff]
-
-line-length = 79
-target-version = "py39"
-
-[tool.ruff.lint]
-
-select = ["ALL"]
-
-ignore = [
-    # We do not annotate the type of 'self', or 'cls'.
-    "ANN101",
-    # We are missing too many docstrings to quickly fix now.
-    "D100",
-    "D103",
-    "D104",
-    "D105",
-    "D203",
-    "D213",
-    # Allow functions to take as many arguments as they want.
-    "PLR0913",
-    # Allow 'assert' in tests as it is the standard for pytest.
-    # Also, allow 'assert' in other code as it is the standard for Python type hint
-    # narrowing - see
-    # https://mypy.readthedocs.io/en/stable/type_narrowing.html#type-narrowing-expressions.
-    "S101",
-]
-
-# Do not automatically remove commented out code.
-# We comment out code during development, and with VSCode auto-save, this code
-# is sometimes annoyingly removed.
-unfixable = ["ERA001"]
-
 [tool.coverage.run]
 
 branch = true
@@ -131,6 +127,61 @@ branch = true
 
 exclude_also = ["if TYPE_CHECKING:"]
 
+[tool.mypy]
+
+strict = true
+
 [tool.pyright]
 
 typeCheckingMode = "strict"
+
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = [
+  "setuptools",
+]
+
+[project]
+name = "pip-check-reqs"
+description = "Find packages that should or should not be in requirements for a project"
+maintainers = [
+    { name = "Adam Dangoor", email = "adamdangoor@gmail.com"},
+    { name = "Richard Jones", email = "r1chardj0n3s@gmail.com"},
+]
+authors = [
+    { name = "Adam Dangoor", email = "adamdangoor@gmail.com"},
+    { name = "Richard Jones", email = "r1chardj0n3s@gmail.com"},
+]
+requires-python = ">=3.9.0"
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Build Tools",
+]
+dynamic = [
+  "dependencies",
+  "optional-dependencies",
+  "readme",
+  "version",
+]
+[project.urls]
+Changelog = "https://github.com/r1chardj0n3s/pip-check-reqs/blob/master/CHANGELOG.rst"
+Homepage = "https://github.com/r1chardj0n3s/pip-check-reqs"
+[project.scripts]
+pip-extra-reqs = "pip_check_reqs.find_extra_reqs:main"
+pip-missing-reqs = "pip_check_reqs.find_missing_reqs:main"
+
+[tool.setuptools]
+packages = ["pip_check_reqs"]
+
+[tool.setuptools.dynamic]
+version = {attr = "pip_check_reqs.__version__" }
+readme = { file = "README.rst", content-type = "text/x-rst" }
+dependencies = { file = "requirements.txt" }
+optional-dependencies = { dev = { file = "test-requirements.txt" } }

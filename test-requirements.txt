@@ -6,4 +6,4 @@ pyright
 pytest
 pytest-cov
 types-setuptools
-ruamel.yaml  # This is used in a test, but not directly imported.
+ruamel.yaml
