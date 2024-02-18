@@ -57,11 +57,12 @@ jobs:
       - name: "Lint"
         run: |
           mypy .
-          ruff .
+          ruff check .
           ruff format --check .
           pip-extra-reqs pip_check_reqs
           pip-missing-reqs pip_check_reqs
           pylint pip_check_reqs tests
+          pyright .
 
       - name: "Run tests"
         run: |
