@@ -1,2 +1,2 @@
-packaging >= 20.5
+packaging >= 22
 pip >= 23.2
