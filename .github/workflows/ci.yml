@@ -65,6 +65,7 @@ jobs:
           pyroma --min=10 .
           pyproject-fmt --check --keep-full-version .
           pyright .
+          actionlint
 
       - name: "Run tests"
         run: |
