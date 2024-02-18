@@ -246,9 +246,13 @@ def package_path(*, path: Path) -> Path | None:
     return path.parent
 
 
+def _null_ignorer(_: str | ParsedRequirement) -> bool:
+    return False
+
+
 def ignorer(*, ignore_cfg: list[str]) -> Callable[..., bool]:
     if not ignore_cfg:
-        return lambda _: False
+        return _null_ignorer
 
     def ignorer_function(
         candidate: str | ParsedRequirement,
