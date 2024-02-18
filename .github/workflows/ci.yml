@@ -43,8 +43,6 @@ jobs:
             echo "activate=source /home/runner/.venv/bin/activate" >> "$GITHUB_OUTPUT"
           fi
 
-          uv venv ../.venv
-
       - name: "Install dependencies"
         run: |
           ${{ steps.venv.outputs.activate }}
