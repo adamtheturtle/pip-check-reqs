@@ -41,9 +41,9 @@ jobs:
           uv pip install --resolution=${{ matrix.uv-resolution }} --upgrade --editable .[dev]
 
       - name: "Lint"
-        env:
-          PATH: "../.venv/bin:$PATH"
         run: |
+          PATH="../.venv/bin:$PATH"
+
           mypy .
           ruff check .
           ruff format --check .
