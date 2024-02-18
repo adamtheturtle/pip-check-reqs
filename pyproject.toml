@@ -144,6 +144,10 @@ requires = [
 [project]
 name = "pip-check-reqs"
 description = "Find packages that should or should not be in requirements for a project"
+keywords = [
+  "lint",
+  "pip",
+]
 maintainers = [
     { name = "Adam Dangoor", email = "adamdangoor@gmail.com"},
     { name = "Richard Jones", email = "r1chardj0n3s@gmail.com"},
