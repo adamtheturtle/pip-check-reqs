@@ -76,6 +76,6 @@ jobs:
         # The original maintainer of this project is the one with access to the
         # Codecov token and GitHub settings which will allow us to bump to the
         # v4 action.
-        uses: "codecov/codecov-action@v3"
+        uses: "codecov/codecov-action@v4"
         with:
           fail_ci_if_error: true
