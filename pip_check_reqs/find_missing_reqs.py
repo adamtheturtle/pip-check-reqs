@@ -65,6 +65,8 @@ def find_missing_reqs(
         package_location = package.location
         package_files: list[str] = []
         for item in package.files or []:
+            if not item.endswith(".py"):
+                continue
             item_location_rel = Path(package_location) / item
             item_location = common.cached_resolve_path(path=item_location_rel)
             if item_location.is_relative_to(here):
