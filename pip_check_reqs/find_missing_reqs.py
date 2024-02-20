@@ -5,7 +5,6 @@ from __future__ import annotations
 import argparse
 import collections
 import datetime
-import importlib.metadata
 import logging
 import sys
 from pathlib import Path
@@ -17,50 +16,26 @@ from pip._internal.req.constructors import install_req_from_line
 from pip._internal.req.req_file import parse_requirements
 
 from pip_check_reqs import common
-from pip_check_reqs.common import (
-    FoundModule,
-    version_info,
-)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
+
+    from pip_check_reqs.common import (
+        FoundModule,
+    )
 
 log = logging.getLogger(__name__)
 
 MICROSECONDS_IN_SECOND = 1000000
 
 
-<<<<<<< HEAD
-# This is a slow operation.
-# It only happens once when calling the CLI, but it is hit many times in
-# tests.
-# We cache the result to speed up tests.
-# @cache
-def get_packages_info() -> list[_PackageInfo]:
-    all_pkgs = [
-        dist.metadata["Name"] for dist in importlib.metadata.distributions()
-    ]
-
-    # On Python 3.11 (and maybe higher), setting this environment variable
-    # dramatically improves speeds.
-    # See https://github.com/r1chardj0n3s/pip-check-reqs/issues/123.
-    with mock.patch.dict(os.environ, {"_PIP_USE_IMPORTLIB_METADATA": "False"}):
-        return list(search_packages_info(query=all_pkgs))
-
-
-=======
->>>>>>> origin/master
 def find_missing_reqs(
     requirements_filename: Path,
     paths: Iterable[Path],
     ignore_files_function: Callable[[str], bool],
     ignore_modules_function: Callable[[str], bool],
-<<<<<<< HEAD,
 ) -> list[tuple[NormalizedName, list[FoundModule]]]:
-    start = datetime.datetime.now()
-=======
-) -> list[tuple[NormalizedName, list[common.FoundModule]]]:
->>>>>>> origin/master
+    start = datetime.datetime.now(tz=datetime.timezone.utc)
     # 1. find files used by imports in the code (as best we can without
     #    executing)
     used_modules = common.find_imported_modules(
@@ -69,24 +44,17 @@ def find_missing_reqs(
         ignore_modules_function=ignore_modules_function,
     )
 
-<<<<<<< HEAD
-    after_find_imported_modules = datetime.datetime.now()
+    after_find_imported_modules = datetime.datetime.now(tz=datetime.timezone.utc)
 
     # 2. find which packages provide which files
     installed_files = {}
 
-    after_all_pkgs = datetime.datetime.now()
+    after_all_pkgs = datetime.datetime.now(tz=datetime.timezone.utc)
 
-    packages_info = get_packages_info()
-
-    after_search_packages_info = datetime.datetime.now()
-
-    here = Path().resolve()
-
-=======
-    installed_files: dict[Path, str] = {}
     packages_info = common.get_packages_info()
->>>>>>> origin/master
+
+    after_search_packages_info = datetime.datetime.now(tz=datetime.timezone.utc)
+
     here = Path().resolve()
 
     for package in packages_info:
@@ -95,7 +63,7 @@ def find_missing_reqs(
         package_files: list[str] = []
         for item in package.files or []:
             item_location_rel = Path(package_location) / item
-            item_location = resolve_path(path=item_location_rel)
+            item_location = common.cached_resolve_path(path=item_location_rel)
             if item_location.is_relative_to(here):
                 relative_item_location = item_location.relative_to(here)
             else:
@@ -109,7 +77,7 @@ def find_missing_reqs(
         )
         for package_file in package_files:
             path = Path(package_location) / package_file
-            path = resolve_path(path=path)
+            path = common.cached_resolve_path(path=path)
 
             installed_files[path] = package_name
             package_path = common.package_path(path=path)
@@ -119,7 +87,7 @@ def find_missing_reqs(
                 # a package by its directory path later
                 installed_files[package_path] = package_name
 
-    after_loop_packages_info = datetime.datetime.now()
+    after_loop_packages_info = datetime.datetime.now(tz=datetime.timezone.utc)
 
 
     # 3. match imported modules against those packages
@@ -144,7 +112,7 @@ def find_missing_reqs(
                 info.filename,
             )
 
-    after_match_used = datetime.datetime.now()
+    after_match_used = datetime.datetime.now(tz=datetime.timezone.utc)
 
     # 4. compare with requirements
     explicit: set[NormalizedName] = set()
@@ -160,21 +128,14 @@ def find_missing_reqs(
         log.debug("found requirement: %s", requirement_name)
         explicit.add(canonicalize_name(requirement_name))
 
-    after_set_explicit = datetime.datetime.now()
+    after_set_explicit = datetime.datetime.now(tz=datetime.timezone.utc)
 
-    find_imported_modules_time = after_find_imported_modules - start
-    all_pkgs_time = after_all_pkgs - after_find_imported_modules
-    search_packages_info_time = after_search_packages_info - after_all_pkgs
-    loop_packages_info_time = after_loop_packages_info - after_search_packages_info
-    match_used_time = after_match_used - after_loop_packages_info
-    set_explicit_time = after_set_explicit - after_match_used
-    print(f"{find_imported_modules_time.total_seconds()=}")
-    print(f"{all_pkgs_time.total_seconds()=}")
-    print(f"{search_packages_info_time.total_seconds()=}")
-    print(f"{loop_packages_info_time.total_seconds()=}")
-    print(f"{match_used_time.total_seconds()=}")
-    print(f"{set_explicit_time.total_seconds()=}")
-    print(f"{len(packages_info)=}")
+    after_find_imported_modules - start
+    after_all_pkgs - after_find_imported_modules
+    after_search_packages_info - after_all_pkgs
+    after_loop_packages_info - after_search_packages_info
+    after_match_used - after_loop_packages_info
+    after_set_explicit - after_match_used
     return [(name, used[name]) for name in used if name not in explicit]
 
 
@@ -255,7 +216,7 @@ def main(arguments: list[str] | None = None) -> None:
 
     log.info(common.version_info())
 
-    before_find_missing_reqs = datetime.datetime.now()
+    before_find_missing_reqs = datetime.datetime.now(tz=datetime.timezone.utc)
     missing = find_missing_reqs(
         requirements_filename=parse_result.requirements_filename,
         paths=parse_result.paths,
@@ -263,10 +224,9 @@ def main(arguments: list[str] | None = None) -> None:
         ignore_modules_function=ignore_mods,
     )
 
-    after_find_missing_reqs = datetime.datetime.now()
+    after_find_missing_reqs = datetime.datetime.now(tz=datetime.timezone.utc)
 
-    find_missing_reqs_time = after_find_missing_reqs - before_find_missing_reqs
-    print(f"{find_missing_reqs_time.total_seconds()=}")
+    after_find_missing_reqs - before_find_missing_reqs
 
     if missing:
         log.warning("Missing requirements:")
