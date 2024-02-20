@@ -1,9 +1,12 @@
+actionlint-py==1.6.26.11
+mypy==1.8.0
+pyenchant==3.2.2
+pylint==3.0.3
+pyproject-fmt==1.7.0
+pyright==1.1.351
+pyroma==4.2
+pytest==8.0.1
+pytest-cov==4.1.0
+ruamel.yaml==0.18.6
 ruff==0.2.1
-mypy
-pyenchant
-pylint
-pyright
-pytest
-pytest-cov
-types-setuptools
-ruamel.yaml  # This is used in a test, but not directly imported.
+types-setuptools==69.1.0.20240217

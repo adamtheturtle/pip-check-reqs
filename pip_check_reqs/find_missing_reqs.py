@@ -7,17 +7,11 @@ import collections
 import datetime
 import importlib.metadata
 import logging
-import os
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable
-from unittest import mock
 
 from packaging.utils import NormalizedName, canonicalize_name
-from pip._internal.commands.show import (
-    _PackageInfo,  # pyright: ignore[reportPrivateUsage]
-    search_packages_info,
-)
 from pip._internal.network.session import PipSession
 from pip._internal.req.constructors import install_req_from_line
 from pip._internal.req.req_file import parse_requirements
@@ -36,6 +30,7 @@ log = logging.getLogger(__name__)
 MICROSECONDS_IN_SECOND = 1000000
 
 
+<<<<<<< HEAD
 # This is a slow operation.
 # It only happens once when calling the CLI, but it is hit many times in
 # tests.
@@ -53,13 +48,19 @@ def get_packages_info() -> list[_PackageInfo]:
         return list(search_packages_info(query=all_pkgs))
 
 
+=======
+>>>>>>> origin/master
 def find_missing_reqs(
     requirements_filename: Path,
     paths: Iterable[Path],
     ignore_files_function: Callable[[str], bool],
     ignore_modules_function: Callable[[str], bool],
+<<<<<<< HEAD,
 ) -> list[tuple[NormalizedName, list[FoundModule]]]:
     start = datetime.datetime.now()
+=======
+) -> list[tuple[NormalizedName, list[common.FoundModule]]]:
+>>>>>>> origin/master
     # 1. find files used by imports in the code (as best we can without
     #    executing)
     used_modules = common.find_imported_modules(
@@ -68,6 +69,7 @@ def find_missing_reqs(
         ignore_modules_function=ignore_modules_function,
     )
 
+<<<<<<< HEAD
     after_find_imported_modules = datetime.datetime.now()
 
     # 2. find which packages provide which files
@@ -81,6 +83,10 @@ def find_missing_reqs(
 
     here = Path().resolve()
 
+=======
+    installed_files: dict[Path, str] = {}
+    packages_info = common.get_packages_info()
+>>>>>>> origin/master
     here = Path().resolve()
 
     for package in packages_info:
@@ -228,7 +234,7 @@ def main(arguments: list[str] | None = None) -> None:
     parse_result = parser.parse_args(arguments)
 
     if parse_result.version:
-        sys.stdout.write(version_info() + "\n")
+        sys.stdout.write(common.version_info() + "\n")
         sys.exit(0)
 
     if not parse_result.paths:
@@ -247,7 +253,7 @@ def main(arguments: list[str] | None = None) -> None:
     log.setLevel(level)
     common.log.setLevel(level)
 
-    log.info(version_info())
+    log.info(common.version_info())
 
     before_find_missing_reqs = datetime.datetime.now()
     missing = find_missing_reqs(
