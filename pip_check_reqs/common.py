@@ -8,6 +8,7 @@ import logging
 import os
 import sys
 from dataclasses import dataclass, field
+from functools import cache
 from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable
@@ -25,6 +26,9 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
+@cache
+def cached_resolve_path(path: Path) -> Path:
+    return path.resolve()
 
 @dataclass
 class FoundModule:

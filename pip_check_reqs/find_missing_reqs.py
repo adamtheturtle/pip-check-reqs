@@ -23,7 +23,10 @@ from pip._internal.req.constructors import install_req_from_line
 from pip._internal.req.req_file import parse_requirements
 
 from pip_check_reqs import common
-from pip_check_reqs.common import FoundModule, version_info
+from pip_check_reqs.common import (
+    FoundModule,
+    version_info,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -86,7 +89,7 @@ def find_missing_reqs(
         package_files: list[str] = []
         for item in package.files or []:
             item_location_rel = Path(package_location) / item
-            item_location = item_location_rel.resolve()
+            item_location = resolve_path(path=item_location_rel)
             if item_location.is_relative_to(here):
                 relative_item_location = item_location.relative_to(here)
             else:
@@ -100,7 +103,7 @@ def find_missing_reqs(
         )
         for package_file in package_files:
             path = Path(package_location) / package_file
-            path = path.resolve()
+            path = resolve_path(path=path)
 
             installed_files[path] = package_name
             package_path = common.package_path(path=path)
