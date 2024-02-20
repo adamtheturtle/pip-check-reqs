@@ -49,7 +49,7 @@ def find_missing_reqs(
     )
 
     # 2. find which packages provide which files
-    installed_files = {}
+    installed_files: dict[Path, str] = {}
 
     after_all_pkgs = datetime.datetime.now(tz=datetime.timezone.utc)
 
@@ -58,8 +58,7 @@ def find_missing_reqs(
     after_search_packages_info = datetime.datetime.now(
         tz=datetime.timezone.utc,
     )
-
-    here = Path().resolve()
+    here = common.cached_resolve_path(path=Path())
 
     for package in packages_info:
         package_name = package.name
