@@ -2,6 +2,10 @@
 Release History
 ---------------
 
+2.5.4
+
+- Performance improvements.
+
 2.5.2
 
 - Performance improvements.
