@@ -44,7 +44,9 @@ def find_missing_reqs(
         ignore_modules_function=ignore_modules_function,
     )
 
-    after_find_imported_modules = datetime.datetime.now(tz=datetime.timezone.utc)
+    after_find_imported_modules = datetime.datetime.now(
+        tz=datetime.timezone.utc,
+    )
 
     # 2. find which packages provide which files
     installed_files = {}
@@ -53,7 +55,9 @@ def find_missing_reqs(
 
     packages_info = common.get_packages_info()
 
-    after_search_packages_info = datetime.datetime.now(tz=datetime.timezone.utc)
+    after_search_packages_info = datetime.datetime.now(
+        tz=datetime.timezone.utc,
+    )
 
     here = Path().resolve()
 
@@ -88,7 +92,6 @@ def find_missing_reqs(
                 installed_files[package_path] = package_name
 
     after_loop_packages_info = datetime.datetime.now(tz=datetime.timezone.utc)
-
 
     # 3. match imported modules against those packages
     used: collections.defaultdict[
@@ -130,12 +133,21 @@ def find_missing_reqs(
 
     after_set_explicit = datetime.datetime.now(tz=datetime.timezone.utc)
 
-    after_find_imported_modules - start
-    after_all_pkgs - after_find_imported_modules
-    after_search_packages_info - after_all_pkgs
-    after_loop_packages_info - after_search_packages_info
-    after_match_used - after_loop_packages_info
-    after_set_explicit - after_match_used
+    find_imported_modules_time = after_find_imported_modules - start
+    all_pkgs_time = after_all_pkgs - after_find_imported_modules
+    search_packages_info_time = after_search_packages_info - after_all_pkgs
+    loop_packages_info_time = (
+        after_loop_packages_info - after_search_packages_info
+    )
+    match_used_time = after_match_used - after_loop_packages_info
+    set_explicit_time = after_set_explicit - after_match_used
+    print(f"{find_imported_modules_time.total_seconds()=}")
+    print(f"{all_pkgs_time.total_seconds()=}")
+    print(f"{search_packages_info_time.total_seconds()=}")
+    print(f"{loop_packages_info_time.total_seconds()=}")
+    print(f"{match_used_time.total_seconds()=}")
+    print(f"{set_explicit_time.total_seconds()=}")
+    print(f"{len(packages_info)=}")
     return [(name, used[name]) for name in used if name not in explicit]
 
 
@@ -226,7 +238,8 @@ def main(arguments: list[str] | None = None) -> None:
 
     after_find_missing_reqs = datetime.datetime.now(tz=datetime.timezone.utc)
 
-    after_find_missing_reqs - before_find_missing_reqs
+    find_missing_reqs_time = after_find_missing_reqs - before_find_missing_reqs
+    print(f"{find_missing_reqs_time.total_seconds()=}")
 
     if missing:
         log.warning("Missing requirements:")
@@ -243,6 +256,7 @@ def main(arguments: list[str] | None = None) -> None:
 
     if missing:
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

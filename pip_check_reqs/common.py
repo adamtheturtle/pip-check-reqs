@@ -32,9 +32,11 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
+
 @cache
 def cached_resolve_path(path: Path) -> Path:
     return path.resolve()
+
 
 # This is a slow operation.
 # It only happens once when calling the CLI, but it is hit many times in
