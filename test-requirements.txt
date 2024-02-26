@@ -1,7 +1,7 @@
 actionlint-py==1.6.26.11
 mypy==1.8.0
 pyenchant==3.2.2
-pylint==3.0.3
+pylint==3.1.0
 pyproject-fmt==1.7.0
 pyright==1.1.351
 pyroma==4.2
