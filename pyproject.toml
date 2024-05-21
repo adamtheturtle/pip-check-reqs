@@ -62,12 +62,6 @@ lint.select = [
   "ALL",
 ]
 
-# Do not automatically remove commented out code.
-# We comment out code during development, and with VSCode auto-save, this code
-# is sometimes annoyingly removed.
-lint.unfixable = [
-  "ERA001",
-]
 lint.ignore = [
   # We do not annotate the type of 'self', or 'cls'.
   "ANN101",
@@ -85,6 +79,13 @@ lint.ignore = [
   # narrowing - see
   # https://mypy.readthedocs.io/en/stable/type_narrowing.html#type-narrowing-expressions.
   "S101",
+]
+
+# Do not automatically remove commented out code.
+# We comment out code during development, and with VSCode auto-save, this code
+# is sometimes annoyingly removed.
+lint.unfixable = [
+  "ERA001",
 ]
 
 [tool.pylint]
