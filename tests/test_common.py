@@ -293,14 +293,10 @@ def test_find_imported_modules_advanced(
     caplog.set_level(logging.INFO)
 
     def ignore_files(path: str) -> bool:
-        if Path(path).name == "ham.py" and ignore_ham:
-            return True
-        return False
+        return bool(Path(path).name == "ham.py" and ignore_ham)
 
     def ignore_mods(module: str) -> bool:
-        if module == "hashlib" and ignore_hashlib:
-            return True
-        return False
+        return bool(module == "hashlib" and ignore_hashlib)
 
     result = common.find_imported_modules(
         paths=[root],
