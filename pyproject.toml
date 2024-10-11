@@ -19,16 +19,19 @@ authors = [
   { name = "Adam Dangoor", email = "adamdangoor@gmail.com" },
   { name = "Richard Jones", email = "r1chardj0n3s@gmail.com" },
 ]
-requires-python = ">=3.9.0"
+requires-python = ">=3.9"
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Intended Audience :: Developers",
   "License :: OSI Approved :: MIT License",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX",
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Topic :: Software Development :: Build Tools",
 ]
 dynamic = [
@@ -175,6 +178,10 @@ spelling-private-dict-file = 'spelling_private_dict.txt'
 # Tells whether to store unknown words to indicated private dictionary in
 # --spelling-private-dict-file option instead of raising a message.
 spelling-store-unknown-words = 'no'
+
+[tool.pyproject-fmt]
+keep_full_version = true
+max_supported_python = "3.13"
 
 [tool.coverage.run]
 
