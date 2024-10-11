@@ -23,9 +23,9 @@ requires-python = ">=3.9"
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: MIT License",
   "Operating System :: Microsoft :: Windows",
   "Operating System :: POSIX",
+  "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
@@ -179,10 +179,6 @@ spelling-private-dict-file = 'spelling_private_dict.txt'
 # --spelling-private-dict-file option instead of raising a message.
 spelling-store-unknown-words = 'no'
 
-[tool.pyproject-fmt]
-keep_full_version = true
-max_supported_python = "3.13"
-
 [tool.coverage.run]
 
 branch = true
@@ -200,3 +196,7 @@ strict = true
 [tool.pyright]
 
 typeCheckingMode = "strict"
+
+[tool.pyproject-fmt]
+keep_full_version = true
+max_supported_python = "3.13"

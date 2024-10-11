@@ -135,7 +135,9 @@ def test_find_imported_modules_frozen(
     for name, value in sys_module_items:
         try:
             spec = value.__spec__
-        except AttributeError:
+        # No coverage as this does not occur on Python 3.13
+        # with our current requirements.
+        except AttributeError:  # pragma: no cover
             continue
 
         if spec is not None and spec.origin == "frozen":
