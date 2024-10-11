@@ -19,7 +19,7 @@ authors = [
   { name = "Adam Dangoor", email = "adamdangoor@gmail.com" },
   { name = "Richard Jones", email = "r1chardj0n3s@gmail.com" },
 ]
-requires-python = ">=3.9.0"
+requires-python = ">=3.9"
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Intended Audience :: Developers",
@@ -29,6 +29,7 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Topic :: Software Development :: Build Tools",
 ]
 dynamic = [
@@ -193,3 +194,7 @@ strict = true
 [tool.pyright]
 
 typeCheckingMode = "strict"
+
+[tool.pyproject-fmt]
+keep_full_version = true
+max_supported_python = "3.13"

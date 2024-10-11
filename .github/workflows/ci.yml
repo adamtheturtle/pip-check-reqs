@@ -18,8 +18,8 @@ jobs:
     strategy:
       matrix:
         uv-resolution: ['highest', 'lowest']
-        # The minimum version should be represented in setup.py.
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        # The minimum version should be represented in pyproject.toml.
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
         os: [ubuntu-latest, windows-latest]
 
     runs-on: ${{ matrix.os }}
@@ -63,7 +63,7 @@ jobs:
           pip-missing-reqs pip_check_reqs
           pylint pip_check_reqs tests
           pyroma --min=10 .
-          pyproject-fmt --check --keep-full-version .
+          pyproject-fmt --check .
           pyright .
           actionlint
 

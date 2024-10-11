@@ -2,6 +2,10 @@
 Release History
 ---------------
 
+Next
+
+- Support for Python 3.13
+
 2.5.4
 
 - Performance improvements.
