@@ -1,5 +1,5 @@
 actionlint-py==1.7.4.20
-mypy==1.13.0
+mypy==1.14.0
 pyenchant==3.2.2
 pylint==3.3.2
 pyproject-fmt==2.5.0
