@@ -1,4 +1,4 @@
-actionlint-py==1.7.5.21
+actionlint-py==1.7.6.22
 mypy==1.14.1
 pyenchant==3.2.2
 pylint==3.3.3
