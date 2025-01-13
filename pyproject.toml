@@ -66,8 +66,6 @@ lint.select = [
 ]
 
 lint.ignore = [
-  # We do not annotate the type of 'self', or 'cls'.
-  "ANN101",
   # We are missing too many docstrings to quickly fix now.
   "D100",
   "D103",
