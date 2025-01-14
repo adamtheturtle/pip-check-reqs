@@ -121,8 +121,7 @@ def main(arguments: list[str] | None = None) -> None:
         type=Path,
         metavar="PATH",
         default=Path("requirements.txt"),
-        help="path to the requirements file "
-        '(defaults to "requirements.txt")',
+        help='path to the requirements file (defaults to "requirements.txt")',
     )
     parser.add_argument(
         "-f",

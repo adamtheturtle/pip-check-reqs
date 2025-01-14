@@ -143,9 +143,9 @@ def test_find_imported_modules_frozen(
         if spec is not None and spec.origin == "frozen":
             frozen_item_names.append(name)
 
-    assert (
-        frozen_item_names
-    ), "This test is only valid if there are frozen modules in sys.modules"
+    assert frozen_item_names, (
+        "This test is only valid if there are frozen modules in sys.modules"
+    )
 
     spam = tmp_path / "spam.py"
     statement = f"import {frozen_item_names[0]}"
