@@ -5,7 +5,7 @@ pylint==3.3.4
 pyproject-fmt==2.5.1
 pyright==1.1.395
 pyroma==4.2
-pytest==8.3.4
+pytest==8.3.5
 pytest-cov==6.0.0
 ruamel.yaml==0.18.10
 ruff==0.9.10
