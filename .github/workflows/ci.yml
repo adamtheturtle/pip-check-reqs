@@ -71,3 +71,15 @@ jobs:
         run: |
           ${{ steps.venv.outputs.activate }}
           pytest -s -vvv --cov-fail-under 100 --cov=pip_check_reqs/ --cov=tests tests/ --cov-report=xml
+
+  completion-ci:
+    needs: build
+    runs-on: ubuntu-latest
+    if: always()  # Run even if one matrix job fails
+    steps:
+      - name: Check matrix job status
+        run: |
+          if ! ${{ needs.build.result == 'success' }}; then
+            echo "One or more matrix jobs failed"
+            exit 1
+          fi
