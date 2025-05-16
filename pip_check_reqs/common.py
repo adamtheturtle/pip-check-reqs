@@ -61,7 +61,9 @@ class FoundModule:
 
     modname: str
     filename: Path
-    locations: list[tuple[str, int]] = field(default_factory=list)
+    locations: list[tuple[str, int]] = field(
+        default_factory=list[tuple[str, int]],
+    )
 
     def __post_init__(self) -> None:
         self.filename = Path(self.filename).resolve()
