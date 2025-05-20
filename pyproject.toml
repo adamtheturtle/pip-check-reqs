@@ -7,6 +7,7 @@ requires = [
 [project]
 name = "pip-check-reqs"
 description = "Find packages that should or should not be in requirements for a project"
+license = { file = "LICENSE" }
 keywords = [
   "lint",
   "pip",
