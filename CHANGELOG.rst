@@ -5,6 +5,7 @@ Release History
 Next
 
 - Support for Python 3.13
+- Remove workaround which made ``pip-check-reqs`` faster with old versions of pip but used a deprecated API.
 
 2.5.4
 
