@@ -13,7 +13,6 @@ from functools import cache
 from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable
-from unittest import mock
 
 from packaging.markers import Marker
 from packaging.utils import NormalizedName, canonicalize_name
@@ -48,11 +47,7 @@ def get_packages_info() -> list[_PackageInfo]:
         dist.metadata["Name"] for dist in importlib.metadata.distributions()
     ]
 
-    # On Python 3.11 (and maybe higher), setting this environment variable
-    # dramatically improves speeds.
-    # See https://github.com/r1chardj0n3s/pip-check-reqs/issues/123.
-    with mock.patch.dict(os.environ, {"_PIP_USE_IMPORTLIB_METADATA": "False"}):
-        return list(search_packages_info(query=all_pkgs))
+    return list(search_packages_info(query=all_pkgs))
 
 
 @dataclass
