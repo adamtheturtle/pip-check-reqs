@@ -13,7 +13,7 @@ Run the following steps, entering a PyPI API token when prompted:
 
    git checkout master && \
    git pull && \
-   pip install twine build && \
+   pip install --upgrade twine build && \
    pip install -r requirements.txt && \
    rm -rf build dist && \
    git status # There should be no uncommitted changes.  && \
