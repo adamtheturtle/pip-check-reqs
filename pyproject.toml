@@ -41,8 +41,8 @@ dynamic = [
   "readme",
   "version",
 ]
-urls.Changelog = "https://github.com/r1chardj0n3s/pip-check-reqs/blob/master/CHANGELOG.rst"
-urls.Homepage = "https://github.com/r1chardj0n3s/pip-check-reqs"
+urls.Changelog = "https://github.com/adamtheturtle/pip-check-reqs/blob/master/CHANGELOG.rst"
+urls.Homepage = "https://github.com/adamtheturtle/pip-check-reqs"
 scripts.pip-extra-reqs = "pip_check_reqs.find_extra_reqs:main"
 scripts.pip-missing-reqs = "pip_check_reqs.find_missing_reqs:main"
 
