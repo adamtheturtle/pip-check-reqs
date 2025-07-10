@@ -3,7 +3,7 @@ mypy==1.16.1
 pyenchant==3.2.2
 pylint==3.3.7
 pyproject-fmt==2.6.0
-pyright==1.1.402
+pyright==1.1.403
 pyroma==4.3.3
 pytest==8.4.1
 pytest-cov==6.2.1
