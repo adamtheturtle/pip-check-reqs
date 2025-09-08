@@ -6,6 +6,6 @@ pyproject-fmt==2.6.0
 pyright==1.1.405
 pyroma==5.0
 pytest==8.4.2
-pytest-cov==6.2.1
+pytest-cov==6.3.0
 ruamel.yaml==0.18.15
 ruff==0.12.3
