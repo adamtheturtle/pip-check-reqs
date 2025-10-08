@@ -75,7 +75,7 @@ class _ImportVisitor(ast.NodeVisitor):
         self._location = location
 
     # Ignore the name error as we are overriding the method.
-    def visit_Import(  # noqa: N802, pylint: disable=invalid-name
+    def visit_Import(
         self,
         node: ast.Import,
     ) -> None:
@@ -83,7 +83,7 @@ class _ImportVisitor(ast.NodeVisitor):
             self._add_module(alias.name, node.lineno)
 
     # Ignore the name error as we are overriding the method.
-    def visit_ImportFrom(  # noqa: N802, pylint: disable=invalid-name
+    def visit_ImportFrom(
         self,
         node: ast.ImportFrom,
     ) -> None:
