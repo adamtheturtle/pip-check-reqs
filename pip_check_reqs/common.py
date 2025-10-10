@@ -105,9 +105,9 @@ class _ImportVisitor(ast.NodeVisitor):
             name = ".".join([*modname_parts_progress, modname_part])
             try:
                 module_spec = find_spec(name=name)
-            except ValueError:
-                # The module has no __spec__ attribute.
-                # For example, if importing __main__.
+            except (ValueError, ImportError, AttributeError, ModuleNotFoundError):
+                # The module has no __spec__ attribute, failed to resolve, 
+                # or doesn't exist
                 return
 
             if module_spec is None:
@@ -124,12 +124,30 @@ class _ImportVisitor(ast.NodeVisitor):
                 # Frozen modules are modules written in Python whose compiled
                 # byte-code object is incorporated into a custom-built Python
                 # interpreter by Python's freeze utility.
+                modname_parts_progress.append(modname_part)
                 continue
 
-            modpath_path = Path(modpath)
-            modname = module_spec.name
+            # We found a concrete module. Now validate that any intermediate modules
+            # in the import path exist. For example, if importing 
+            # backports.ssl_match_hostname.match_hostname, we need to ensure that
+            # backports.ssl_match_hostname exists as a module.
+            remaining_parts = modname.split(".")[len(name.split(".")):]
+            if len(remaining_parts) > 1:
+                # More than one remaining part means there are intermediate modules to check
+                intermediate_module = name + "." + ".".join(remaining_parts[:-1])
+                try:
+                    intermediate_spec = find_spec(intermediate_module)
+                    if intermediate_spec is None:
+                        # The intermediate module doesn't exist, so this import would fail
+                        return
+                except (ValueError, ImportError, AttributeError, ModuleNotFoundError):
+                    # Failed to resolve intermediate module - this import would fail
+                    return
 
-            if modname not in self._modules:
+            modpath_path = Path(modpath)
+            resolved_modname = module_spec.name
+
+            if resolved_modname not in self._modules:
                 if modpath_path.is_file():
                     if modpath_path.name == "__init__.py":
                         modpath_path = modpath_path.parent
@@ -139,12 +157,12 @@ class _ImportVisitor(ast.NodeVisitor):
                         # __init__" checks, and to make sure we have coverage
                         # for this case.
                         pass
-                self._modules[modname] = FoundModule(
-                    modname=modname,
+                self._modules[resolved_modname] = FoundModule(
+                    modname=resolved_modname,
                     filename=modpath_path,
                 )
             assert isinstance(self._location, str)
-            self._modules[modname].locations.append((self._location, lineno))
+            self._modules[resolved_modname].locations.append((self._location, lineno))
             return
 
     def finalise(self) -> dict[str, FoundModule]:
