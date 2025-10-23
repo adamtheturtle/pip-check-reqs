@@ -7,5 +7,5 @@ pyright==1.1.406
 pyroma==5.0
 pytest==8.4.2
 pytest-cov==7.0.0
-ruamel.yaml==0.18.15
+ruamel.yaml==0.18.16
 ruff==0.14.1
