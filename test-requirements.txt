@@ -4,7 +4,7 @@ pyenchant==3.3.0
 pylint==3.3.9
 pyproject-fmt==2.8.0
 pyright==1.1.407
-pyroma==5.0
+pyroma==5.0.1
 pytest==8.4.2
 pytest-cov==7.0.0
 ruamel.yaml==0.18.16
