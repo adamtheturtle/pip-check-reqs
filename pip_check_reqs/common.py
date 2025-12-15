@@ -75,7 +75,7 @@ class _ImportVisitor(ast.NodeVisitor):
         self._location = location
 
     # Ignore the name error as we are overriding the method.
-    def visit_Import(  # noqa: N802, pylint: disable=invalid-name
+    def visit_Import(  # pylint: disable=invalid-name
         self,
         node: ast.Import,
     ) -> None:
@@ -83,7 +83,7 @@ class _ImportVisitor(ast.NodeVisitor):
             self._add_module(alias.name, node.lineno)
 
     # Ignore the name error as we are overriding the method.
-    def visit_ImportFrom(  # noqa: N802, pylint: disable=invalid-name
+    def visit_ImportFrom(  # pylint: disable=invalid-name
         self,
         node: ast.ImportFrom,
     ) -> None:
@@ -96,7 +96,11 @@ class _ImportVisitor(ast.NodeVisitor):
                 continue
             self._add_module(node.module + "." + alias.name, node.lineno)
 
-    def _add_module(self, modname: str, lineno: int) -> None:
+    def _add_module(  # noqa: C901, PLR0912
+        self,
+        modname: str,
+        lineno: int,
+    ) -> None:
         if self._ignore_modules_function(modname):
             return
 
@@ -105,8 +109,13 @@ class _ImportVisitor(ast.NodeVisitor):
             name = ".".join([*modname_parts_progress, modname_part])
             try:
                 module_spec = find_spec(name=name)
-            except (ValueError, ImportError, AttributeError, ModuleNotFoundError):
-                # The module has no __spec__ attribute, failed to resolve, 
+            except (
+                ValueError,
+                ImportError,
+                AttributeError,
+                ModuleNotFoundError,
+            ):
+                # The module has no __spec__ attribute, failed to resolve,
                 # or doesn't exist
                 return
 
@@ -127,21 +136,27 @@ class _ImportVisitor(ast.NodeVisitor):
                 modname_parts_progress.append(modname_part)
                 continue
 
-            # We found a concrete module. Now validate that any intermediate modules
-            # in the import path exist. For example, if importing 
-            # backports.ssl_match_hostname.match_hostname, we need to ensure that
-            # backports.ssl_match_hostname exists as a module.
-            remaining_parts = modname.split(".")[len(name.split(".")):]
+            # Validate that intermediate modules in the import path exist.
+            # E.g., for backports.ssl_match_hostname.match_hostname,
+            # ensure backports.ssl_match_hostname exists as a module.
+            remaining_parts = modname.split(".")[len(name.split(".")) :]
             if len(remaining_parts) > 1:
-                # More than one remaining part means there are intermediate modules to check
-                intermediate_module = name + "." + ".".join(remaining_parts[:-1])
+                # Intermediate modules to check.
+                intermediate_module = (
+                    name + "." + ".".join(remaining_parts[:-1])
+                )
                 try:
                     intermediate_spec = find_spec(intermediate_module)
                     if intermediate_spec is None:
-                        # The intermediate module doesn't exist, so this import would fail
+                        # Intermediate module doesn't exist.
                         return
-                except (ValueError, ImportError, AttributeError, ModuleNotFoundError):
-                    # Failed to resolve intermediate module - this import would fail
+                except (
+                    ValueError,
+                    ImportError,
+                    AttributeError,
+                    ModuleNotFoundError,
+                ):
+                    # Failed to resolve intermediate module.
                     return
 
             modpath_path = Path(modpath)
@@ -162,7 +177,9 @@ class _ImportVisitor(ast.NodeVisitor):
                     filename=modpath_path,
                 )
             assert isinstance(self._location, str)
-            self._modules[resolved_modname].locations.append((self._location, lineno))
+            self._modules[resolved_modname].locations.append(
+                (self._location, lineno),
+            )
             return
 
     def finalise(self) -> dict[str, FoundModule]:

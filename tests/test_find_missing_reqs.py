@@ -157,37 +157,32 @@ def test_main_version(capsys: pytest.CaptureFixture[str]) -> None:
 
 def test_backports_namespace_false_positive(tmp_path: Path) -> None:
     """Test that namespace packages don't cause false positives.
-    
-    This test verifies the fix for issue #397 where backports-datetime-fromisoformat
-    was incorrectly reported as a missing requirement when code tried to import
-    from backports.ssl_match_hostname (which doesn't exist).
+
+    Regression test for issue #397.
     """
     requirements_file = tmp_path / "requirements.txt"
     requirements_file.write_text("# No backports requirements\n")
-    
+
     source_dir = tmp_path / "source"
     source_dir.mkdir()
-    
+
     source_file = source_dir / "source.py"
     source_file.write_text(
         textwrap.dedent(
             """\
-            # This should NOT trigger a missing requirement for backports
-            # even if backports-datetime-fromisoformat is installed
             try:
-                from backports.ssl_match_hostname import match_hostname, CertificateError
+                from backports.ssl_match_hostname import match_hostname
             except ImportError:
                 HAS_MATCH_HOSTNAME = False
             """,
         ),
     )
-    
+
     result = find_missing_reqs.find_missing_reqs(
         requirements_filename=requirements_file,
         paths=[source_dir],
         ignore_files_function=common.ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
-    
-    # Should be empty - no missing requirements
+
     assert result == []

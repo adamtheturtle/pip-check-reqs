@@ -372,22 +372,21 @@ def test_version_info_shows_version_number() -> None:
 
 
 def test_namespace_package_nonexistent_submodule(tmp_path: Path) -> None:
-    """Test that importing from a non-existent submodule of a namespace package is not recorded.
+    """Test that non-existent submodules of namespace packages are ignored.
 
-    When backports-datetime-fromisoformat is installed, it provides the `backports`
-    namespace package. If code tries to import from `backports.ssl_match_hostname`
-    (which doesn't exist), the tool should NOT record `backports` as a used module.
+    Regression test for https://github.com/adamtheturtle/pip-check-reqs/issues/397
 
-    Without the fix, `find_imported_modules` would incorrectly record `backports`
-    because it found the `backports` package (from backports-datetime-fromisoformat)
-    without validating that `backports.ssl_match_hostname` actually exists.
+    When backports-datetime-fromisoformat is installed, it provides the
+    `backports` namespace package. If code imports from a non-existent
+    submodule like `backports.ssl_match_hostname`, the tool should not
+    record `backports` as a used module.
     """
     source_file = tmp_path / "source.py"
     source_file.write_text(
         textwrap.dedent(
             """\
             try:
-                from backports.ssl_match_hostname import match_hostname, CertificateError
+                from backports.ssl_match_hostname import match_hostname
             except ImportError:
                 HAS_MATCH_HOSTNAME = False
             """,
@@ -400,7 +399,5 @@ def test_namespace_package_nonexistent_submodule(tmp_path: Path) -> None:
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
 
-    # The result should be empty because backports.ssl_match_hostname doesn't exist,
-    # even though the backports namespace package exists (from backports-datetime-fromisoformat).
-    # Without the fix, this would incorrectly include 'backports'.
-    assert "backports" not in result
+    # Should be empty - backports.ssl_match_hostname doesn't exist.
+    assert result == {}
