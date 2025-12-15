@@ -369,3 +369,38 @@ def test_find_required_modules_env_markers(tmp_path: Path) -> None:
 
 def test_version_info_shows_version_number() -> None:
     assert __version__ in common.version_info()
+
+
+def test_namespace_package_nonexistent_submodule(tmp_path: Path) -> None:
+    """Test that importing from a non-existent submodule of a namespace package is not recorded.
+
+    When backports-datetime-fromisoformat is installed, it provides the `backports`
+    namespace package. If code tries to import from `backports.ssl_match_hostname`
+    (which doesn't exist), the tool should NOT record `backports` as a used module.
+
+    Without the fix, `find_imported_modules` would incorrectly record `backports`
+    because it found the `backports` package (from backports-datetime-fromisoformat)
+    without validating that `backports.ssl_match_hostname` actually exists.
+    """
+    source_file = tmp_path / "source.py"
+    source_file.write_text(
+        textwrap.dedent(
+            """\
+            try:
+                from backports.ssl_match_hostname import match_hostname, CertificateError
+            except ImportError:
+                HAS_MATCH_HOSTNAME = False
+            """,
+        ),
+    )
+
+    result = common.find_imported_modules(
+        paths=[tmp_path],
+        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+    )
+
+    # The result should be empty because backports.ssl_match_hostname doesn't exist,
+    # even though the backports namespace package exists (from backports-datetime-fromisoformat).
+    # Without the fix, this would incorrectly include 'backports'.
+    assert "backports" not in result
