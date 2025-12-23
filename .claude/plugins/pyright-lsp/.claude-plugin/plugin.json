@@ -1,0 +1,5 @@
+{
+  "name": "pyright-lsp",
+  "description": "Python language server using Pyright",
+  "version": "1.0.0"
+}
