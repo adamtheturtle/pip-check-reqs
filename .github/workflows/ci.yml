@@ -37,7 +37,7 @@ jobs:
         run: |
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
             uv venv C:/Users/runner/.venv
-            echo "activate=C:/Users/runner/.venv/Scripts/Activate.ps1" >> "$GITHUB_OUTPUT"
+            echo "activate=source C:/Users/runner/.venv/Scripts/activate" >> "$GITHUB_OUTPUT"
           else
             uv venv /home/runner/.venv
             echo "activate=source /home/runner/.venv/bin/activate" >> "$GITHUB_OUTPUT"
