@@ -1,5 +1,4 @@
 ---
-
 name: CI
 
 on:
@@ -10,14 +9,13 @@ on:
   schedule:
     # * is a special character in YAML so you have to quote this string
     # Run at 1:00 every day
-    - cron:  '0 1 * * *'
+    - cron: "0 1 * * *"
 
 jobs:
   build:
-
     strategy:
       matrix:
-        uv-resolution: ['highest', 'lowest']
+        uv-resolution: ["highest", "lowest"]
         # The minimum version should be represented in pyproject.toml.
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
         os: [ubuntu-latest, windows-latest]
@@ -39,7 +37,7 @@ jobs:
         run: |
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
             uv venv C:/Users/runner/.venv
-            echo "activate=C:/Users/runner/.venv/Scripts/Activate.ps1" >> "$GITHUB_OUTPUT"
+            echo "activate=source C:/Users/runner/.venv/Scripts/activate" >> "$GITHUB_OUTPUT"
           else
             uv venv /home/runner/.venv
             echo "activate=source /home/runner/.venv/bin/activate" >> "$GITHUB_OUTPUT"
@@ -47,6 +45,9 @@ jobs:
         shell: bash
 
       - name: "Install dependencies"
+        # Use bash to ensure the step fails if any command fails.
+        # PowerShell does not fail on intermediate command failures by default.
+        shell: bash
         run: |
           ${{ steps.venv.outputs.activate }}
           # We want the latest dev requirements, but the lowest install requirements.
@@ -54,6 +55,9 @@ jobs:
           uv pip install --resolution=${{ matrix.uv-resolution }} --upgrade --editable .
 
       - name: "Lint"
+        # Use bash to ensure the step fails if any command fails.
+        # PowerShell does not fail on intermediate command failures by default.
+        shell: bash
         run: |
           ${{ steps.venv.outputs.activate }}
           mypy .
@@ -68,6 +72,9 @@ jobs:
           actionlint
 
       - name: "Run tests"
+        # Use bash to ensure the step fails if any command fails.
+        # PowerShell does not fail on intermediate command failures by default.
+        shell: bash
         run: |
           ${{ steps.venv.outputs.activate }}
           pytest -s -vvv --cov-fail-under 100 --cov=pip_check_reqs/ --cov=tests tests/ --cov-report=xml
@@ -75,7 +82,7 @@ jobs:
   completion-ci:
     needs: build
     runs-on: ubuntu-latest
-    if: always()  # Run even if one matrix job fails
+    if: always() # Run even if one matrix job fails
     steps:
       - name: Check matrix job status
         run: |
