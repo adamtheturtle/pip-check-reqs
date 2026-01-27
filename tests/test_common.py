@@ -277,7 +277,7 @@ def test_find_imported_modules_advanced(
 
     spam_file_contents = textwrap.dedent(
         """\
-        from __future__ import braces
+        from __future__ import annotations
         import ast, sys
         from . import friend
         """,
