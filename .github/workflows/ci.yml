@@ -30,7 +30,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: "Install uv"
-        run: "pip install --upgrade uv"
+        uses: astral-sh/setup-uv@v7
 
       - name: "Create virtual environment"
         id: venv
