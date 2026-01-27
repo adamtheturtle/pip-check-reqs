@@ -30,27 +30,24 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: "Install dependencies"
-        run: uv sync --resolution=${{ matrix.uv-resolution }}
-
       - name: "Lint"
         # Use bash to ensure the step fails if any command fails.
         # PowerShell does not fail on intermediate command failures by default.
         shell: bash
         run: |
-          uv run mypy .
-          uv run ruff check .
-          uv run ruff format --check .
-          uv run pip-extra-reqs pip_check_reqs
-          uv run pip-missing-reqs pip_check_reqs
-          uv run pylint pip_check_reqs tests
-          uv run pyroma --min=10 .
-          uv run pyproject-fmt --check .
-          uv run pyright .
-          uv run actionlint
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev mypy .
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev ruff check .
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev ruff format --check .
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pip-extra-reqs pip_check_reqs
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pip-missing-reqs pip_check_reqs
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pylint pip_check_reqs tests
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pyroma --min=10 .
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pyproject-fmt --check .
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pyright .
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev actionlint
 
       - name: "Run tests"
-        run: uv run pytest -s -vvv --cov-fail-under 100 --cov=pip_check_reqs/ --cov=tests tests/ --cov-report=xml
+        run: uv run --resolution=${{ matrix.uv-resolution }} --extra dev pytest -s -vvv --cov-fail-under 100 --cov=pip_check_reqs/ --cov=tests tests/ --cov-report=xml
 
   completion-ci:
     needs: build
