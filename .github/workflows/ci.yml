@@ -36,24 +36,24 @@ jobs:
       - name: "Install dependencies"
         run: |
           # We want the latest dev requirements, but the lowest install requirements.
-          uv pip install --editable .[dev]
-          uv pip install --resolution=${{ matrix.uv-resolution }} --editable .
+          uv pip install --upgrade --editable .[dev]
+          uv pip install --resolution=${{ matrix.uv-resolution }} --upgrade --editable .
 
       - name: "Lint"
         run: |
-          uv run mypy .
-          uv run ruff check .
-          uv run ruff format --check .
-          uv run pip-extra-reqs pip_check_reqs
-          uv run pip-missing-reqs pip_check_reqs
-          uv run pylint pip_check_reqs tests
-          uv run pyroma --min=10 .
-          uv run pyproject-fmt --check .
-          uv run pyright .
+          uv run --no-sync mypy .
+          uv run --no-sync ruff check .
+          uv run --no-sync ruff format --check .
+          uv run --no-sync pip-extra-reqs pip_check_reqs
+          uv run --no-sync pip-missing-reqs pip_check_reqs
+          uv run --no-sync pylint pip_check_reqs tests
+          uv run --no-sync pyroma --min=10 .
+          uv run --no-sync pyproject-fmt --check .
+          uv run --no-sync pyright .
           actionlint
 
       - name: "Run tests"
-        run: uv run pytest -s -vvv --cov-fail-under 100 --cov=pip_check_reqs/ --cov=tests tests/ --cov-report=xml
+        run: uv run --no-sync pytest -s -vvv --cov-fail-under 100 --cov=pip_check_reqs/ --cov=tests tests/ --cov-report=xml
 
   completion-ci:
     needs: build
