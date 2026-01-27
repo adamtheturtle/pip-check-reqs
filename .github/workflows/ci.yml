@@ -30,11 +30,14 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: "Create virtual environment"
+        run: uv venv
+
       - name: "Install dependencies"
         run: |
           # We want the latest dev requirements, but the lowest install requirements.
-          uv sync --all-extras
-          uv sync --resolution=${{ matrix.uv-resolution }}
+          uv pip install --editable .[dev]
+          uv pip install --resolution=${{ matrix.uv-resolution }} --editable .
 
       - name: "Lint"
         run: |
