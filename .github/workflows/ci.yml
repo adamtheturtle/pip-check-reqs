@@ -43,6 +43,8 @@ jobs:
           fi
 
       - name: "Install dependencies"
+        # Use bash to ensure the step fails if any command fails.
+        # PowerShell does not fail on intermediate command failures by default.
         shell: bash
         run: |
           ${{ steps.venv.outputs.activate }}
@@ -51,6 +53,8 @@ jobs:
           uv pip install --resolution=${{ matrix.uv-resolution }} --upgrade --editable .
 
       - name: "Lint"
+        # Use bash to ensure the step fails if any command fails.
+        # PowerShell does not fail on intermediate command failures by default.
         shell: bash
         run: |
           ${{ steps.venv.outputs.activate }}
@@ -66,6 +70,8 @@ jobs:
           actionlint
 
       - name: "Run tests"
+        # Use bash to ensure the step fails if any command fails.
+        # PowerShell does not fail on intermediate command failures by default.
         shell: bash
         run: |
           ${{ steps.venv.outputs.activate }}
