@@ -55,7 +55,7 @@ jobs:
           uv run --no-sync pyroma --min=10 .
           uv run --no-sync pyproject-fmt --check .
           uv run --no-sync pyright .
-          actionlint
+          uv run --no-sync actionlint
 
       - name: "Run tests"
         run: uv run --no-sync pytest -s -vvv --cov-fail-under 100 --cov=pip_check_reqs/ --cov=tests tests/ --cov-report=xml
