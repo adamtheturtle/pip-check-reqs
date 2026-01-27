@@ -13,9 +13,8 @@ Run the following steps, entering a PyPI API token when prompted:
 
    git checkout master && \
    git pull && \
-   pip install --upgrade twine build && \
-   pip install -r requirements.txt && \
+   uv pip install --upgrade twine build && \
    rm -rf build dist && \
    git status # There should be no uncommitted changes.  && \
-   python -m build && \
-   twine upload --username=__token__ -r pypi dist/*
+   uv run python -m build && \
+   uv run twine upload --username=__token__ -r pypi dist/*
