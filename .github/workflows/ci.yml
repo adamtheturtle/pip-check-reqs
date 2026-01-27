@@ -22,6 +22,9 @@ jobs:
 
     runs-on: ${{ matrix.os }}
 
+    env:
+      VENV_PATH: ${{ matrix.os == 'windows-latest' && 'C:/Users/runner/.venv' || '/home/runner/.venv' }}
+
     steps:
       - uses: actions/checkout@v6
 
@@ -31,23 +34,14 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: "Create virtual environment"
-        id: venv
-        shell: bash
-        run: |
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            uv venv C:/Users/runner/.venv
-            echo "activate=source C:/Users/runner/.venv/Scripts/activate" >> "$GITHUB_OUTPUT"
-          else
-            uv venv /home/runner/.venv
-            echo "activate=source /home/runner/.venv/bin/activate" >> "$GITHUB_OUTPUT"
-          fi
+        run: uv venv ${{ env.VENV_PATH }}
 
       - name: "Install dependencies"
         # Use bash to ensure the step fails if any command fails.
         # PowerShell does not fail on intermediate command failures by default.
         shell: bash
         run: |
-          ${{ steps.venv.outputs.activate }}
+          source "$VENV_PATH/bin/activate" || source "$VENV_PATH/Scripts/activate"
           # We want the latest dev requirements, but the lowest install requirements.
           uv pip install --upgrade --editable .[dev]
           uv pip install --resolution=${{ matrix.uv-resolution }} --upgrade --editable .
@@ -57,7 +51,7 @@ jobs:
         # PowerShell does not fail on intermediate command failures by default.
         shell: bash
         run: |
-          ${{ steps.venv.outputs.activate }}
+          source "$VENV_PATH/bin/activate" || source "$VENV_PATH/Scripts/activate"
           mypy .
           ruff check .
           ruff format --check .
@@ -74,7 +68,7 @@ jobs:
         # PowerShell does not fail on intermediate command failures by default.
         shell: bash
         run: |
-          ${{ steps.venv.outputs.activate }}
+          source "$VENV_PATH/bin/activate" || source "$VENV_PATH/Scripts/activate"
           pytest -s -vvv --cov-fail-under 100 --cov=pip_check_reqs/ --cov=tests tests/ --cov-report=xml
 
   completion-ci:
