@@ -22,9 +22,6 @@ jobs:
 
     runs-on: ${{ matrix.os }}
 
-    env:
-      UV_PROJECT_ENVIRONMENT: .venv
-
     steps:
       - uses: actions/checkout@v6
 
@@ -34,11 +31,21 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: "Create virtual environment"
-        run: uv venv
+        id: venv
+        shell: bash
+        run: |
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            uv venv C:/Users/runner/.venv
+            echo "activate=source C:/Users/runner/.venv/Scripts/activate" >> "$GITHUB_OUTPUT"
+          else
+            uv venv /home/runner/.venv
+            echo "activate=source /home/runner/.venv/bin/activate" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: "Install dependencies"
         shell: bash
         run: |
+          ${{ steps.venv.outputs.activate }}
           # We want the latest dev requirements, but the lowest install requirements.
           uv pip install --upgrade --editable .[dev]
           uv pip install --resolution=${{ matrix.uv-resolution }} --upgrade --editable .
@@ -46,7 +53,7 @@ jobs:
       - name: "Lint"
         shell: bash
         run: |
-          source .venv/bin/activate || source .venv/Scripts/activate
+          ${{ steps.venv.outputs.activate }}
           mypy .
           ruff check .
           ruff format --check .
@@ -61,7 +68,7 @@ jobs:
       - name: "Run tests"
         shell: bash
         run: |
-          source .venv/bin/activate || source .venv/Scripts/activate
+          ${{ steps.venv.outputs.activate }}
           pytest -s -vvv --cov-fail-under 100 --cov=pip_check_reqs/ --cov=tests tests/ --cov-report=xml
 
   completion-ci:
