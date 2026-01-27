@@ -43,31 +43,18 @@ def find_extra_reqs(
 
     installed_files: dict[Path, str] = {}
     packages_info = common.get_packages_info()
-    here = common.cached_resolve_path(path=Path())
 
     for package in packages_info:
         package_name = package.name
         package_location = package.location
-        package_files: list[str] = []
-        for item in package.files or []:
-            item_location_rel = Path(package_location) / item
-            item_location = common.cached_resolve_path(path=item_location_rel)
-            try:
-                relative_item_location = item_location.relative_to(here)
-            except ValueError:
-                # Ideally we would use Pathlib.is_relative_to rather than
-                # checking for a ValueError, but that is only available in
-                # Python 3.9+.
-                relative_item_location = item_location
-            package_files.append(str(relative_item_location))
 
         log.debug(
             "installed package: %s (at %s)",
             package_name,
             package_location,
         )
-        for package_file in package_files:
-            path = Path(package_location) / package_file
+        for item in package.files or []:
+            path = Path(package_location) / item
             path = common.cached_resolve_path(path=path)
 
             installed_files[path] = package_name

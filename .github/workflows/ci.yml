@@ -22,10 +22,6 @@ jobs:
 
     runs-on: ${{ matrix.os }}
 
-    env:
-      # Set venv outside project dir so pip-extra-reqs resolves paths correctly
-      UV_PROJECT_ENVIRONMENT: ${{ matrix.os == 'windows-latest' && 'C:/Users/runner/.venv' || '/home/runner/.venv' }}
-
     steps:
       - uses: actions/checkout@v6
 
@@ -35,33 +31,26 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: "Install dependencies"
-        # Use bash to ensure the step fails if any command fails.
-        # PowerShell does not fail on intermediate command failures by default.
-        shell: bash
-        run: |
-          uv venv ${{ env.UV_PROJECT_ENVIRONMENT }}
-          # We want the latest dev requirements, but the lowest install requirements.
-          uv pip install --python ${{ env.UV_PROJECT_ENVIRONMENT }} --upgrade --editable .[dev]
-          uv pip install --python ${{ env.UV_PROJECT_ENVIRONMENT }} --resolution=${{ matrix.uv-resolution }} --upgrade --editable .
+        run: uv sync --resolution=${{ matrix.uv-resolution }}
 
       - name: "Lint"
         # Use bash to ensure the step fails if any command fails.
         # PowerShell does not fail on intermediate command failures by default.
         shell: bash
         run: |
-          uv run --no-sync mypy .
-          uv run --no-sync ruff check .
-          uv run --no-sync ruff format --check .
-          uv run --no-sync pip-extra-reqs pip_check_reqs
-          uv run --no-sync pip-missing-reqs pip_check_reqs
-          uv run --no-sync pylint pip_check_reqs tests
-          uv run --no-sync pyroma --min=10 .
-          uv run --no-sync pyproject-fmt --check .
-          uv run --no-sync pyright .
-          uv run --no-sync actionlint
+          uv run mypy .
+          uv run ruff check .
+          uv run ruff format --check .
+          uv run pip-extra-reqs pip_check_reqs
+          uv run pip-missing-reqs pip_check_reqs
+          uv run pylint pip_check_reqs tests
+          uv run pyroma --min=10 .
+          uv run pyproject-fmt --check .
+          uv run pyright .
+          uv run actionlint
 
       - name: "Run tests"
-        run: uv run --no-sync pytest -s -vvv --cov-fail-under 100 --cov=pip_check_reqs/ --cov=tests tests/ --cov-report=xml
+        run: uv run pytest -s -vvv --cov-fail-under 100 --cov=pip_check_reqs/ --cov=tests tests/ --cov-report=xml
 
   completion-ci:
     needs: build
