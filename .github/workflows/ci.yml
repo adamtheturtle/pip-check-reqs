@@ -22,6 +22,9 @@ jobs:
 
     runs-on: ${{ matrix.os }}
 
+    env:
+      UV_PROJECT_ENVIRONMENT: .venv
+
     steps:
       - uses: actions/checkout@v6
 
@@ -34,26 +37,32 @@ jobs:
         run: uv venv
 
       - name: "Install dependencies"
+        shell: bash
         run: |
           # We want the latest dev requirements, but the lowest install requirements.
           uv pip install --upgrade --editable .[dev]
           uv pip install --resolution=${{ matrix.uv-resolution }} --upgrade --editable .
 
       - name: "Lint"
+        shell: bash
         run: |
-          uv run --no-sync mypy .
-          uv run --no-sync ruff check .
-          uv run --no-sync ruff format --check .
-          uv run --no-sync pip-extra-reqs pip_check_reqs
-          uv run --no-sync pip-missing-reqs pip_check_reqs
-          uv run --no-sync pylint pip_check_reqs tests
-          uv run --no-sync pyroma --min=10 .
-          uv run --no-sync pyproject-fmt --check .
-          uv run --no-sync pyright .
+          source .venv/bin/activate || source .venv/Scripts/activate
+          mypy .
+          ruff check .
+          ruff format --check .
+          pip-extra-reqs pip_check_reqs
+          pip-missing-reqs pip_check_reqs
+          pylint pip_check_reqs tests
+          pyroma --min=10 .
+          pyproject-fmt --check .
+          pyright .
           actionlint
 
       - name: "Run tests"
-        run: uv run --no-sync pytest -s -vvv --cov-fail-under 100 --cov=pip_check_reqs/ --cov=tests tests/ --cov-report=xml
+        shell: bash
+        run: |
+          source .venv/bin/activate || source .venv/Scripts/activate
+          pytest -s -vvv --cov-fail-under 100 --cov=pip_check_reqs/ --cov=tests tests/ --cov-report=xml
 
   completion-ci:
     needs: build
