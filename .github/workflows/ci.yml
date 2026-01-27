@@ -17,7 +17,7 @@ jobs:
       matrix:
         uv-resolution: ["highest", "lowest"]
         # The minimum version should be represented in pyproject.toml.
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
         os: [ubuntu-latest, windows-latest]
 
     runs-on: ${{ matrix.os }}
@@ -35,6 +35,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: "Install dependencies"
+        # Use bash to ensure the step fails if any command fails.
+        # PowerShell does not fail on intermediate command failures by default.
+        shell: bash
         run: |
           uv venv ${{ env.UV_PROJECT_ENVIRONMENT }}
           # We want the latest dev requirements, but the lowest install requirements.
