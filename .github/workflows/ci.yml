@@ -38,8 +38,8 @@ jobs:
         run: |
           uv venv ${{ env.UV_PROJECT_ENVIRONMENT }}
           # We want the latest dev requirements, but the lowest install requirements.
-          uv pip install --upgrade --editable .[dev]
-          uv pip install --resolution=${{ matrix.uv-resolution }} --upgrade --editable .
+          uv pip install --python ${{ env.UV_PROJECT_ENVIRONMENT }} --upgrade --editable .[dev]
+          uv pip install --python ${{ env.UV_PROJECT_ENVIRONMENT }} --resolution=${{ matrix.uv-resolution }} --upgrade --editable .
 
       - name: "Lint"
         # Use bash to ensure the step fails if any command fails.
