@@ -36,6 +36,7 @@ jobs:
 
       - name: "Install dependencies"
         run: |
+          uv venv ${{ env.UV_PROJECT_ENVIRONMENT }}
           # We want the latest dev requirements, but the lowest install requirements.
           uv pip install --upgrade --editable .[dev]
           uv pip install --resolution=${{ matrix.uv-resolution }} --upgrade --editable .
