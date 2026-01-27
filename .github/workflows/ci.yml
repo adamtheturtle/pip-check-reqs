@@ -15,7 +15,7 @@ jobs:
   build:
     strategy:
       matrix:
-        uv-resolution: ["highest", "lowest"]
+        uv-resolution: ["highest", "lowest-direct"]
         # The minimum version should be represented in pyproject.toml.
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
         os: [ubuntu-latest, windows-latest]
