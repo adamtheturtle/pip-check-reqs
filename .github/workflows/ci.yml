@@ -15,16 +15,12 @@ jobs:
   build:
     strategy:
       matrix:
-        uv-resolution: ["highest", "lowest"]
+        uv-resolution: ["highest", "lowest-direct"]
         # The minimum version should be represented in pyproject.toml.
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
         os: [ubuntu-latest, windows-latest]
 
     runs-on: ${{ matrix.os }}
-
-    env:
-      # Set venv outside project dir so pip-extra-reqs resolves paths correctly
-      UV_PROJECT_ENVIRONMENT: ${{ matrix.os == 'windows-latest' && 'C:/Users/runner/.venv' || '/home/runner/.venv' }}
 
     steps:
       - uses: actions/checkout@v6
@@ -34,34 +30,24 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: "Install dependencies"
-        # Use bash to ensure the step fails if any command fails.
-        # PowerShell does not fail on intermediate command failures by default.
-        shell: bash
-        run: |
-          uv venv ${{ env.UV_PROJECT_ENVIRONMENT }}
-          # We want the latest dev requirements, but the lowest install requirements.
-          uv pip install --python ${{ env.UV_PROJECT_ENVIRONMENT }} --upgrade --editable .[dev]
-          uv pip install --python ${{ env.UV_PROJECT_ENVIRONMENT }} --resolution=${{ matrix.uv-resolution }} --upgrade --editable .
-
       - name: "Lint"
         # Use bash to ensure the step fails if any command fails.
         # PowerShell does not fail on intermediate command failures by default.
         shell: bash
         run: |
-          uv run --no-sync mypy .
-          uv run --no-sync ruff check .
-          uv run --no-sync ruff format --check .
-          uv run --no-sync pip-extra-reqs pip_check_reqs
-          uv run --no-sync pip-missing-reqs pip_check_reqs
-          uv run --no-sync pylint pip_check_reqs tests
-          uv run --no-sync pyroma --min=10 .
-          uv run --no-sync pyproject-fmt --check .
-          uv run --no-sync pyright .
-          uv run --no-sync actionlint
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev mypy .
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev ruff check .
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev ruff format --check .
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pip-extra-reqs pip_check_reqs
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pip-missing-reqs pip_check_reqs
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pylint pip_check_reqs tests
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pyroma --min=10 .
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pyproject-fmt --check .
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pyright .
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev actionlint
 
       - name: "Run tests"
-        run: uv run --no-sync pytest -s -vvv --cov-fail-under 100 --cov=pip_check_reqs/ --cov=tests tests/ --cov-report=xml
+        run: uv run --resolution=${{ matrix.uv-resolution }} --extra dev pytest -s -vvv --cov-fail-under 100 --cov=pip_check_reqs/ --cov=tests tests/ --cov-report=xml
 
   completion-ci:
     needs: build
