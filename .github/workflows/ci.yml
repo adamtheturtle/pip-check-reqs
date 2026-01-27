@@ -23,7 +23,8 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     env:
-      VENV_PATH: ${{ matrix.os == 'windows-latest' && 'C:/Users/runner/.venv' || '/home/runner/.venv' }}
+      # Set venv outside project dir so pip-extra-reqs resolves paths correctly
+      UV_PROJECT_ENVIRONMENT: ${{ matrix.os == 'windows-latest' && 'C:/Users/runner/.venv' || '/home/runner/.venv' }}
 
     steps:
       - uses: actions/checkout@v6
@@ -33,15 +34,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: "Create virtual environment"
-        run: uv venv ${{ env.VENV_PATH }}
-
       - name: "Install dependencies"
-        # Use bash to ensure the step fails if any command fails.
-        # PowerShell does not fail on intermediate command failures by default.
-        shell: bash
         run: |
-          source "$VENV_PATH/bin/activate" || source "$VENV_PATH/Scripts/activate"
           # We want the latest dev requirements, but the lowest install requirements.
           uv pip install --upgrade --editable .[dev]
           uv pip install --resolution=${{ matrix.uv-resolution }} --upgrade --editable .
@@ -51,25 +45,19 @@ jobs:
         # PowerShell does not fail on intermediate command failures by default.
         shell: bash
         run: |
-          source "$VENV_PATH/bin/activate" || source "$VENV_PATH/Scripts/activate"
-          mypy .
-          ruff check .
-          ruff format --check .
-          pip-extra-reqs pip_check_reqs
-          pip-missing-reqs pip_check_reqs
-          pylint pip_check_reqs tests
-          pyroma --min=10 .
-          pyproject-fmt --check .
-          pyright .
+          uv run --no-sync mypy .
+          uv run --no-sync ruff check .
+          uv run --no-sync ruff format --check .
+          uv run --no-sync pip-extra-reqs pip_check_reqs
+          uv run --no-sync pip-missing-reqs pip_check_reqs
+          uv run --no-sync pylint pip_check_reqs tests
+          uv run --no-sync pyroma --min=10 .
+          uv run --no-sync pyproject-fmt --check .
+          uv run --no-sync pyright .
           actionlint
 
       - name: "Run tests"
-        # Use bash to ensure the step fails if any command fails.
-        # PowerShell does not fail on intermediate command failures by default.
-        shell: bash
-        run: |
-          source "$VENV_PATH/bin/activate" || source "$VENV_PATH/Scripts/activate"
-          pytest -s -vvv --cov-fail-under 100 --cov=pip_check_reqs/ --cov=tests tests/ --cov-report=xml
+        run: uv run --no-sync pytest -s -vvv --cov-fail-under 100 --cov=pip_check_reqs/ --cov=tests tests/ --cov-report=xml
 
   completion-ci:
     needs: build
