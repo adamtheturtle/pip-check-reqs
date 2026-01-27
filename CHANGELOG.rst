@@ -2,6 +2,11 @@
 Release History
 ---------------
 
+2.5.6
+
+- Fix path resolution when virtual environment is inside the project directory.
+- Support for Python 3.14.
+
 2.5.5
 
 - Add CHANGELOG back to source distribution.
