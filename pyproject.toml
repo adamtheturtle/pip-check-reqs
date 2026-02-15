@@ -164,6 +164,7 @@ report.exclude_also = [
 ]
 run.branch = true
 
+report.show_missing = true
 [tool.mypy]
 strict = true
 
