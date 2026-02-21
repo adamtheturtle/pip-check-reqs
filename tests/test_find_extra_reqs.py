@@ -60,6 +60,7 @@ def test_find_extra_reqs(tmp_path: Path) -> None:
 
 
 def test_main_failure(
+    *,
     caplog: pytest.LogCaptureFixture,
     tmp_path: Path,
 ) -> None:
@@ -106,10 +107,10 @@ def test_main_no_spec(capsys: pytest.CaptureFixture[str]) -> None:
     ],
 )
 def test_logging_config(
+    *,
     caplog: pytest.LogCaptureFixture,
     expected_log_levels: set[int],
     tmp_path: Path,
-    *,
     verbose_cfg: bool,
     debug_cfg: bool,
 ) -> None:
