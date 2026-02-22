@@ -33,7 +33,7 @@ from pip_check_reqs import __version__, common
         (Path("/ham/spam/__init__.py"), Path("/ham/spam")),
     ],
 )
-def test_package_path(path: Path, result: Path) -> None:
+def test_package_path(*, path: Path, result: Path) -> None:
     assert common.package_path(path=path) == result, path
 
 
@@ -104,6 +104,7 @@ def test_pyfiles_package(tmp_path: Path) -> None:
     ],
 )
 def test_find_imported_modules_simple(
+    *,
     statement: str,
     expected_module_names: set[str],
     tmp_path: Path,

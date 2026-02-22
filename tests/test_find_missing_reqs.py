@@ -65,6 +65,7 @@ def test_find_missing_reqs(tmp_path: Path) -> None:
 
 
 def test_main_failure(
+    *,
     caplog: pytest.LogCaptureFixture,
     tmp_path: Path,
 ) -> None:
