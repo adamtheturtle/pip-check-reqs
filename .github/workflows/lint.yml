@@ -1,0 +1,62 @@
+---
+name: Lint
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    # Run at 1:00 every day
+    - cron: "0 1 * * *"
+  workflow_dispatch: {}
+
+permissions: {}
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        uv-resolution: ["highest", "lowest-direct"]
+        # The minimum version should be represented in pyproject.toml.
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
+        os: [ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: "Install uv"
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: "Lint"
+        # Use bash to ensure the step fails if any command fails.
+        # PowerShell does not fail on intermediate command failures by default.
+        shell: bash
+        run: |
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev mypy .
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev ruff check .
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev ruff format --check .
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pip-extra-reqs pip_check_reqs
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pip-missing-reqs pip_check_reqs
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pylint pip_check_reqs tests
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pyroma --min=10 .
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pyproject-fmt --check .
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pyright .
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev actionlint
+
+  completion-lint:
+    needs: build
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check matrix job status
+        run: |
+          if ! ${{ needs.build.result == 'success' }}; then
+            echo "One or more matrix jobs failed"
+            exit 1
+          fi
