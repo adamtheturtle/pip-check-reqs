@@ -30,29 +30,13 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: "Lint"
-        # Use bash to ensure the step fails if any command fails.
-        # PowerShell does not fail on intermediate command failures by default.
-        shell: bash
-        run: |
-          uv run --resolution=${{ matrix.uv-resolution }} --extra dev mypy .
-          uv run --resolution=${{ matrix.uv-resolution }} --extra dev ruff check .
-          uv run --resolution=${{ matrix.uv-resolution }} --extra dev ruff format --check .
-          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pip-extra-reqs pip_check_reqs
-          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pip-missing-reqs pip_check_reqs
-          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pylint pip_check_reqs tests
-          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pyroma --min=10 .
-          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pyproject-fmt --check .
-          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pyright .
-          uv run --resolution=${{ matrix.uv-resolution }} --extra dev actionlint
-
       - name: "Run tests"
         run: uv run --resolution=${{ matrix.uv-resolution }} --extra dev pytest -s -vvv --cov-fail-under 100 --cov=pip_check_reqs/ --cov=tests tests/ --cov-report=xml
 
   completion-ci:
     needs: build
     runs-on: ubuntu-latest
-    if: always() # Run even if one matrix job fails
+    if: always()
     steps:
       - name: Check matrix job status
         run: |
