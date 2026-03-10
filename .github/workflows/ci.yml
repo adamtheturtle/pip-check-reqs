@@ -49,7 +49,7 @@ jobs:
       - name: "Run tests"
         run: uv run --resolution=${{ matrix.uv-resolution }} --extra dev pytest -s -vvv --cov-fail-under 100 --cov=pip_check_reqs/ --cov=tests tests/ --cov-report=xml
 
-  completion-ci:
+  completion-lint:
     needs: build
     runs-on: ubuntu-latest
     if: always() # Run even if one matrix job fails
