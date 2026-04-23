@@ -50,7 +50,7 @@ def get_packages_info() -> list[_PackageInfo]:
     return list(search_packages_info(query=all_pkgs))
 
 
-@dataclass
+@dataclass(kw_only=True)
 class FoundModule:
     """A module with uses in the source."""
 
