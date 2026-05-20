@@ -101,6 +101,11 @@ persistent = true
 # Use multiple processes to speed up Pylint.
 jobs = 0
 
+# Return non-zero exit code if useless-suppression is emitted.
+fail-on = [
+  'useless-suppression',
+]
+
 # List of plugins (as comma separated values of python modules names) to load,
 # usually to register additional checkers.
 load-plugins = [
