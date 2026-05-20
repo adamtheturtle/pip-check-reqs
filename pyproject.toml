@@ -106,6 +106,7 @@ jobs = 0
 load-plugins = [
   'pylint.extensions.docparams',
   'pylint.extensions.no_self_use',
+  'pylint.extensions.bad_builtin',
 ]
 
 # Allow loading of arbitrary C extensions. Extensions are imported into the
@@ -158,6 +159,16 @@ disable = [
   "missing-function-docstring",
   # We will remove this in issue 97
   "deprecated-module",
+]
+
+[tool.pylint.'DEPRECATED BUILTINS']
+
+bad-functions = [
+  'filter',
+  'getattr',
+  'hasattr',
+  'map',
+  'setattr',
 ]
 
 [tool.pylint.'FORMAT']
