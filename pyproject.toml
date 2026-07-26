@@ -68,6 +68,8 @@ lint.select = [
 ]
 
 lint.ignore = [
+  # The project does not require copyright notices in every Python file.
+  "CPY001",
   # We are missing too many docstrings to quickly fix now.
   "D100",
   "D103",
