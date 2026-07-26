@@ -2,7 +2,8 @@ actionlint-py==1.7.12.24
 mypy==1.19.1
 pyenchant==3.3.0
 pylint==3.3.9
-pyproject-fmt==2.25.3
+pyproject-fmt==2.8.0; python_version < "3.10"
+pyproject-fmt==2.25.3; python_version >= "3.10"
 pyright==1.1.411
 pyroma==5.0.1
 pytest==8.4.2

@@ -51,22 +51,17 @@ scripts.pip-missing-reqs = "pip_check_reqs.find_missing_reqs:main"
 packages = [
   "pip_check_reqs",
 ]
-
-[tool.setuptools.dynamic]
-version = { attr = "pip_check_reqs.__version__" }
-readme = { file = "README.rst", content-type = "text/x-rst" }
-dependencies = { file = "requirements.txt" }
-optional-dependencies = { dev = { file = "test-requirements.txt" } }
+dynamic.dependencies = { file = "requirements.txt" }
+dynamic.optional-dependencies = { dev = { file = "test-requirements.txt" } }
+dynamic.readme = { file = "README.rst", content-type = "text/x-rst" }
+dynamic.version = { attr = "pip_check_reqs.__version__" }
 
 [tool.ruff]
-
 target-version = "py39"
-
 line-length = 79
 lint.select = [
   "ALL",
 ]
-
 lint.ignore = [
   # The project does not require copyright notices in every Python file.
   "CPY001",
@@ -85,7 +80,6 @@ lint.ignore = [
   # https://mypy.readthedocs.io/en/stable/type_narrowing.html#type-narrowing-expressions.
   "S101",
 ]
-
 # Do not automatically remove commented out code.
 # We comment out code during development, and with VSCode auto-save, this code
 # is sometimes annoyingly removed.
@@ -94,43 +88,13 @@ lint.unfixable = [
 ]
 
 [tool.pylint]
-
-[tool.pylint.'MASTER']
-
-# Pickle collected data for later comparisons.
-persistent = true
-
-# Use multiple processes to speed up Pylint.
-jobs = 0
-
-# Return non-zero exit code if useless-suppression is emitted.
-fail-on = [
-  'useless-suppression',
+"DEPRECATED BUILTINS".bad-functions = [
+  "filter",
+  "getattr",
+  "hasattr",
+  "map",
+  "setattr",
 ]
-
-# List of plugins (as comma separated values of python modules names) to load,
-# usually to register additional checkers.
-load-plugins = [
-  'pylint.extensions.docparams',
-  'pylint.extensions.no_self_use',
-  'pylint.extensions.bad_builtin',
-]
-
-# Allow loading of arbitrary C extensions. Extensions are imported into the
-# active Python interpreter and may run arbitrary code.
-unsafe-load-any-extension = false
-
-[tool.pylint.'MESSAGES CONTROL']
-
-# Enable the message, report, category or checker with the given id(s). You can
-# either give multiple identifier separated by comma (,) or put this option
-# multiple time (only on the command line, not in the configuration file where
-# it should appear only once). See also the "--disable" option for examples.
-enable = [
-  'spelling',
-  'useless-suppression',
-]
-
 # Disable the message, report, category or checker with the given id(s). You
 # can either give multiple identifiers separated by comma (,) or put this
 # option multiple times (only on the command line, not in the configuration
@@ -140,81 +104,82 @@ enable = [
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
-
-disable = [
-  'too-few-public-methods',
-  'too-many-locals',
-  'too-many-arguments',
-  'too-many-instance-attributes',
-  'too-many-return-statements',
-  'too-many-lines',
-  'locally-disabled',
-  # Let ruff handle long lines
-  'line-too-long',
-  # Let ruff handle unused imports
-  'unused-import',
-  # Let isort deal with sorting
-  'ungrouped-imports',
-  # We don't need everything to be documented because of mypy
-  'missing-type-doc',
-  'missing-return-type-doc',
-  # Too difficult to please
-  'duplicate-code',
-  # Let ruff handle imports
-  'wrong-import-order',
-  # It would be nice to add this, but it's too much work
-  "missing-function-docstring",
+"MESSAGES CONTROL".disable = [
   # We will remove this in issue 97
   "deprecated-module",
+  # Too difficult to please
+  "duplicate-code",
+  # Let ruff handle long lines
+  "line-too-long",
+  "locally-disabled",
+  # It would be nice to add this, but it's too much work
+  "missing-function-docstring",
+  "missing-return-type-doc",
+  # We don't need everything to be documented because of mypy
+  "missing-type-doc",
+  "too-few-public-methods",
+  "too-many-arguments",
+  "too-many-instance-attributes",
+  "too-many-lines",
+  "too-many-locals",
+  "too-many-return-statements",
+  # Let isort deal with sorting
+  "ungrouped-imports",
+  # Let ruff handle unused imports
+  "unused-import",
+  # Let ruff handle imports
+  "wrong-import-order",
 ]
-
-[tool.pylint.'DEPRECATED BUILTINS']
-
-bad-functions = [
-  'filter',
-  'getattr',
-  'hasattr',
-  'map',
-  'setattr',
+# Enable the message, report, category or checker with the given id(s). You can
+# either give multiple identifier separated by comma (,) or put this option
+# multiple time (only on the command line, not in the configuration file where
+# it should appear only once). See also the "--disable" option for examples.
+"MESSAGES CONTROL".enable = [
+  "spelling",
+  "useless-suppression",
 ]
-
-[tool.pylint.'FORMAT']
-
 # Allow the body of an if to be on the same line as the test if there is no
 # else.
-single-line-if-stmt = false
-
-[tool.pylint.'SPELLING']
-
+FORMAT.single-line-if-stmt = false
+# Return non-zero exit code if useless-suppression is emitted.
+MASTER.fail-on = [
+  "useless-suppression",
+]
+# Use multiple processes to speed up Pylint.
+MASTER.jobs = 0
+# List of plugins (as comma separated values of python modules names) to load,
+# usually to register additional checkers.
+MASTER.load-plugins = [
+  "pylint.extensions.bad_builtin",
+  "pylint.extensions.docparams",
+  "pylint.extensions.no_self_use",
+]
+# Pickle collected data for later comparisons.
+MASTER.persistent = true
+# Allow loading of arbitrary C extensions. Extensions are imported into the
+# active Python interpreter and may run arbitrary code.
+MASTER.unsafe-load-any-extension = false
 # Spelling dictionary name. Available dictionaries: none. To make it working
 # install python-enchant package.
-spelling-dict = 'en_US'
-
+SPELLING.spelling-dict = "en_US"
 # A path to a file that contains private dictionary; one word per line.
-spelling-private-dict-file = 'spelling_private_dict.txt'
-
+SPELLING.spelling-private-dict-file = "spelling_private_dict.txt"
 # Tells whether to store unknown words to indicated private dictionary in
 # --spelling-private-dict-file option instead of raising a message.
-spelling-store-unknown-words = 'no'
+SPELLING.spelling-store-unknown-words = "no"
 
 [tool.pyproject-fmt]
 keep_full_version = true
 max_supported_python = "3.14"
 
-[tool.coverage.run]
-
-branch = true
-
-[tool.coverage.report]
-
-exclude_also = [
-  "if TYPE_CHECKING:",
-]
-
 [tool.mypy]
-
 strict = true
 
 [tool.pyright]
-
 typeCheckingMode = "strict"
+
+[tool.coverage]
+run.branch = true
+report.exclude_also = [
+  "if TYPE_CHECKING:",
+]
