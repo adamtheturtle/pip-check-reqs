@@ -43,7 +43,10 @@ def cached_resolve_path(path: Path) -> Path:
 # We cache the result to speed up tests.
 @cache
 def get_packages_info() -> list[_PackageInfo]:
-    all_pkgs = [dist.name for dist in importlib.metadata.distributions()]
+    all_pkgs: list[str] = [
+        dist.metadata["Name"]  # pyright: ignore[reportUnknownMemberType]
+        for dist in importlib.metadata.distributions()
+    ]
 
     return list(search_packages_info(query=all_pkgs))
 
