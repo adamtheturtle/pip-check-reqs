@@ -1,5 +1,6 @@
 actionlint-py==1.7.12.24
-mypy==1.19.1
+mypy==1.19.1; python_version < "3.10"
+mypy==2.3.0; python_version >= "3.10"
 pyenchant==3.3.0
 pylint==3.3.9
 pyproject-fmt==2.8.0; python_version < "3.10"
