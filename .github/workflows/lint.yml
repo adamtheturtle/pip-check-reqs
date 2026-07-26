@@ -45,7 +45,9 @@ jobs:
           uv run --resolution=${{ matrix.uv-resolution }} --extra dev pip-missing-reqs pip_check_reqs
           uv run --resolution=${{ matrix.uv-resolution }} --extra dev pylint pip_check_reqs tests
           uv run --resolution=${{ matrix.uv-resolution }} --extra dev pyroma --min=10 .
-          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pyproject-fmt --check .
+          if [[ "${{ matrix.python-version }}" != "3.9" ]]; then
+            uv run --resolution=${{ matrix.uv-resolution }} --extra dev pyproject-fmt --check .
+          fi
           uv run --resolution=${{ matrix.uv-resolution }} --extra dev pyright .
           uv run --resolution=${{ matrix.uv-resolution }} --extra dev actionlint
 
