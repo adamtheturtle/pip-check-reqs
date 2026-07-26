@@ -3,4 +3,5 @@ pragma
 pyright
 pytest
 reportPrivateUsage
+reportUnknownMemberType
 reqs
