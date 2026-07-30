@@ -48,7 +48,7 @@ def get_packages_info() -> list[_PackageInfo]:
         for dist in importlib.metadata.distributions()
     ]
 
-    return list(search_packages_info(query=all_pkgs))
+    return list(search_packages_info(query=all_pkgs, include_files=True))
 
 
 @dataclass
