@@ -1,3 +1,3 @@
 """Package for finding missing and extra requirements."""
 
-__version__ = "2.5.6"
+__version__ = "3.0.0"
