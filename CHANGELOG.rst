@@ -2,6 +2,12 @@
 Release History
 ---------------
 
+3.0.0
+
+- Drop support for Python 3.9. Python 3.10 or later is now required.
+- Require pip 26.2 or later.
+- Require packaging 26.2 or later.
+
 2.5.6
 
 - Fix path resolution when virtual environment is inside the project directory.
