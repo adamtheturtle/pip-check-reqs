@@ -4,17 +4,11 @@ Contributing
 Release process
 ---------------
 
-* Update the CHANGELOG on the master branch
+* Update the CHANGELOG on the master branch.
 * Update ``__version__`` in ``pip_check_reqs/__init__.py`` on the master branch.
 
-Run the following steps, entering a PyPI API token when prompted:
+Run the release script, entering a PyPI API token when prompted:
 
 .. code:: sh
 
-   git checkout master && \
-   git pull && \
-   uv pip install --upgrade twine build && \
-   rm -rf build dist && \
-   git status # There should be no uncommitted changes.  && \
-   uv run python -m build && \
-   uv run twine upload --username=__token__ -r pypi dist/*
+   ./release.sh
