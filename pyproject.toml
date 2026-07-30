@@ -20,7 +20,7 @@ authors = [
   { name = "Adam Dangoor", email = "adamdangoor@gmail.com" },
   { name = "Richard Jones", email = "r1chardj0n3s@gmail.com" },
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Intended Audience :: Developers",
@@ -28,7 +28,6 @@ classifiers = [
   "Operating System :: Microsoft :: Windows",
   "Operating System :: POSIX",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -57,7 +56,7 @@ dynamic.readme = { file = "README.rst", content-type = "text/x-rst" }
 dynamic.version = { attr = "pip_check_reqs.__version__" }
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py310"
 line-length = 79
 lint.select = [
   "ALL",
