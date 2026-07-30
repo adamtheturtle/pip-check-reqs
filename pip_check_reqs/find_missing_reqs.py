@@ -7,7 +7,7 @@ import collections
 import logging
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 from packaging.utils import NormalizedName, canonicalize_name
 from pip._internal.network.session import PipSession
@@ -17,7 +17,7 @@ from pip._internal.req.req_file import parse_requirements
 from pip_check_reqs import common
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Callable, Iterable
 
 log = logging.getLogger(__name__)
 

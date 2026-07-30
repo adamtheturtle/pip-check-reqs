@@ -1,14 +1,11 @@
 actionlint-py==1.7.12.24
-mypy==1.19.1; python_version < "3.10"
-mypy==2.3.0; python_version >= "3.10"
+mypy==2.3.0
 pyenchant==3.3.0
-pylint==3.3.9; python_version < "3.10"
-pylint==4.0.6; python_version >= "3.10"
-pyproject-fmt==2.26.0; python_version >= "3.10"
+pylint==4.0.6
+pyproject-fmt==2.26.0
 pyright==1.1.411
 pyroma==5.0.1
-pytest==8.4.2; python_version < "3.10"
-pytest==9.1.1; python_version >= "3.10"
+pytest==9.1.1
 pytest-cov==7.1.0
 ruamel.yaml==0.19.1
 ruff==0.16.0

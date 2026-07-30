@@ -20,7 +20,7 @@ jobs:
       matrix:
         uv-resolution: ["highest", "lowest-direct"]
         # The minimum version should be represented in pyproject.toml.
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
         os: [ubuntu-latest, windows-latest]
 
     runs-on: ${{ matrix.os }}
@@ -45,9 +45,7 @@ jobs:
           uv run --resolution=${{ matrix.uv-resolution }} --extra dev pip-missing-reqs pip_check_reqs
           uv run --resolution=${{ matrix.uv-resolution }} --extra dev pylint pip_check_reqs tests
           uv run --resolution=${{ matrix.uv-resolution }} --extra dev pyroma --min=10 .
-          if [[ "${{ matrix.python-version }}" != "3.9" ]]; then
-            uv run --resolution=${{ matrix.uv-resolution }} --extra dev pyproject-fmt --check .
-          fi
+          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pyproject-fmt --check .
           uv run --resolution=${{ matrix.uv-resolution }} --extra dev pyright .
           uv run --resolution=${{ matrix.uv-resolution }} --extra dev actionlint
 
