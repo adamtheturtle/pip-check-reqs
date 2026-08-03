@@ -27,7 +27,9 @@ from pip._internal.req.req_file import ParsedRequirement, parse_requirements
 from . import __version__
 
 if TYPE_CHECKING:
+    import argparse
     from collections.abc import Callable, Generator, Iterable
+    from typing import NoReturn
 
 log = logging.getLogger(__name__)
 
@@ -153,6 +155,10 @@ class _ImportVisitor(ast.NodeVisitor):
 
 
 def pyfiles(root: Path) -> Generator[Path, None, None]:
+    if not root.exists():
+        msg = f"source path not found: {root}"
+        raise FileNotFoundError(msg)
+
     if root.is_file():
         if root.suffix == ".py":
             yield root.absolute()
@@ -162,6 +168,31 @@ def pyfiles(root: Path) -> Generator[Path, None, None]:
     else:
         for item in root.rglob("*.py"):
             yield item.absolute()
+
+
+def validate_requirements_file(*, path: Path) -> None:
+    if not path.is_file():
+        msg = f"requirements file not found: {path}"
+        raise FileNotFoundError(msg)
+
+
+def report_input_error(
+    *,
+    parser: argparse.ArgumentParser,
+    debug: bool,
+    error: OSError | ValueError,
+) -> NoReturn:
+    if debug:
+        raise error
+    parser.error(str(error))
+
+
+def log_level(*, debug: bool, verbose: bool) -> int:
+    if debug:
+        return logging.DEBUG
+    if verbose:
+        return logging.INFO
+    return logging.WARNING
 
 
 def find_imported_modules(

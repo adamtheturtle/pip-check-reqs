@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 import textwrap
 from pathlib import Path
 
@@ -108,6 +109,73 @@ def test_main_no_spec(capsys: pytest.CaptureFixture[str]) -> None:
     assert excinfo.value.code == expected_code
     err = capsys.readouterr().err
     assert err.endswith("error: no source files or directories specified\n")
+
+
+def test_main_missing_requirements_file(
+    capsys: pytest.CaptureFixture[str],
+    tmp_path: Path,
+) -> None:
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    requirements_file = tmp_path / "missing-requirements.txt"
+
+    with pytest.raises(SystemExit) as excinfo:
+        find_missing_reqs.main(
+            arguments=[
+                "--requirements",
+                str(requirements_file),
+                str(source_dir),
+            ],
+        )
+
+    expected_code = 2
+    assert excinfo.value.code == expected_code
+    err = capsys.readouterr().err
+    assert err.endswith(
+        f"error: requirements file not found: {requirements_file}\n",
+    )
+
+
+def test_main_missing_source_path(
+    capsys: pytest.CaptureFixture[str],
+    tmp_path: Path,
+) -> None:
+    requirements_file = tmp_path / "requirements.txt"
+    requirements_file.touch()
+    source_dir = tmp_path / "missing-source"
+
+    with pytest.raises(SystemExit) as excinfo:
+        find_missing_reqs.main(
+            arguments=[
+                "--requirements",
+                str(requirements_file),
+                str(source_dir),
+            ],
+        )
+
+    expected_code = 2
+    assert excinfo.value.code == expected_code
+    err = capsys.readouterr().err
+    assert err.endswith(f"error: source path not found: {source_dir}\n")
+
+
+def test_main_debug_reraises_input_error(tmp_path: Path) -> None:
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    requirements_file = tmp_path / "missing-requirements.txt"
+
+    with pytest.raises(
+        FileNotFoundError,
+        match=re.escape(f"requirements file not found: {requirements_file}"),
+    ):
+        find_missing_reqs.main(
+            arguments=[
+                "--debug",
+                "--requirements",
+                str(requirements_file),
+                str(source_dir),
+            ],
+        )
 
 
 @pytest.mark.parametrize(

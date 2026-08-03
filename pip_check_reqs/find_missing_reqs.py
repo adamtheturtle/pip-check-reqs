@@ -164,23 +164,31 @@ def main(arguments: list[str] | None = None) -> None:
     ignore_mods = common.ignorer(ignore_cfg=parse_result.ignore_mods)
 
     logging.basicConfig(format="%(message)s")
-    if parse_result.debug:
-        level = logging.DEBUG
-    elif parse_result.verbose:
-        level = logging.INFO
-    else:
-        level = logging.WARNING
+    level = common.log_level(
+        debug=parse_result.debug,
+        verbose=parse_result.verbose,
+    )
     log.setLevel(level)
     common.log.setLevel(level)
 
     log.info(common.version_info())
 
-    missing = find_missing_reqs(
-        requirements_filename=parse_result.requirements_filename,
-        paths=parse_result.paths,
-        ignore_files_function=ignore_files,
-        ignore_modules_function=ignore_mods,
-    )
+    try:
+        common.validate_requirements_file(
+            path=parse_result.requirements_filename,
+        )
+        missing = find_missing_reqs(
+            requirements_filename=parse_result.requirements_filename,
+            paths=parse_result.paths,
+            ignore_files_function=ignore_files,
+            ignore_modules_function=ignore_mods,
+        )
+    except (OSError, ValueError) as error:
+        common.report_input_error(
+            parser=parser,
+            debug=parse_result.debug,
+            error=error,
+        )
 
     if missing:
         log.warning("Missing requirements:")
