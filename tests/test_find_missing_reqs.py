@@ -65,6 +65,33 @@ def test_find_missing_reqs(tmp_path: Path) -> None:
     assert result == expected_result
 
 
+def test_main_multiple_requirements_files(
+    *,
+    caplog: pytest.LogCaptureFixture,
+    tmp_path: Path,
+) -> None:
+    first_requirements_file = tmp_path / "requirements.txt"
+    first_requirements_file.write_text("pip\n")
+    second_requirements_file = tmp_path / "test-requirements.txt"
+    second_requirements_file.write_text("pytest\n")
+
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    (source_dir / "source.py").write_text("import pip\nimport pytest\n")
+
+    find_missing_reqs.main(
+        arguments=[
+            "--requirements-file",
+            str(first_requirements_file),
+            "--requirements-file",
+            str(second_requirements_file),
+            str(source_dir),
+        ],
+    )
+
+    assert not caplog.records
+
+
 def test_main_failure(
     *,
     caplog: pytest.LogCaptureFixture,

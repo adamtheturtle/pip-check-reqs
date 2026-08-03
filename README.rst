@@ -37,6 +37,12 @@ Basic usage, running in your project directory::
 This will find all imports in the code in "sample" and check that the
 packages those modules belong to are in the requirements.txt file.
 
+If dependencies are split across multiple files, repeat ``--requirements-file``
+to check them together::
+
+    pip-missing-reqs --requirements-file=requirements.txt \
+        --requirements-file=test-requirements.txt sample
+
 Additionally it is possible to check that there are no dependencies in
 requirements.txt that are then unused in the project::
 
