@@ -27,6 +27,7 @@ def find_missing_reqs(
     paths: Iterable[Path],
     ignore_files_function: Callable[[str], bool],
     ignore_modules_function: Callable[[str], bool],
+    additional_requirements_filenames: Iterable[Path] = (),
 ) -> list[tuple[NormalizedName, list[common.FoundModule]]]:
     # 1. find files used by imports in the code (as best we can without
     #    executing)
@@ -84,17 +85,21 @@ def find_missing_reqs(
 
     # 4. compare with requirements
     explicit: set[NormalizedName] = set()
-    for requirement in parse_requirements(
-        str(requirements_filename),
-        session=PipSession(),
-    ):
-        requirement_name = install_req_from_line(
-            requirement.requirement,
-        ).name
+    for filename in [
+        requirements_filename,
+        *additional_requirements_filenames,
+    ]:
+        for requirement in parse_requirements(
+            str(filename),
+            session=PipSession(),
+        ):
+            requirement_name = install_req_from_line(
+                requirement.requirement,
+            ).name
 
-        assert isinstance(requirement_name, str)
-        log.debug("found requirement: %s", requirement_name)
-        explicit.add(canonicalize_name(requirement_name))
+            assert isinstance(requirement_name, str)
+            log.debug("found requirement: %s", requirement_name)
+            explicit.add(canonicalize_name(requirement_name))
 
     return [(name, used[name]) for name in used if name not in explicit]
 
@@ -104,11 +109,14 @@ def main(arguments: list[str] | None = None) -> None:
     parser.add_argument("paths", type=Path, nargs="*")
     parser.add_argument(
         "--requirements-file",
-        dest="requirements_filename",
+        dest="requirements_filenames",
         metavar="PATH",
         type=Path,
-        default="requirements.txt",
-        help='path to the requirements file (defaults to "requirements.txt")',
+        action="append",
+        help=(
+            "path to a requirements file; may be repeated "
+            '(defaults to "requirements.txt")'
+        ),
     )
     parser.add_argument(
         "-f",
@@ -160,6 +168,9 @@ def main(arguments: list[str] | None = None) -> None:
     if not parse_result.paths:
         parser.error("no source files or directories specified")
 
+    requirements_filenames = parse_result.requirements_filenames or [
+        Path("requirements.txt"),
+    ]
     ignore_files = common.ignorer(ignore_cfg=parse_result.ignore_files)
     ignore_mods = common.ignorer(ignore_cfg=parse_result.ignore_mods)
 
@@ -174,14 +185,14 @@ def main(arguments: list[str] | None = None) -> None:
     log.info(common.version_info())
 
     try:
-        common.validate_requirements_file(
-            path=parse_result.requirements_filename,
-        )
+        for requirements_filename in requirements_filenames:
+            common.validate_requirements_file(path=requirements_filename)
         missing = find_missing_reqs(
-            requirements_filename=parse_result.requirements_filename,
+            requirements_filename=requirements_filenames[0],
             paths=parse_result.paths,
             ignore_files_function=ignore_files,
             ignore_modules_function=ignore_mods,
+            additional_requirements_filenames=requirements_filenames[1:],
         )
     except (OSError, ValueError) as error:
         common.report_input_error(
