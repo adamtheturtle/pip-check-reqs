@@ -242,6 +242,33 @@ def test_find_imported_modules_period(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
+    "parent_name",
+    [
+        "pytest",
+        "pprint",
+    ],
+)
+def test_find_imported_modules_missing_from_submodule(
+    parent_name: str,
+    tmp_path: Path,
+) -> None:
+    """A missing sub-module is not attributed to its installed parent."""
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    (source_dir / "example.py").write_text(
+        f"from {parent_name}.missing import attribute",
+    )
+
+    result = common.find_imported_modules(
+        paths=[source_dir],
+        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+    )
+
+    assert not result
+
+
+@pytest.mark.parametrize(
     ("ignore_ham", "ignore_hashlib", "expect", "locs"),
     [
         (
