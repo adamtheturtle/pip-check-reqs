@@ -181,25 +181,33 @@ def main(arguments: list[str] | None = None) -> None:
     ignore_reqs = common.ignorer(ignore_cfg=parse_result.ignore_reqs)
 
     logging.basicConfig(format="%(message)s")
-    if parse_result.debug:
-        level = logging.DEBUG
-    elif parse_result.verbose:
-        level = logging.INFO
-    else:
-        level = logging.WARNING
+    level = common.log_level(
+        debug=parse_result.debug,
+        verbose=parse_result.verbose,
+    )
     log.setLevel(level)
     common.log.setLevel(level)
 
     log.info(common.version_info())
 
-    extras = find_extra_reqs(
-        requirements_filename=parse_result.requirements_filename,
-        paths=parse_result.paths,
-        ignore_files_function=ignore_files,
-        ignore_modules_function=ignore_mods,
-        ignore_requirements_function=ignore_reqs,
-        skip_incompatible=parse_result.skip_incompatible,
-    )
+    try:
+        common.validate_requirements_file(
+            path=parse_result.requirements_filename,
+        )
+        extras = find_extra_reqs(
+            requirements_filename=parse_result.requirements_filename,
+            paths=parse_result.paths,
+            ignore_files_function=ignore_files,
+            ignore_modules_function=ignore_mods,
+            ignore_requirements_function=ignore_reqs,
+            skip_incompatible=parse_result.skip_incompatible,
+        )
+    except (OSError, ValueError) as error:
+        common.report_input_error(
+            parser=parser,
+            debug=parse_result.debug,
+            error=error,
+        )
 
     if extras:
         log.warning("Extra requirements:")
