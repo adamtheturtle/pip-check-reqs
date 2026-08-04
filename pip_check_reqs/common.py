@@ -93,11 +93,27 @@ class _ImportVisitor(ast.NodeVisitor):
         if node.module == "__future__":
             # not an actual module
             return
+        if node.module is None or node.level != 0:
+            # relative import
+            return
+        if not self._module_exists(modname=node.module):
+            return
         for alias in node.names:
-            if node.module is None or node.level != 0:
-                # relative import
-                continue
             self._add_module(node.module + "." + alias.name, node.lineno)
+
+    @staticmethod
+    def _module_exists(*, modname: str) -> bool:
+        modname_parts_progress: list[str] = []
+        for modname_part in modname.split("."):
+            name = ".".join([*modname_parts_progress, modname_part])
+            try:
+                module_spec = find_spec(name=name)
+            except (ModuleNotFoundError, ValueError):
+                return False
+            if module_spec is None:
+                return False
+            modname_parts_progress.append(modname_part)
+        return True
 
     def _add_module(self, modname: str, lineno: int) -> None:
         if self._ignore_modules_function(modname):
