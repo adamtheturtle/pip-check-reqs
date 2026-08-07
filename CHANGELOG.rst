@@ -2,8 +2,15 @@
 Release History
 ---------------
 
-Next
+3.1.0
 
+- ``pip-missing-reqs`` accepts ``--requirements-file`` more than once, so
+  requirements split across several files are checked as one set.
+- A missing requirements file or source path now reports a concise command
+  line error. A missing requirements file previously surfaced an internal
+  pip exception, and a missing source path was silently ignored.
+- An import from a submodule that does not exist is no longer attributed to
+  an installed parent distribution, which removed a class of false positives.
 - A requirement with no distribution name, such as a bare
   ``git+ssh://...`` URL, now reports an error asking for an ``#egg=<name>``
   fragment. It previously crashed with an ``AssertionError``.
