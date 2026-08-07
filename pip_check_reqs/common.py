@@ -247,7 +247,15 @@ def find_required_modules(
         requirement_name = install_req_from_line(
             requirement.requirement,
         ).name
-        assert isinstance(requirement_name, str)
+        if requirement_name is None:
+            # A direct URL such as ``git+ssh://git@example.com/org/repo.git``
+            # carries no distribution name, and pip will not learn one without
+            # fetching the project. Skipping the line would silently drop a
+            # requirement and report the modules it provides as missing, so
+            # ask for the name instead of guessing at it.
+            hint = "Add an '#egg=<name>' fragment naming the distribution."
+            msg = f"requirement has no name: {requirement.requirement}. {hint}"
+            raise ValueError(msg)
 
         if ignore_requirements_function(requirement):
             log.debug("ignoring requirement: %s", requirement_name)

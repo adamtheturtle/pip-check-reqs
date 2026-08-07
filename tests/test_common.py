@@ -395,5 +395,36 @@ def test_find_required_modules_env_markers(tmp_path: Path) -> None:
     assert reqs == {"ham", "eggs"}
 
 
+def test_find_required_modules_unnamed_requirement(tmp_path: Path) -> None:
+    fake_requirements_file = tmp_path / "requirements.txt"
+    url = "git+ssh://git@example.com/org/repo.git"
+    fake_requirements_file.write_text(f"foobar==1\n{url}\n")
+
+    with pytest.raises(ValueError, match="requirement has no name") as excinfo:
+        common.find_required_modules(
+            ignore_requirements_function=common.ignorer(ignore_cfg=[]),
+            skip_incompatible=False,
+            requirements_filename=fake_requirements_file,
+        )
+
+    assert url in str(excinfo.value)
+    assert "#egg=" in str(excinfo.value)
+
+
+def test_find_required_modules_egg_fragment_names_requirement(
+    tmp_path: Path,
+) -> None:
+    fake_requirements_file = tmp_path / "requirements.txt"
+    url = "git+ssh://git@example.com/org/repo.git#egg=repo"
+    fake_requirements_file.write_text(f"foobar==1\n{url}\n")
+
+    reqs = common.find_required_modules(
+        ignore_requirements_function=common.ignorer(ignore_cfg=[]),
+        skip_incompatible=False,
+        requirements_filename=fake_requirements_file,
+    )
+    assert reqs == {"foobar", "repo"}
+
+
 def test_version_info_shows_version_number() -> None:
     assert __version__ in common.version_info()
