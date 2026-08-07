@@ -54,3 +54,6 @@ coverage.xml
 docs/_build/
 
 uv.lock
+
+# Vale styles downloaded by ``vale sync``
+styles/
