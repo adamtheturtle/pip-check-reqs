@@ -2,6 +2,12 @@
 Release History
 ---------------
 
+Next
+
+- A requirement with no distribution name, such as a bare
+  ``git+ssh://...`` URL, now reports an error asking for an ``#egg=<name>``
+  fragment. It previously crashed with an ``AssertionError``.
+
 3.0.0
 
 - Drop support for Python 3.9. Python 3.10 or later is now required.
