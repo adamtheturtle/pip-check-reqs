@@ -58,7 +58,7 @@ jobs:
       - name: "Install uv"
         uses: astral-sh/setup-uv@v9.0.0
 
-      # ClearProse bans em dashes.  The style package is pinned in
+      # ai-tells bans em dashes and other AI-written prose patterns.  The style package is pinned in
       # ``.vale.ini`` and ``vale sync`` downloads it into the gitignored
       # ``styles`` directory.  Vale needs ``rst2html`` from Docutils on the
       # ``PATH`` to parse reStructuredText.
