@@ -209,7 +209,9 @@ def test_main_source_file_parse_error(
     expected_code = 2
     assert excinfo.value.code == expected_code
     err = capsys.readouterr().err
-    assert f"error: could not parse {source_file}:1: " in err
+    assert err.endswith(
+        f"error: could not parse {source_file}:1: invalid syntax\n",
+    )
 
 
 def test_main_debug_reraises_input_error(tmp_path: Path) -> None:

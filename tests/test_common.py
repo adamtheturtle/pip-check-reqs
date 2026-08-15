@@ -233,9 +233,10 @@ def test_find_imported_modules_syntax_error(tmp_path: Path) -> None:
         ),
     )
 
+    expected_message = f"could not parse {spam}:3: invalid syntax"
     with pytest.raises(
         expected_exception=ValueError,
-        match=re.escape(f"could not parse {spam}:3: "),
+        match=f"^{re.escape(expected_message)}$",
     ):
         common.find_imported_modules(
             paths=[tmp_path],
