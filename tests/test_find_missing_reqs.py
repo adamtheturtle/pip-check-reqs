@@ -214,6 +214,56 @@ def test_main_source_file_parse_error(
     )
 
 
+def test_main_unnamed_requirement(
+    capsys: pytest.CaptureFixture[str],
+    tmp_path: Path,
+) -> None:
+    requirements_file = tmp_path / "requirements.txt"
+    url = "git+ssh://git@example.com/org/repo.git"
+    requirements_file.write_text(f"{url}\n")
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    (source_dir / "source.py").write_text("import pytest\n")
+
+    with pytest.raises(SystemExit) as excinfo:
+        find_missing_reqs.main(
+            arguments=[
+                "--requirements",
+                str(requirements_file),
+                str(source_dir),
+            ],
+        )
+
+    expected_code = 2
+    assert excinfo.value.code == expected_code
+    err = capsys.readouterr().err
+    hint = "Add an '#egg=<name>' fragment naming the distribution."
+    assert err.endswith(f"error: requirement has no name: {url}. {hint}\n")
+
+
+def test_main_egg_fragment_names_requirement(
+    *,
+    caplog: pytest.LogCaptureFixture,
+    tmp_path: Path,
+) -> None:
+    requirements_file = tmp_path / "requirements.txt"
+    url = "git+ssh://git@example.com/org/repo.git#egg=pytest"
+    requirements_file.write_text(f"{url}\n")
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    (source_dir / "source.py").write_text("import pytest\n")
+
+    find_missing_reqs.main(
+        arguments=[
+            "--requirements",
+            str(requirements_file),
+            str(source_dir),
+        ],
+    )
+
+    assert not caplog.records
+
+
 def test_main_debug_reraises_input_error(tmp_path: Path) -> None:
     source_dir = tmp_path / "source"
     source_dir.mkdir()

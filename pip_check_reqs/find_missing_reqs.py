@@ -10,9 +10,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from packaging.utils import NormalizedName, canonicalize_name
-from pip._internal.network.session import PipSession
-from pip._internal.req.constructors import install_req_from_line
-from pip._internal.req.req_file import parse_requirements
 
 from pip_check_reqs import common
 
@@ -89,17 +86,11 @@ def find_missing_reqs(
         requirements_filename,
         *additional_requirements_filenames,
     ]:
-        for requirement in parse_requirements(
-            str(filename),
-            session=PipSession(),
-        ):
-            requirement_name = install_req_from_line(
-                requirement.requirement,
-            ).name
-
-            assert isinstance(requirement_name, str)
-            log.debug("found requirement: %s", requirement_name)
-            explicit.add(canonicalize_name(requirement_name))
+        explicit |= common.find_required_modules(
+            ignore_requirements_function=common.ignorer(ignore_cfg=[]),
+            skip_incompatible=False,
+            requirements_filename=filename,
+        )
 
     return [(name, used[name]) for name in used if name not in explicit]
 

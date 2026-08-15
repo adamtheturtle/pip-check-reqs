@@ -16,7 +16,8 @@ Release History
   an installed parent distribution, which removed a class of false positives.
 - A requirement with no distribution name, such as a bare
   ``git+ssh://...`` URL, now reports an error asking for an ``#egg=<name>``
-  fragment. It previously crashed with an ``AssertionError``.
+  fragment in both commands. It previously crashed with an
+  ``AssertionError``.
 
 3.0.0
 
