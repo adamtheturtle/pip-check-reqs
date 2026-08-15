@@ -383,6 +383,8 @@ def test_find_imported_modules_advanced(
         (["spam*"], "eggs", False),
         (["spam"], str(Path.cwd() / "spam"), True),
         (["eggs"], str(Path.cwd() / "spam"), False),
+        (["spam"], str(Path.cwd() / "eggs" / ".." / "spam"), True),
+        (["spam"], str(Path("eggs") / ".." / "spam"), True),
         (["spam"], str(Path.cwd().parent / "spam"), False),
     ],
 )

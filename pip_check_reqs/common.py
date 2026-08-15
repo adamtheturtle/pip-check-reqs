@@ -6,6 +6,7 @@ import ast
 import fnmatch
 import importlib.metadata
 import logging
+import os
 import sys
 from dataclasses import dataclass, field
 from functools import cache
@@ -340,12 +341,17 @@ def ignorer(*, ignore_cfg: list[str]) -> Callable[..., bool]:
             # Files are given as absolute paths, while an ignore glob is
             # usually written relative to the working directory, so we match
             # against the relative path as well.
+            # A path may contain ``..``, for example when the source to scan
+            # was given as ``scripts/../src``, so we normalize it before
+            # comparing.
             # We use ``Path`` rather than ``os.path.relpath``, which raises
             # ``ValueError`` on Windows for a path on a different drive to the
             # working directory.
-            candidate_as_path = Path(candidate_path)
-            if candidate_as_path.is_relative_to(working_directory):
-                relative_candidate = candidate_as_path.relative_to(
+            absolute_candidate = Path(
+                os.path.normpath(working_directory / candidate_path),
+            )
+            if absolute_candidate.is_relative_to(working_directory):
+                relative_candidate = absolute_candidate.relative_to(
                     working_directory,
                 )
                 if fnmatch.fnmatch(str(relative_candidate), ignore):
