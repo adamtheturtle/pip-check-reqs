@@ -407,8 +407,9 @@ def test_find_required_modules_unnamed_requirement(tmp_path: Path) -> None:
             requirements_filename=fake_requirements_file,
         )
 
-    assert url in str(excinfo.value)
-    assert "#egg=" in str(excinfo.value)
+    hint = "Add an '#egg=<name>' fragment naming the distribution."
+    expected_message = f"requirement has no name: {url}. {hint}"
+    assert str(excinfo.value) == expected_message
 
 
 def test_find_required_modules_egg_fragment_names_requirement(
@@ -427,4 +428,12 @@ def test_find_required_modules_egg_fragment_names_requirement(
 
 
 def test_version_info_shows_version_number() -> None:
-    assert __version__ in common.version_info()
+    major, minor, patch = sys.version_info[:3]
+    python_version = f"{major}.{minor}.{patch}"
+    parent_directory = Path(common.__file__).parent.resolve()
+    expected_version_info = (
+        f"pip-check-reqs {__version__} "
+        f"from {parent_directory} "
+        f"(python {python_version})"
+    )
+    assert common.version_info() == expected_version_info
