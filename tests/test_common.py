@@ -220,6 +220,30 @@ def test_find_imported_modules_no_spec(tmp_path: Path) -> None:
     assert set(result.keys()) == set()
 
 
+def test_find_imported_modules_syntax_error(tmp_path: Path) -> None:
+    """A file which cannot be parsed gives an error naming file and line."""
+    spam = tmp_path / "spam.py"
+    spam.write_text(
+        data=textwrap.dedent(
+            text="""\
+            import os
+
+            def (
+            """,
+        ),
+    )
+
+    with pytest.raises(
+        expected_exception=ValueError,
+        match=re.escape(f"could not parse {spam}:3: "),
+    ):
+        common.find_imported_modules(
+            paths=[tmp_path],
+            ignore_files_function=common.ignorer(ignore_cfg=[]),
+            ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        )
+
+
 def test_find_imported_modules_period(tmp_path: Path) -> None:
     """Imported modules are found if the package name contains a period.
 

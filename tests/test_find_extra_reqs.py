@@ -146,6 +146,32 @@ def test_main_missing_source_path(
     assert err.endswith(f"error: source path not found: {source_dir}\n")
 
 
+def test_main_source_file_parse_error(
+    capsys: pytest.CaptureFixture[str],
+    tmp_path: Path,
+) -> None:
+    requirements_file = tmp_path / "requirements.txt"
+    requirements_file.touch()
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    source_file = source_dir / "spam.py"
+    source_file.write_text(data="def (\n")
+
+    with pytest.raises(SystemExit) as excinfo:
+        find_extra_reqs.main(
+            arguments=[
+                "--requirements",
+                str(requirements_file),
+                str(source_dir),
+            ],
+        )
+
+    expected_code = 2
+    assert excinfo.value.code == expected_code
+    err = capsys.readouterr().err
+    assert f"error: could not parse {source_file}:1: " in err
+
+
 def test_main_debug_reraises_input_error(tmp_path: Path) -> None:
     source_dir = tmp_path / "source"
     source_dir.mkdir()

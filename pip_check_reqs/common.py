@@ -226,7 +226,15 @@ def find_imported_modules(
             log.debug("scanning: %s", filename)
             content = filename.read_text(encoding="utf-8")
             vis.set_location(location=str(filename))
-            vis.visit(ast.parse(content, str(filename)))
+            try:
+                tree = ast.parse(content, str(filename))
+            except SyntaxError as exc:
+                # ``ast`` knows where the problem is, but the default traceback
+                # buries that behind a stack trace, so we surface it as an
+                # input error with the file and line which could not be parsed.
+                msg = f"could not parse {filename}:{exc.lineno}: {exc.msg}"
+                raise ValueError(msg) from exc
+            vis.visit(tree)
     return vis.finalise()
 
 
