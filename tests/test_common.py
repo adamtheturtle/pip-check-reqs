@@ -489,6 +489,164 @@ def test_find_imported_modules_uninstalled_submodule(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
+    "handler",
+    [
+        pytest.param("except ImportError:", id="ImportError"),
+        pytest.param("except ModuleNotFoundError:", id="ModuleNotFoundError"),
+        pytest.param("except builtins.ImportError:", id="Dotted path"),
+        pytest.param("except (ValueError, ImportError):", id="Tuple"),
+        pytest.param("except (*errors, ImportError):", id="Tuple with a star"),
+        pytest.param("except:  # noqa: E722", id="Bare except"),
+    ],
+)
+@pytest.mark.parametrize(
+    "statement",
+    [
+        pytest.param("import {name}", id="Import"),
+        pytest.param("from {name} import ham", id="ImportFrom"),
+    ],
+)
+def test_find_imported_modules_uninstalled_optional(
+    *,
+    handler: str,
+    statement: str,
+    tmp_path: Path,
+) -> None:
+    """An import which the source tolerates failing is not reported.
+
+    A soft dependency is imported in a ``try`` block which catches
+    ``ImportError``, so the code runs whether or not it is installed.
+    """
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    name = "a" + uuid.uuid4().hex
+    (source_dir / "spam.py").write_text(
+        data=textwrap.dedent(
+            text="""\
+            try:
+                {statement}
+            {handler}
+                pass
+            """,
+        ).format(statement=statement.format(name=name), handler=handler),
+    )
+
+    result = common.find_imported_modules(
+        paths=[source_dir],
+        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+    )
+
+    assert not result.uninstalled
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        pytest.param(
+            """\
+            try:
+                {statement}
+            except ValueError:
+                pass
+            """,
+            id="Handler which does not catch ImportError",
+        ),
+        pytest.param(
+            """\
+            try:
+                pass
+            except ImportError:
+                {statement}
+            """,
+            id="Import in the handler",
+        ),
+        pytest.param(
+            """\
+            try:
+                pass
+            except ImportError:
+                pass
+            else:
+                {statement}
+            """,
+            id="Import in the else block",
+        ),
+        pytest.param(
+            """\
+            try:
+                pass
+            except ImportError:
+                pass
+            finally:
+                {statement}
+            """,
+            id="Import in the finally block",
+        ),
+        pytest.param(
+            """\
+            try:
+                pass
+            except ImportError:
+                pass
+            {statement}
+            """,
+            id="Import after the try statement",
+        ),
+    ],
+)
+def test_find_imported_modules_uninstalled_not_optional(
+    *,
+    source: str,
+    tmp_path: Path,
+) -> None:
+    """An import which the ``try`` does not guard is still reported."""
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    source_file = source_dir / "spam.py"
+    name = "a" + uuid.uuid4().hex
+    source_file.write_text(
+        data=textwrap.dedent(text=source).format(statement=f"import {name}"),
+    )
+
+    result = common.find_imported_modules(
+        paths=[source_dir],
+        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+    )
+
+    assert set(result.uninstalled) == {name}
+
+
+def test_find_imported_modules_optional_installed(tmp_path: Path) -> None:
+    """An optional import of an installed module is still a use of it.
+
+    A soft dependency which is installed and listed in the requirements is
+    used, so ``pip-extra-reqs`` must not report it as extra.
+    """
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    (source_dir / "spam.py").write_text(
+        data=textwrap.dedent(
+            text="""\
+            try:
+                import pytest
+            except ImportError:
+                pass
+            """,
+        ),
+    )
+
+    result = common.find_imported_modules(
+        paths=[source_dir],
+        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+    )
+
+    assert set(result.found) == {"pytest"}
+
+
+@pytest.mark.parametrize(
     "statement",
     [
         pytest.param("import spam", id="Module in the source"),

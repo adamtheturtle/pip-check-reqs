@@ -59,6 +59,16 @@ the file and line, rather than passing over it. Silence a warning with
 ``--ignore-module`` if the import is conditional, or if the module comes
 from a path which you do not give to ``pip-missing-reqs``.
 
+An import in a ``try`` block which catches ``ImportError`` is a soft
+dependency: the code runs whether or not the module is installed.
+``pip-missing-reqs`` does not warn about such an import when the module is
+not installed::
+
+    try:
+        import Levenshtein
+    except ImportError:
+        Levenshtein = None
+
 ``pip-extra-reqs`` learns which modules a requirement provides from the
 installed distribution, so it cannot check a requirement which is not
 installed in the environment. It warns about each such requirement rather

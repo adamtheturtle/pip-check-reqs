@@ -28,6 +28,10 @@ Release History
   so a package uninstalled by mistake, or an import of the wrong name, gave
   no output at all. A module which the scanned source provides is not
   reported, and ``--ignore-module`` silences the warning.
+- ``pip-missing-reqs`` no longer warns about an import which is not
+  installed when it is made in a ``try`` block which catches
+  ``ImportError``. Such an import is a soft dependency which the code
+  tolerates being absent.
 - ``pip-extra-reqs`` no longer reports a requirement which is not installed
   as an extra requirement. Which modules a requirement provides is only
   known from the installed distribution, so an uninstalled requirement was
