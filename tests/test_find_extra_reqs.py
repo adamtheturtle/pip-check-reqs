@@ -6,15 +6,12 @@ import logging
 import re
 import sys
 import textwrap
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 import pip  # This happens to be installed in the test environment.
 import pytest
 
 from pip_check_reqs import common, find_extra_reqs
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 def test_find_extra_reqs(tmp_path: Path) -> None:
@@ -256,9 +253,7 @@ def test_main_warns_when_run_from_another_environment(
     (source_dir / "source.py").write_text("import pprint")
 
     active_prefix = tmp_path / "active"
-    running_prefix = tmp_path / "running"
     monkeypatch.setenv("VIRTUAL_ENV", str(active_prefix))
-    monkeypatch.setattr(sys, "prefix", str(running_prefix))
 
     find_extra_reqs.main(
         arguments=[
@@ -268,5 +263,37 @@ def test_main_warns_when_run_from_another_environment(
         ],
     )
 
-    expected_start = f"WARNING: Running from {running_prefix}, "
-    assert capsys.readouterr().err.startswith(expected_start)
+    running_prefix = Path(sys.prefix).resolve()
+    expected_stderr = (
+        f"WARNING: Running from {running_prefix}, but the active "
+        f"virtual environment is {active_prefix}. "
+        "Results describe the environment pip-check-reqs is installed in. "
+        "Install pip-check-reqs in the active virtual environment, and "
+        'run "hash -r" ("rehash" in zsh), to check that environment.\n'
+    )
+    assert capsys.readouterr().err == expected_stderr
+
+
+def test_main_does_not_warn_when_run_from_the_active_environment(
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    requirements_file = tmp_path / "requirements.txt"
+    requirements_file.touch()
+
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    (source_dir / "source.py").write_text("import pprint")
+
+    monkeypatch.setenv("VIRTUAL_ENV", sys.prefix)
+
+    find_extra_reqs.main(
+        arguments=[
+            "--requirements-file",
+            str(requirements_file),
+            str(source_dir),
+        ],
+    )
+
+    assert capsys.readouterr().err == ""

@@ -189,7 +189,7 @@ def main(arguments: list[str] | None = None) -> None:
     common.log.setLevel(level)
 
     log.info(common.version_info())
-    common.warn_if_not_in_active_virtualenv()
+    common.report_wrong_environment(stream=sys.stderr)
 
     try:
         common.validate_requirements_file(
