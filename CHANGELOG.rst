@@ -20,6 +20,9 @@ Release History
   ``AssertionError``.
 - On Windows, an ignore glob no longer crashes with a ``ValueError`` when a
   source file is on a different drive to the working directory.
+- Both commands now warn when they are run from outside the active virtual
+  environment, as the results then describe the environment the command is
+  installed in rather than the active one.
 
 3.0.0
 

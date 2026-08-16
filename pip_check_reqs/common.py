@@ -29,7 +29,7 @@ from . import __version__
 if TYPE_CHECKING:
     import argparse
     from collections.abc import Callable, Generator, Iterable
-    from typing import NoReturn
+    from typing import NoReturn, TextIO
 
 log = logging.getLogger(__name__)
 
@@ -359,6 +359,61 @@ def ignorer(*, ignore_cfg: list[str]) -> Callable[..., bool]:
         return False
 
     return ignorer_function
+
+
+def _yellow(*, message: str) -> str:
+    yellow = "\033[33m"
+    reset = "\033[0m"
+    return f"{yellow}{message}{reset}"
+
+
+def wrong_environment_warning(
+    *,
+    running_prefix: Path,
+    active_virtualenv: str | None,
+    color: bool,
+) -> str | None:
+    """Return a warning if we do not run from the active virtual environment.
+
+    Return ``None`` when there is nothing to warn about, which is when no
+    virtual environment is active or when we run from the active one.
+
+    A shell caches the paths of the commands it has run, so right after
+    ``pip install pip-check-reqs`` in a new virtual environment, the shell
+    can still resolve ``pip-missing-reqs`` to a command from another
+    environment.
+    That command inspects the packages installed alongside it, not the ones
+    in the active environment, so the results describe the wrong environment.
+    """
+    if not active_virtualenv:
+        return None
+
+    active_prefix = Path(active_virtualenv).resolve()
+    resolved_running_prefix = running_prefix.resolve()
+    if active_prefix == resolved_running_prefix:
+        return None
+
+    message = (
+        f"WARNING: Running from {resolved_running_prefix}, but the active "
+        f"virtual environment is {active_prefix}. "
+        "Results describe the environment pip-check-reqs is installed in. "
+        "Install pip-check-reqs in the active virtual environment, and "
+        'run "hash -r" ("rehash" in zsh), to check that environment.'
+    )
+    if color:
+        return _yellow(message=message)
+    return message
+
+
+def report_wrong_environment(*, stream: TextIO) -> None:
+    """Write a warning to ``stream`` if we run from the wrong environment."""
+    warning = wrong_environment_warning(
+        running_prefix=Path(sys.prefix),
+        active_virtualenv=os.environ.get("VIRTUAL_ENV"),
+        color=stream.isatty(),
+    )
+    if warning is not None:
+        stream.write(warning + "\n")
 
 
 def version_info() -> str:

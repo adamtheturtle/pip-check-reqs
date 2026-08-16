@@ -483,3 +483,65 @@ def test_version_info_shows_version_number() -> None:
         f"(python {python_version})"
     )
     assert common.version_info() == expected_version_info
+
+
+def test_no_wrong_environment_warning_without_active_virtualenv(
+    tmp_path: Path,
+) -> None:
+    warning = common.wrong_environment_warning(
+        running_prefix=tmp_path,
+        active_virtualenv=None,
+        color=False,
+    )
+    assert warning is None
+
+
+def test_no_wrong_environment_warning_from_active_virtualenv(
+    tmp_path: Path,
+) -> None:
+    warning = common.wrong_environment_warning(
+        running_prefix=tmp_path,
+        active_virtualenv=str(tmp_path),
+        color=False,
+    )
+    assert warning is None
+
+
+def test_wrong_environment_warning(tmp_path: Path) -> None:
+    active_prefix = tmp_path / "active"
+    running_prefix = tmp_path / "running"
+
+    warning = common.wrong_environment_warning(
+        running_prefix=running_prefix,
+        active_virtualenv=str(active_prefix),
+        color=False,
+    )
+
+    expected_warning = (
+        f"WARNING: Running from {running_prefix}, but the active "
+        f"virtual environment is {active_prefix}. "
+        "Results describe the environment pip-check-reqs is installed in. "
+        "Install pip-check-reqs in the active virtual environment, and "
+        'run "hash -r" ("rehash" in zsh), to check that environment.'
+    )
+    assert warning == expected_warning
+
+
+def test_wrong_environment_warning_in_color(tmp_path: Path) -> None:
+    active_prefix = tmp_path / "active"
+    running_prefix = tmp_path / "running"
+
+    warning = common.wrong_environment_warning(
+        running_prefix=running_prefix,
+        active_virtualenv=str(active_prefix),
+        color=True,
+    )
+
+    plain_warning = common.wrong_environment_warning(
+        running_prefix=running_prefix,
+        active_virtualenv=str(active_prefix),
+        color=False,
+    )
+    yellow = "\033[33m"
+    reset = "\033[0m"
+    assert warning == f"{yellow}{plain_warning}{reset}"
