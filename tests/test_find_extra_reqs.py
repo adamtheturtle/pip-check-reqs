@@ -51,11 +51,47 @@ def test_find_extra_reqs(tmp_path: Path) -> None:
         ignore_requirements_function=common.ignorer(ignore_cfg=[]),
         skip_incompatible=False,
     )
-    expected_result = [
-        "not-installed-package-12345",
-        installed_not_imported_required_package.__name__,
-    ]
-    assert sorted(result) == sorted(expected_result)
+    expected_result = [installed_not_imported_required_package.__name__]
+    assert result == expected_result
+
+
+def test_uninstalled_requirement_is_not_extra(
+    *,
+    caplog: pytest.LogCaptureFixture,
+    tmp_path: Path,
+) -> None:
+    """An uninstalled requirement is reported as unchecked, not as extra.
+
+    We tell which modules a requirement provides from the files of the
+    installed distribution, so we cannot tell whether an uninstalled
+    requirement is used, even when the code imports it.
+    """
+    fake_requirements_file = tmp_path / "requirements.txt"
+    fake_requirements_file.write_text("not_installed_package_12345==1\n")
+
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+
+    source_file = source_dir / "source.py"
+    source_file.write_text("import not_installed_package_12345\n")
+
+    caplog.set_level(logging.WARNING)
+
+    result = find_extra_reqs.find_extra_reqs(
+        requirements_filename=fake_requirements_file,
+        paths=[source_dir],
+        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        ignore_requirements_function=common.ignorer(ignore_cfg=[]),
+        skip_incompatible=False,
+    )
+
+    assert not result
+    expected_message = (
+        "not-installed-package-12345 is not installed, so we cannot tell "
+        "whether it is used"
+    )
+    assert [record.message for record in caplog.records] == [expected_message]
 
 
 def test_main_failure(
@@ -63,8 +99,12 @@ def test_main_failure(
     caplog: pytest.LogCaptureFixture,
     tmp_path: Path,
 ) -> None:
+    installed_not_imported_required_package = pytest
+
     requirements_file = tmp_path / "requirements.txt"
-    requirements_file.write_text("extra")
+    requirements_file.write_text(
+        installed_not_imported_required_package.__name__,
+    )
 
     source_dir = tmp_path / "source"
     source_dir.mkdir()
@@ -83,7 +123,11 @@ def test_main_failure(
     assert excinfo.value.code == 1
 
     assert caplog.records[0].message == "Extra requirements:"
-    assert caplog.records[1].message == f"extra in {requirements_file}"
+    expected_message = (
+        f"{installed_not_imported_required_package.__name__} in "
+        f"{requirements_file}"
+    )
+    assert caplog.records[1].message == expected_message
 
 
 def test_main_no_spec(capsys: pytest.CaptureFixture[str]) -> None:

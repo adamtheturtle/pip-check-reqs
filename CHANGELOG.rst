@@ -23,6 +23,11 @@ Release History
 - Both commands now warn when they are run from outside the active virtual
   environment, as the results then describe the environment the command is
   installed in rather than the active one.
+- ``pip-extra-reqs`` no longer reports a requirement which is not installed
+  as an extra requirement. Which modules a requirement provides is only
+  known from the installed distribution, so an uninstalled requirement was
+  reported as extra even when the code imported it. It is now reported as a
+  warning saying that it could not be checked.
 
 3.0.0
 
