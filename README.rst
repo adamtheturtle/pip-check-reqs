@@ -52,6 +52,11 @@ requirements.txt that are then unused in the project::
 This would find anything that is listed in requirements.txt but that is not
 imported by sample.
 
+``pip-extra-reqs`` learns which modules a requirement provides from the
+installed distribution, so it cannot check a requirement which is not
+installed in the environment. It warns about each such requirement rather
+than reporting it as extra.
+
 Sample tox.ini configuration
 ----------------------------
 

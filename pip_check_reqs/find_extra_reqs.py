@@ -43,10 +43,12 @@ def find_extra_reqs(
 
     installed_files: dict[Path, str] = {}
     packages_info = common.get_packages_info()
+    installed_names: set[NormalizedName] = set()
 
     for package in packages_info:
         package_name = package.name
         package_location = package.location
+        installed_names.add(canonicalize_name(package_name))
 
         log.debug(
             "installed package: %s (at %s)",
@@ -95,7 +97,26 @@ def find_extra_reqs(
         requirements_filename=requirements_filename,
     )
 
-    return [name for name in explicit if name not in used]
+    extras: list[str] = []
+    for name in explicit:
+        if name in used:
+            continue
+
+        if name not in installed_names:
+            # We know which modules a requirement provides by looking at the
+            # files of the installed distribution, so a requirement which is
+            # not installed looks unused even when the code imports it.
+            # Reporting it would be a false positive, so we say what we could
+            # not check instead.
+            log.warning(
+                "%s is not installed, so we cannot tell whether it is used",
+                name,
+            )
+            continue
+
+        extras.append(name)
+
+    return extras
 
 
 def main(arguments: list[str] | None = None) -> None:
