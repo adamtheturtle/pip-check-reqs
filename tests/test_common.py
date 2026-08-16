@@ -117,7 +117,7 @@ def test_find_imported_modules_simple(
         paths=[tmp_path],
         ignore_files_function=common.ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
-    )
+    ).found
 
     assert set(result.keys()) == expected_module_names
     for value in result.values():
@@ -156,7 +156,7 @@ def test_find_imported_modules_frozen(
         paths=[tmp_path],
         ignore_files_function=common.ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
-    )
+    ).found
 
     assert set(result.keys()) == set()
 
@@ -186,7 +186,7 @@ def test_find_imported_modules_main(
         paths=[tmp_path],
         ignore_files_function=common.ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
-    )
+    ).found
 
     assert set(result.keys()) == set()
 
@@ -214,7 +214,7 @@ def test_find_imported_modules_no_spec(tmp_path: Path) -> None:
             paths=[tmp_path],
             ignore_files_function=common.ignorer(ignore_cfg=[]),
             ignore_modules_function=common.ignorer(ignore_cfg=[]),
-        )
+        ).found
     finally:
         del sys.modules[name]
     assert set(result.keys()) == set()
@@ -261,7 +261,7 @@ def test_find_imported_modules_period(tmp_path: Path) -> None:
         paths=[tmp_path],
         ignore_files_function=common.ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
-    )
+    ).found
 
     assert set(result.keys()) == {"ruamel.yaml"}
 
@@ -288,7 +288,7 @@ def test_find_imported_modules_missing_from_submodule(
         paths=[source_dir],
         ignore_files_function=common.ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
-    )
+    ).found
 
     assert not result
 
@@ -357,7 +357,7 @@ def test_find_imported_modules_advanced(
         paths=[root],
         ignore_files_function=ignore_files,
         ignore_modules_function=ignore_mods,
-    )
+    ).found
     assert set(result) == set(expect)
     absolute_locations = result["ast"].locations
     relative_locations = [
@@ -368,6 +368,163 @@ def test_find_imported_modules_advanced(
 
     if ignore_ham:
         assert caplog.records[0].message == f"ignoring: {ham}"
+
+
+def test_find_imported_modules_uninstalled(tmp_path: Path) -> None:
+    """An import of a module which is not installed is reported."""
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    source_file = source_dir / "spam.py"
+    name = "a" + uuid.uuid4().hex
+    source_file.write_text(
+        data=textwrap.dedent(
+            text=f"""\
+            import re
+            import {name}
+            from {name}.ham import eggs
+            """,
+        ),
+    )
+
+    result = common.find_imported_modules(
+        paths=[source_dir],
+        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+    )
+
+    assert set(result.found) == {"re"}
+    assert result.uninstalled == {
+        name: [(str(source_file), 2), (str(source_file), 3)],
+    }
+
+
+@pytest.mark.parametrize(
+    "ignore_glob",
+    [
+        pytest.param("{name}", id="Top-level module name"),
+        pytest.param("{name}*", id="Glob"),
+    ],
+)
+def test_find_imported_modules_uninstalled_ignored(
+    *,
+    ignore_glob: str,
+    tmp_path: Path,
+) -> None:
+    """An ignored module which is not installed is not reported."""
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    name = "a" + uuid.uuid4().hex
+    (source_dir / "spam.py").write_text(data=f"import {name}.ham\n")
+
+    result = common.find_imported_modules(
+        paths=[source_dir],
+        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(
+            ignore_cfg=[ignore_glob.format(name=name)],
+        ),
+    )
+
+    assert not result.uninstalled
+
+
+def test_find_imported_modules_uninstalled_no_spec(tmp_path: Path) -> None:
+    """A module without a ``__spec__`` is available, so is not reported.
+
+    See ``test_find_imported_modules_no_spec`` for how such a module comes
+    about.
+    """
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    name = "a" + uuid.uuid4().hex
+    (source_dir / "spam.py").write_text(data=f"from {name}.ham import eggs\n")
+    module = types.ModuleType(name=name)
+    module.__spec__ = None
+    sys.modules[name] = module
+
+    try:
+        result = common.find_imported_modules(
+            paths=[source_dir],
+            ignore_files_function=common.ignorer(ignore_cfg=[]),
+            ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        )
+    finally:
+        del sys.modules[name]
+
+    assert not result.uninstalled
+
+
+def test_find_imported_modules_uninstalled_submodule(tmp_path: Path) -> None:
+    """A missing sub-module of an installed package is not reported.
+
+    The distribution which would provide the sub-module is installed, so
+    there is no requirement which we cannot check.
+    """
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    (source_dir / "spam.py").write_text(
+        data=textwrap.dedent(
+            text="""\
+            import pytest.missing
+            from pytest.missing import attribute
+            """,
+        ),
+    )
+
+    result = common.find_imported_modules(
+        paths=[source_dir],
+        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+    )
+
+    assert not result.uninstalled
+
+
+@pytest.mark.parametrize(
+    "statement",
+    [
+        pytest.param("import spam", id="Module in the source"),
+        pytest.param("import ham", id="Package in the source"),
+        pytest.param("from ham.eggs import scrambled", id="Source submodule"),
+        pytest.param("import source", id="Directory we scan"),
+        pytest.param("import ignored", id="Ignored file in the source"),
+    ],
+)
+def test_find_imported_modules_source_module(
+    *,
+    statement: str,
+    tmp_path: Path,
+) -> None:
+    """A module which the scanned source provides is not reported.
+
+    Such a module is not expected to be installed, so reporting it would be
+    a false positive.
+    """
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    (source_dir / "spam.py").write_text(data=statement)
+    (source_dir / "ignored.py").touch()
+    package_dir = source_dir / "ham"
+    package_dir.mkdir()
+    (package_dir / "__init__.py").touch()
+    (package_dir / "eggs.py").touch()
+
+    result = common.find_imported_modules(
+        paths=[source_dir],
+        ignore_files_function=common.ignorer(ignore_cfg=["*ignored.py"]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+    )
+
+    assert not result.uninstalled
+
+
+def test_source_module_names_file(tmp_path: Path) -> None:
+    """A single source file gives its own module name."""
+    source_file = tmp_path / "spam.py"
+    source_file.touch()
+
+    result = common.source_module_names(paths=[source_file])
+
+    assert result == {"spam"}
 
 
 @pytest.mark.parametrize(

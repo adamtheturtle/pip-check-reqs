@@ -23,6 +23,11 @@ Release History
 - Both commands now warn when they are run from outside the active virtual
   environment, as the results then describe the environment the command is
   installed in rather than the active one.
+- ``pip-missing-reqs`` now warns about an import of a module which is not
+  installed, giving the file and line. Such an import was silently ignored,
+  so a package uninstalled by mistake, or an import of the wrong name, gave
+  no output at all. A module which the scanned source provides is not
+  reported, and ``--ignore-module`` silences the warning.
 - ``pip-extra-reqs`` no longer reports a requirement which is not installed
   as an extra requirement. Which modules a requirement provides is only
   known from the installed distribution, so an uninstalled requirement was

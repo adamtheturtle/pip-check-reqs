@@ -39,7 +39,7 @@ def find_extra_reqs(
         paths=paths,
         ignore_files_function=ignore_files_function,
         ignore_modules_function=ignore_modules_function,
-    )
+    ).found
 
     installed_files: dict[Path, str] = {}
     packages_info = common.get_packages_info()

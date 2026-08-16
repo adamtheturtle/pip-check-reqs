@@ -67,11 +67,27 @@ class FoundModule:
         self.filename = Path(self.filename).resolve()
 
 
+@dataclass
+class ImportedModules:
+    """The modules which the scanned source imports."""
+
+    found: dict[str, FoundModule]
+    """Modules which we found in the environment, keyed by module name."""
+
+    uninstalled: dict[str, list[tuple[str, int]]]
+    """Top-level modules which are not installed, keyed by module name.
+
+    Each value is the list of ``(filename, line number)`` locations which
+    import the module.
+    """
+
+
 class _ImportVisitor(ast.NodeVisitor):
     def __init__(self, ignore_modules_function: Callable[[str], bool]) -> None:
         super().__init__()
         self._ignore_modules_function = ignore_modules_function
         self._modules: dict[str, FoundModule] = {}
+        self._uninstalled: dict[str, list[tuple[str, int]]] = {}
         self._location: str | None = None
 
     def set_location(self, *, location: str) -> None:
@@ -97,6 +113,7 @@ class _ImportVisitor(ast.NodeVisitor):
             # relative import
             return
         if not self._module_exists(modname=node.module):
+            self._record_uninstalled(modname=node.module, lineno=node.lineno)
             return
         for alias in node.names:
             self._add_module(node.module + "." + alias.name, node.lineno)
@@ -115,6 +132,32 @@ class _ImportVisitor(ast.NodeVisitor):
             modname_parts_progress.append(modname_part)
         return True
 
+    def _record_uninstalled(self, *, modname: str, lineno: int) -> None:
+        """Note an import which we could not resolve to an installed module.
+
+        We only note the import when its top-level module is missing, which
+        is what an uninstalled distribution looks like. A missing sub-module
+        of an installed distribution is a different problem, and the
+        distribution which would provide it is checked already.
+        """
+        top_level_name = modname.split(".", maxsplit=1)[0]
+        if self._ignore_modules_function(top_level_name):
+            return
+
+        try:
+            module_spec = find_spec(name=top_level_name)
+        except ValueError:
+            # The module has no ``__spec__`` attribute, as ``__main__`` does
+            # not, so it is available rather than missing.
+            return
+
+        if module_spec is not None:
+            return
+
+        assert isinstance(self._location, str)
+        locations = self._uninstalled.setdefault(top_level_name, [])
+        locations.append((self._location, lineno))
+
     def _add_module(self, modname: str, lineno: int) -> None:
         if self._ignore_modules_function(modname):
             return
@@ -131,6 +174,7 @@ class _ImportVisitor(ast.NodeVisitor):
 
             if module_spec is None:
                 # The component specified at this point is not installed.
+                self._record_uninstalled(modname=name, lineno=lineno)
                 return
 
             if module_spec.origin is None:
@@ -168,6 +212,9 @@ class _ImportVisitor(ast.NodeVisitor):
 
     def finalise(self) -> dict[str, FoundModule]:
         return self._modules
+
+    def uninstalled(self) -> dict[str, list[tuple[str, int]]]:
+        return self._uninstalled
 
 
 def pyfiles(root: Path) -> Generator[Path, None, None]:
@@ -211,12 +258,36 @@ def log_level(*, debug: bool, verbose: bool) -> int:
     return logging.WARNING
 
 
+def source_module_names(*, paths: Iterable[Path]) -> set[str]:
+    """Return the top-level module names which the scanned source provides.
+
+    A module of the source we scan is not expected to be installed, so we
+    must not report it as uninstalled. We do not import the source, so we
+    take the names from the file system: any file or directory name at or
+    below a path we scan can name a module of the source.
+    """
+    names: set[str] = set()
+    for path in paths:
+        absolute_path = path.absolute()
+        for filename in pyfiles(path):
+            names.add(filename.stem)
+            if absolute_path.is_dir():
+                relative_filename = filename.relative_to(absolute_path)
+                names.update(relative_filename.parts[:-1])
+        names.add(absolute_path.stem)
+    return names
+
+
 def find_imported_modules(
     *,
     paths: Iterable[Path],
     ignore_files_function: Callable[[str], bool],
     ignore_modules_function: Callable[[str], bool],
-) -> dict[str, FoundModule]:
+) -> ImportedModules:
+    # We take the names the source provides before scanning, as an ignored
+    # file still gives a module which the source, and not an installed
+    # distribution, provides.
+    provided_names = source_module_names(paths=paths)
     vis = _ImportVisitor(ignore_modules_function=ignore_modules_function)
     for path in paths:
         for filename in pyfiles(path):
@@ -235,7 +306,13 @@ def find_imported_modules(
                 msg = f"could not parse {filename}:{exc.lineno}: {exc.msg}"
                 raise ValueError(msg) from exc
             vis.visit(tree)
-    return vis.finalise()
+
+    uninstalled = {
+        modname: locations
+        for modname, locations in vis.uninstalled().items()
+        if modname not in provided_names
+    }
+    return ImportedModules(found=vis.finalise(), uninstalled=uninstalled)
 
 
 def find_required_modules(
