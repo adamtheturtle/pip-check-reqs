@@ -382,6 +382,10 @@ def test_find_imported_modules_advanced(
         (["spam*"], "spam.ham", True),
         (["spam*"], "eggs", False),
         (["spam"], str(Path.cwd() / "spam"), True),
+        (["eggs"], str(Path.cwd() / "spam"), False),
+        (["spam"], str(Path.cwd() / "eggs" / ".." / "spam"), True),
+        (["spam"], str(Path("eggs") / ".." / "spam"), True),
+        (["spam"], str(Path.cwd().parent / "spam"), False),
     ],
 )
 def test_ignorer(
@@ -392,6 +396,23 @@ def test_ignorer(
 ) -> None:
     ignorer = common.ignorer(ignore_cfg=ignore_cfg)
     assert ignorer(candidate) == result
+
+
+@pytest.mark.skipif(
+    condition=platform.system() != "Windows",
+    reason="Only Windows has drives, which is what this test is about",
+)
+def test_ignorer_other_drive() -> None:  # pragma: no cover
+    """A candidate on another drive than the working directory is handled.
+
+    Making such a path relative to the working directory is impossible, and
+    that used to raise an error.
+    """
+    working_directory_drive = Path.cwd().drive
+    other_drive = "Y:" if working_directory_drive.upper() == "Z:" else "Z:"
+    ignorer = common.ignorer(ignore_cfg=["eggs"])
+
+    assert not ignorer(rf"{other_drive}\eggs\spam.py")
 
 
 def test_find_required_modules(tmp_path: Path) -> None:

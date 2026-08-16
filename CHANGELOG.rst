@@ -18,6 +18,8 @@ Release History
   ``git+ssh://...`` URL, now reports an error asking for an ``#egg=<name>``
   fragment in both commands. It previously crashed with an
   ``AssertionError``.
+- On Windows, an ignore glob no longer crashes with a ``ValueError`` when a
+  source file is on a different drive to the working directory.
 
 3.0.0
 

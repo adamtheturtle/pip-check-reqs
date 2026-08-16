@@ -324,6 +324,7 @@ def ignorer(*, ignore_cfg: list[str]) -> Callable[..., bool]:
         candidate: str | ParsedRequirement,
         ignore_cfg: list[str] = ignore_cfg,
     ) -> bool:
+        working_directory = Path.cwd()
         for ignore in ignore_cfg:
             if isinstance(candidate, str):
                 candidate_path = candidate
@@ -336,8 +337,25 @@ def ignorer(*, ignore_cfg: list[str]) -> Callable[..., bool]:
 
             if fnmatch.fnmatch(candidate_path, ignore):
                 return True
-            if fnmatch.fnmatch(os.path.relpath(candidate_path), ignore):
-                return True
+
+            # Files are given as absolute paths, while an ignore glob is
+            # usually written relative to the working directory, so we match
+            # against the relative path as well.
+            # A path may contain ``..``, for example when the source to scan
+            # was given as ``scripts/../src``, so we normalize it before
+            # comparing.
+            # We use ``Path`` rather than ``os.path.relpath``, which raises
+            # ``ValueError`` on Windows for a path on a different drive to the
+            # working directory.
+            absolute_candidate = Path(
+                os.path.normpath(working_directory / candidate_path),
+            )
+            if absolute_candidate.is_relative_to(working_directory):
+                relative_candidate = absolute_candidate.relative_to(
+                    working_directory,
+                )
+                if fnmatch.fnmatch(str(relative_candidate), ignore):
+                    return True
         return False
 
     return ignorer_function
