@@ -28,11 +28,12 @@ def find_missing_reqs(
 ) -> list[tuple[NormalizedName, list[common.FoundModule]]]:
     # 1. find files used by imports in the code (as best we can without
     #    executing)
-    used_modules = common.find_imported_modules(
+    imported_modules = common.find_imported_modules(
         paths=paths,
         ignore_files_function=ignore_files_function,
         ignore_modules_function=ignore_modules_function,
     )
+    used_modules = imported_modules.found
 
     installed_files: dict[Path, str] = {}
     packages_info = common.get_packages_info()
@@ -92,7 +93,40 @@ def find_missing_reqs(
             requirements_filename=filename,
         )
 
+    _report_uninstalled_imports(
+        uninstalled=imported_modules.uninstalled,
+        explicit=explicit,
+    )
+
     return [(name, used[name]) for name in used if name not in explicit]
+
+
+def _report_uninstalled_imports(
+    *,
+    uninstalled: dict[str, list[tuple[str, int]]],
+    explicit: set[NormalizedName],
+) -> None:
+    """Warn about imports of modules which are not installed.
+
+    We tell which distribution provides a module from the files of the
+    installed distribution, so we cannot tell whether a module which is not
+    installed is required. Such an import was silently ignored, which hid
+    both an import of the wrong name and a package uninstalled by mistake.
+    """
+    for modname, locations in uninstalled.items():
+        if canonicalize_name(modname) in explicit:
+            # The requirement is listed but not installed, so there is
+            # nothing to report: the import is accounted for.
+            continue
+
+        for filename, lineno in locations:
+            log.warning(
+                "%s:%s module=%s is not installed, so we cannot tell which "
+                "requirement provides it",
+                filename,
+                lineno,
+                modname,
+            )
 
 
 def main(arguments: list[str] | None = None) -> None:

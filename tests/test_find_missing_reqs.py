@@ -66,6 +66,135 @@ def test_find_missing_reqs(tmp_path: Path) -> None:
     assert result == expected_result
 
 
+def test_uninstalled_import_is_reported(
+    *,
+    caplog: pytest.LogCaptureFixture,
+    tmp_path: Path,
+) -> None:
+    """An import of a module which is not installed is reported.
+
+    We know which requirement provides a module from the files of the
+    installed distribution, so we cannot tell whether such an import is
+    required, and we say so rather than passing it over.
+    """
+    fake_requirements_file = tmp_path / "requirements.txt"
+    fake_requirements_file.write_text("pytest\n")
+
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+
+    source_file = source_dir / "source.py"
+    source_file.write_text("import not_installed_package_12345\n")
+
+    caplog.set_level(logging.WARNING)
+
+    result = find_missing_reqs.find_missing_reqs(
+        requirements_filename=fake_requirements_file,
+        paths=[source_dir],
+        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+    )
+
+    assert not result
+    expected_message = (
+        f"{source_file}:1 module=not_installed_package_12345 is not "
+        "installed, so we cannot tell which requirement provides it"
+    )
+    assert [record.message for record in caplog.records] == [expected_message]
+
+
+def test_uninstalled_import_of_requirement_is_not_reported(
+    *,
+    caplog: pytest.LogCaptureFixture,
+    tmp_path: Path,
+) -> None:
+    """An import of a listed but uninstalled requirement is not reported.
+
+    The requirement is in the requirements file, so nothing is missing.
+    """
+    fake_requirements_file = tmp_path / "requirements.txt"
+    fake_requirements_file.write_text("Not-Installed-Package-12345==1\n")
+
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    (source_dir / "source.py").write_text("import not_installed_package_12345")
+
+    caplog.set_level(logging.WARNING)
+
+    result = find_missing_reqs.find_missing_reqs(
+        requirements_filename=fake_requirements_file,
+        paths=[source_dir],
+        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+    )
+
+    assert not result
+    assert not caplog.records
+
+
+def test_main_uninstalled_import_does_not_fail(
+    *,
+    caplog: pytest.LogCaptureFixture,
+    tmp_path: Path,
+) -> None:
+    """An uninstalled import is a warning rather than a failure.
+
+    An import which we cannot resolve is not always a mistake, as a module
+    of the source may be given by a path we do not scan, so we do not fail
+    the run for it.
+    """
+    requirements_file = tmp_path / "requirements.txt"
+    requirements_file.touch()
+
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    source_file = source_dir / "source.py"
+    source_file.write_text("import not_installed_package_12345\n")
+
+    caplog.set_level(logging.WARNING)
+
+    find_missing_reqs.main(
+        arguments=[
+            "--requirements",
+            str(requirements_file),
+            str(source_dir),
+        ],
+    )
+
+    expected_message = (
+        f"{source_file}:1 module=not_installed_package_12345 is not "
+        "installed, so we cannot tell which requirement provides it"
+    )
+    assert [record.message for record in caplog.records] == [expected_message]
+
+
+def test_main_ignore_module_silences_uninstalled_import(
+    *,
+    caplog: pytest.LogCaptureFixture,
+    tmp_path: Path,
+) -> None:
+    requirements_file = tmp_path / "requirements.txt"
+    requirements_file.touch()
+
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    (source_dir / "source.py").write_text("import not_installed_package_12345")
+
+    caplog.set_level(logging.WARNING)
+
+    find_missing_reqs.main(
+        arguments=[
+            "--requirements",
+            str(requirements_file),
+            "--ignore-module",
+            "not_installed_package_12345",
+            str(source_dir),
+        ],
+    )
+
+    assert not caplog.records
+
+
 def test_main_multiple_requirements_files(
     *,
     caplog: pytest.LogCaptureFixture,

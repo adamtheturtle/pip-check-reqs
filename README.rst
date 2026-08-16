@@ -52,6 +52,13 @@ requirements.txt that are then unused in the project::
 This would find anything that is listed in requirements.txt but that is not
 imported by sample.
 
+``pip-missing-reqs`` learns which requirement provides a module from the
+installed distribution, so an import of a module which is not installed
+cannot be traced to a requirement. It warns about each such import, giving
+the file and line, rather than passing over it. Silence a warning with
+``--ignore-module`` if the import is conditional, or if the module comes
+from a path which you do not give to ``pip-missing-reqs``.
+
 ``pip-extra-reqs`` learns which modules a requirement provides from the
 installed distribution, so it cannot check a requirement which is not
 installed in the environment. It warns about each such requirement rather
