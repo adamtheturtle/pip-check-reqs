@@ -361,6 +361,46 @@ def ignorer(*, ignore_cfg: list[str]) -> Callable[..., bool]:
     return ignorer_function
 
 
+def _yellow(*, message: str) -> str:
+    if not sys.stderr.isatty():
+        return message
+    yellow = "\033[33m"
+    reset = "\033[0m"
+    return f"{yellow}{message}{reset}"
+
+
+def warn_if_not_in_active_virtualenv() -> None:
+    """Warn when we are not running from the active virtual environment.
+
+    A shell caches the paths of the commands it has run, so right after
+    ``pip install pip-check-reqs`` in a new virtual environment, the shell
+    can still resolve ``pip-missing-reqs`` to a command from another
+    environment.
+    That command inspects the packages installed alongside it, not the ones
+    in the active environment, so the results describe the wrong environment.
+    """
+    virtual_env = os.environ.get("VIRTUAL_ENV")
+    if not virtual_env:
+        return
+
+    active_prefix = Path(virtual_env).resolve()
+    running_prefix = Path(sys.prefix).resolve()
+    if active_prefix == running_prefix:
+        return
+
+    message = _yellow(
+        message=(
+            f"WARNING: Running from {running_prefix}, but the active "
+            f"virtual environment is {active_prefix}. "
+            "Results describe the environment pip-check-reqs is installed "
+            "in. "
+            "Install pip-check-reqs in the active virtual environment, and "
+            'run "hash -r" ("rehash" in zsh), to check that environment.'
+        ),
+    )
+    sys.stderr.write(message + "\n")
+
+
 def version_info() -> str:
     major, minor, patch = sys.version_info[:3]
     python_version = f"{major}.{minor}.{patch}"

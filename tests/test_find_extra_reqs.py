@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import re
+import sys
 import textwrap
 from typing import TYPE_CHECKING
 
@@ -240,3 +241,32 @@ def test_main_version(capsys: pytest.CaptureFixture[str]) -> None:
         find_extra_reqs.main(arguments=["--version"])
 
     assert capsys.readouterr().out == common.version_info() + "\n"
+
+
+def test_main_warns_when_run_from_another_environment(
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    requirements_file = tmp_path / "requirements.txt"
+    requirements_file.touch()
+
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    (source_dir / "source.py").write_text("import pprint")
+
+    active_prefix = tmp_path / "active"
+    running_prefix = tmp_path / "running"
+    monkeypatch.setenv("VIRTUAL_ENV", str(active_prefix))
+    monkeypatch.setattr(sys, "prefix", str(running_prefix))
+
+    find_extra_reqs.main(
+        arguments=[
+            "--requirements-file",
+            str(requirements_file),
+            str(source_dir),
+        ],
+    )
+
+    expected_start = f"WARNING: Running from {running_prefix}, "
+    assert capsys.readouterr().err.startswith(expected_start)

@@ -483,3 +483,70 @@ def test_version_info_shows_version_number() -> None:
         f"(python {python_version})"
     )
     assert common.version_info() == expected_version_info
+
+
+def test_no_warning_without_active_virtualenv(
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("VIRTUAL_ENV", raising=False)
+    common.warn_if_not_in_active_virtualenv()
+    assert capsys.readouterr().err == ""
+
+
+def test_no_warning_when_running_from_active_virtualenv(
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("VIRTUAL_ENV", str(tmp_path))
+    monkeypatch.setattr(sys, "prefix", str(tmp_path))
+    common.warn_if_not_in_active_virtualenv()
+    assert capsys.readouterr().err == ""
+
+
+def test_warning_when_running_from_another_environment(
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    active_prefix = tmp_path / "active"
+    running_prefix = tmp_path / "running"
+    monkeypatch.setenv("VIRTUAL_ENV", str(active_prefix))
+    monkeypatch.setattr(sys, "prefix", str(running_prefix))
+
+    common.warn_if_not_in_active_virtualenv()
+
+    expected_message = (
+        f"WARNING: Running from {running_prefix}, but the active "
+        f"virtual environment is {active_prefix}. "
+        "Results describe the environment pip-check-reqs is installed in. "
+        "Install pip-check-reqs in the active virtual environment, and "
+        'run "hash -r" ("rehash" in zsh), to check that environment.\n'
+    )
+    assert capsys.readouterr().err == expected_message
+
+
+def test_warning_is_yellow_on_a_terminal(
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    active_prefix = tmp_path / "active"
+    running_prefix = tmp_path / "running"
+    monkeypatch.setenv("VIRTUAL_ENV", str(active_prefix))
+    monkeypatch.setattr(sys, "prefix", str(running_prefix))
+    monkeypatch.setattr(sys.stderr, "isatty", lambda: True)
+
+    common.warn_if_not_in_active_virtualenv()
+
+    expected_message = (
+        "\033[33m"
+        f"WARNING: Running from {running_prefix}, but the active "
+        f"virtual environment is {active_prefix}. "
+        "Results describe the environment pip-check-reqs is installed in. "
+        "Install pip-check-reqs in the active virtual environment, and "
+        'run "hash -r" ("rehash" in zsh), to check that environment.'
+        "\033[0m\n"
+    )
+    assert capsys.readouterr().err == expected_message
