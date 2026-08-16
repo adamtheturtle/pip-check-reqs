@@ -82,6 +82,36 @@ class ImportedModules:
     """
 
 
+_IMPORT_ERROR_NAMES = frozenset({"ImportError", "ModuleNotFoundError"})
+
+
+def _catches_import_error(*, handler: ast.ExceptHandler) -> bool:
+    """Whether an ``except`` clause catches an import which is not installed.
+
+    A bare ``except`` catches everything, so it counts.
+    """
+    if handler.type is None:
+        return True
+
+    caught = (
+        handler.type.elts
+        if isinstance(handler.type, ast.Tuple)
+        else [handler.type]
+    )
+    for exception in caught:
+        if isinstance(exception, ast.Name):
+            name = exception.id
+        elif isinstance(exception, ast.Attribute):
+            # An exception may be given by a dotted path, as
+            # ``builtins.ImportError`` is.
+            name = exception.attr
+        else:
+            continue
+        if name in _IMPORT_ERROR_NAMES:
+            return True
+    return False
+
+
 class _ImportVisitor(ast.NodeVisitor):
     def __init__(self, ignore_modules_function: Callable[[str], bool]) -> None:
         super().__init__()
@@ -89,6 +119,7 @@ class _ImportVisitor(ast.NodeVisitor):
         self._modules: dict[str, FoundModule] = {}
         self._uninstalled: dict[str, list[tuple[str, int]]] = {}
         self._location: str | None = None
+        self._optional_import_depth = 0
 
     def set_location(self, *, location: str) -> None:
         self._location = location
@@ -118,6 +149,36 @@ class _ImportVisitor(ast.NodeVisitor):
         for alias in node.names:
             self._add_module(node.module + "." + alias.name, node.lineno)
 
+    # Ignore the name error as we are overriding the method.
+    def visit_Try(  # pylint: disable=invalid-name
+        self,
+        node: ast.Try,
+    ) -> None:
+        """Visit a ``try`` statement, noting imports it makes optional.
+
+        A soft dependency is imported in a ``try`` block which catches
+        ``ImportError``, so the code runs whether or not it is installed.
+        Such an import is deliberately optional, so we do not report it as
+        an import we could not resolve.
+        """
+        optional = any(
+            _catches_import_error(handler=handler) for handler in node.handlers
+        )
+        self._optional_import_depth += int(optional)
+        for statement in node.body:
+            self.visit(statement)
+        self._optional_import_depth -= int(optional)
+
+        # An import in a handler, in ``else`` or in ``finally`` is not
+        # guarded by this ``try``, so we treat it as any other import.
+        unguarded: list[ast.AST] = [
+            *node.handlers,
+            *node.orelse,
+            *node.finalbody,
+        ]
+        for node_to_visit in unguarded:
+            self.visit(node_to_visit)
+
     @staticmethod
     def _module_exists(*, modname: str) -> bool:
         modname_parts_progress: list[str] = []
@@ -140,6 +201,11 @@ class _ImportVisitor(ast.NodeVisitor):
         of an installed distribution is a different problem, and the
         distribution which would provide it is checked already.
         """
+        if self._optional_import_depth:
+            # The import is a soft dependency, so the code tolerates the
+            # module not being installed and there is nothing to report.
+            return
+
         top_level_name = modname.split(".", maxsplit=1)[0]
         # An ignore glob may name either the dotted import path, as it may
         # for an installed module, or just the top-level module which we
