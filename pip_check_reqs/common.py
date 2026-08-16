@@ -141,7 +141,12 @@ class _ImportVisitor(ast.NodeVisitor):
         distribution which would provide it is checked already.
         """
         top_level_name = modname.split(".", maxsplit=1)[0]
-        if self._ignore_modules_function(top_level_name):
+        # An ignore glob may name either the dotted import path, as it may
+        # for an installed module, or just the top-level module which we
+        # report.
+        if self._ignore_modules_function(modname) or (
+            self._ignore_modules_function(top_level_name)
+        ):
             return
 
         try:

@@ -471,7 +471,9 @@ def test_main_warns_when_run_from_another_environment(
     source_dir.mkdir()
     (source_dir / "source.py").write_text("import pprint")
 
-    active_prefix = tmp_path / "active"
+    # We resolve the path as the warning shows resolved paths, and a
+    # temporary directory is reached through a symbolic link on some hosts.
+    active_prefix = (tmp_path / "active").resolve()
     monkeypatch.setenv("VIRTUAL_ENV", str(active_prefix))
 
     find_missing_reqs.main(

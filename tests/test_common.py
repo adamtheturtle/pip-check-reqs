@@ -399,22 +399,31 @@ def test_find_imported_modules_uninstalled(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
+    "statement",
+    [
+        pytest.param("import {name}.ham\n", id="Import"),
+        pytest.param("from {name}.ham import eggs\n", id="ImportFrom"),
+    ],
+)
+@pytest.mark.parametrize(
     "ignore_glob",
     [
         pytest.param("{name}", id="Top-level module name"),
         pytest.param("{name}*", id="Glob"),
+        pytest.param("{name}.ham", id="Dotted import path"),
     ],
 )
 def test_find_imported_modules_uninstalled_ignored(
     *,
     ignore_glob: str,
+    statement: str,
     tmp_path: Path,
 ) -> None:
     """An ignored module which is not installed is not reported."""
     source_dir = tmp_path / "source"
     source_dir.mkdir()
     name = "a" + uuid.uuid4().hex
-    (source_dir / "spam.py").write_text(data=f"import {name}.ham\n")
+    (source_dir / "spam.py").write_text(data=statement.format(name=name))
 
     result = common.find_imported_modules(
         paths=[source_dir],
@@ -665,8 +674,10 @@ def test_no_wrong_environment_warning_from_active_virtualenv(
 
 
 def test_wrong_environment_warning(tmp_path: Path) -> None:
-    active_prefix = tmp_path / "active"
-    running_prefix = tmp_path / "running"
+    # We resolve the paths as the warning shows resolved paths, and a
+    # temporary directory is reached through a symbolic link on some hosts.
+    active_prefix = (tmp_path / "active").resolve()
+    running_prefix = (tmp_path / "running").resolve()
 
     warning = common.wrong_environment_warning(
         running_prefix=running_prefix,
@@ -685,8 +696,8 @@ def test_wrong_environment_warning(tmp_path: Path) -> None:
 
 
 def test_wrong_environment_warning_in_color(tmp_path: Path) -> None:
-    active_prefix = tmp_path / "active"
-    running_prefix = tmp_path / "running"
+    active_prefix = (tmp_path / "active").resolve()
+    running_prefix = (tmp_path / "running").resolve()
 
     warning = common.wrong_environment_warning(
         running_prefix=running_prefix,
