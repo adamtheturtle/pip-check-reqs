@@ -7,11 +7,15 @@ import re
 import sys
 import textwrap
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pip  # This happens to be installed in the test environment.
 import pytest
 
 from pip_check_reqs import common, find_extra_reqs
+
+if TYPE_CHECKING:
+    from .conftest import EditableInstall
 
 
 def test_find_extra_reqs(tmp_path: Path) -> None:
@@ -343,3 +347,64 @@ def test_main_does_not_warn_when_run_from_the_active_environment(
     )
 
     assert capsys.readouterr().err == ""
+
+
+def test_editable_requirement_is_not_extra(
+    *,
+    editable_install: EditableInstall,
+    tmp_path: Path,
+) -> None:
+    """A requirement installed in editable mode and imported is not extra.
+
+    The files of an editable install are an import hook rather than the
+    modules of the distribution, so the modules it provides are only found by
+    looking at the project directory which it is installed from.
+    """
+    fake_requirements_file = tmp_path / "requirements.txt"
+    fake_requirements_file.write_text(
+        editable_install.distribution_name + "\n",
+    )
+
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    source_file = source_dir / "source.py"
+    source_file.write_text(f"import {editable_install.module_name}\n")
+
+    result = find_extra_reqs.find_extra_reqs(
+        requirements_filename=fake_requirements_file,
+        paths=[source_dir],
+        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        ignore_requirements_function=common.ignorer(ignore_cfg=[]),
+        skip_incompatible=False,
+    )
+
+    assert not result
+
+
+def test_editable_requirement_not_imported_is_extra(
+    *,
+    editable_install: EditableInstall,
+    tmp_path: Path,
+) -> None:
+    """A requirement installed in editable mode is extra when not imported."""
+    fake_requirements_file = tmp_path / "requirements.txt"
+    fake_requirements_file.write_text(
+        editable_install.distribution_name + "\n",
+    )
+
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    source_file = source_dir / "source.py"
+    source_file.write_text("import pprint\n")
+
+    result = find_extra_reqs.find_extra_reqs(
+        requirements_filename=fake_requirements_file,
+        paths=[source_dir],
+        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        ignore_requirements_function=common.ignorer(ignore_cfg=[]),
+        skip_incompatible=False,
+    )
+
+    assert result == [editable_install.distribution_name]

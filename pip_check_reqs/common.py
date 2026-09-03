@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import ast
+import collections
 import fnmatch
 import importlib.metadata
+import json
 import logging
 import os
 import sys
@@ -23,6 +25,7 @@ from pip._internal.commands.show import (
 from pip._internal.network.session import PipSession
 from pip._internal.req.constructors import install_req_from_line
 from pip._internal.req.req_file import ParsedRequirement, parse_requirements
+from pip._internal.utils.urls import url_to_path
 
 from . import __version__
 
@@ -254,25 +257,24 @@ class _ImportVisitor(ast.NodeVisitor):
 
             modpath = module_spec.origin
 
-            if modpath == "frozen":
+            if modpath in ("frozen", "built-in"):
                 # Frozen modules are modules written in Python whose compiled
                 # byte-code object is incorporated into a custom-built Python
                 # interpreter by Python's freeze utility.
+                # A built-in module, such as ``sys``, is compiled into the
+                # interpreter.
+                # Neither has an origin which names a file, so there is no
+                # file to attribute to a distribution.
                 continue
 
             modpath_path = Path(modpath)
             modname = module_spec.name
 
             if modname not in self._modules:
-                if modpath_path.is_file():
-                    if modpath_path.name == "__init__.py":
-                        modpath_path = modpath_path.parent
-                    else:
-                        # We have this empty "else" so that we are
-                        # not tempted to combine the "is file" and "is
-                        # __init__" checks, and to make sure we have coverage
-                        # for this case.
-                        pass
+                if modpath_path.name == "__init__.py":
+                    # The origin of a package is its ``__init__.py``, and we
+                    # want the directory of the package itself.
+                    modpath_path = modpath_path.parent
                 self._modules[modname] = FoundModule(
                     modname=modname,
                     filename=modpath_path,
@@ -384,6 +386,124 @@ def find_imported_modules(
         if modname not in provided_names
     }
     return ImportedModules(found=vis.finalise(), uninstalled=uninstalled)
+
+
+def installed_distribution_names() -> set[NormalizedName]:
+    """Return the name of each distribution installed in the environment."""
+    return {canonicalize_name(package.name) for package in get_packages_info()}
+
+
+def _installed_files() -> dict[Path, str]:
+    """Map each file of an installed distribution to the distribution name."""
+    installed_files: dict[Path, str] = {}
+    for package in get_packages_info():
+        log.debug(
+            "installed package: %s (at %s)",
+            package.name,
+            package.location,
+        )
+        for item in package.files or []:
+            path = cached_resolve_path(path=Path(package.location) / item)
+            installed_files[path] = package.name
+            containing_package_path = package_path(path=path)
+            if containing_package_path:
+                # we've seen a package file so add the bare package directory
+                # to the installed list as well as we might want to look up
+                # a package by its directory path later
+                installed_files[containing_package_path] = package.name
+    return installed_files
+
+
+@cache
+def editable_source_directories() -> dict[Path, str]:
+    """Map the source directory of each editable install to its distribution.
+
+    An editable install records the files of the wheel which pip installed,
+    which for an editable install are an import hook and not the modules of
+    the distribution. The modules are imported from the project directory
+    instead, so the files of the distribution do not tell us which modules it
+    provides. The project directory is recorded in ``direct_url.json``, as
+    described by PEP 610, so we take it from there.
+    """
+    directories: dict[Path, str] = {}
+    for distribution in importlib.metadata.distributions():
+        direct_url_text = distribution.read_text("direct_url.json")
+        if direct_url_text is None:
+            continue
+
+        direct_url = json.loads(direct_url_text)
+        directory_info = direct_url.get("dir_info", {})
+        if not directory_info.get("editable", False):
+            continue
+
+        # An editable install is always of a local directory, so the URL is
+        # a ``file`` URL.
+        directory = cached_resolve_path(
+            path=Path(url_to_path(direct_url["url"])),
+        )
+        directories[directory] = distribution.metadata["Name"]
+
+    return directories
+
+
+def _editable_distribution_name(
+    *,
+    filename: Path,
+    scanned_paths: Iterable[Path],
+) -> str | None:
+    """Return the editable distribution which provides ``filename``.
+
+    Return ``None`` when no editable install provides the file.
+
+    A file of the source we scan is not a file of a dependency even when the
+    source is installed as editable, as it is the project being checked and
+    not a distribution it requires.
+    """
+    if any(
+        filename == scanned_path or filename.is_relative_to(scanned_path)
+        for scanned_path in scanned_paths
+    ):
+        return None
+
+    for directory, name in editable_source_directories().items():
+        if filename.is_relative_to(directory):
+            return name
+    return None
+
+
+def used_packages(
+    *,
+    used_modules: dict[str, FoundModule],
+    paths: Iterable[Path],
+) -> dict[NormalizedName, list[FoundModule]]:
+    """Map each distribution used by the scanned source to its uses."""
+    installed_files = _installed_files()
+    scanned_paths = [cached_resolve_path(path=path) for path in paths]
+
+    used: collections.defaultdict[NormalizedName, list[FoundModule]] = (
+        collections.defaultdict(list)
+    )
+    for modname, info in used_modules.items():
+        # probably standard library if it's not in the files list
+        name = installed_files.get(info.filename)
+        if name is None:
+            name = _editable_distribution_name(
+                filename=info.filename,
+                scanned_paths=scanned_paths,
+            )
+
+        if name is None:
+            log.debug(
+                "used module: %s (from file %s, assuming stdlib or local)",
+                modname,
+                info.filename,
+            )
+            continue
+
+        log.debug("used module: %s (from package %s)", modname, name)
+        used[canonicalize_name(name)].append(info)
+
+    return used
 
 
 def find_required_modules(

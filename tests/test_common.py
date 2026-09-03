@@ -16,6 +16,8 @@ import pytest
 import __main__
 from pip_check_reqs import __version__, common
 
+from .conftest import write_dist_info
+
 
 @pytest.mark.parametrize(
     ("path", "result"),
@@ -151,6 +153,26 @@ def test_find_imported_modules_frozen(
     spam = tmp_path / "spam.py"
     statement = f"import {frozen_item_names[0]}"
     spam.write_text(data=statement)
+
+    result = common.find_imported_modules(
+        paths=[tmp_path],
+        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+    ).found
+
+    assert set(result.keys()) == set()
+
+
+def test_find_imported_modules_built_in(
+    tmp_path: Path,
+) -> None:
+    """Built-in modules are not included in the result.
+
+    A built-in module is compiled into the interpreter, so it has no file
+    which could belong to a distribution.
+    """
+    spam = tmp_path / "spam.py"
+    spam.write_text(data="import sys")
 
     result = common.find_imported_modules(
         paths=[tmp_path],
@@ -299,7 +321,7 @@ def test_find_imported_modules_missing_from_submodule(
         (
             False,
             False,
-            ["ast", "pathlib", "hashlib", "sys"],
+            ["ast", "pathlib", "hashlib"],
             [
                 ("spam.py", 2),
                 ("ham.py", 2),
@@ -308,11 +330,11 @@ def test_find_imported_modules_missing_from_submodule(
         (
             False,
             True,
-            ["ast", "pathlib", "sys"],
+            ["ast", "pathlib"],
             [("spam.py", 2), ("ham.py", 2)],
         ),
-        (True, False, ["ast", "sys"], [("spam.py", 2)]),
-        (True, True, ["ast", "sys"], [("spam.py", 2)]),
+        (True, False, ["ast"], [("spam.py", 2)]),
+        (True, True, ["ast"], [("spam.py", 2)]),
     ],
 )
 def test_find_imported_modules_advanced(
@@ -871,3 +893,65 @@ def test_wrong_environment_warning_in_color(tmp_path: Path) -> None:
     yellow = "\033[33m"
     reset = "\033[0m"
     assert warning == f"{yellow}{plain_warning}{reset}"
+
+
+def test_editable_source_directories(
+    *,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Only a distribution installed in editable mode has a source directory.
+
+    A distribution installed from a local directory records that directory in
+    ``direct_url.json`` just as an editable install does, but its modules are
+    copied into ``site-packages``, so the directory does not provide them.
+    """
+    site_packages = tmp_path / "site-packages"
+    editable_source_directory = tmp_path / "editable-project"
+    write_dist_info(
+        site_packages=site_packages,
+        distribution_name="editable-package-12345",
+        direct_url={
+            "url": editable_source_directory.as_uri(),
+            "dir_info": {"editable": True},
+        },
+    )
+    write_dist_info(
+        site_packages=site_packages,
+        distribution_name="copied-package-12345",
+        direct_url={
+            "url": (tmp_path / "copied-project").as_uri(),
+            "dir_info": {},
+        },
+    )
+    write_dist_info(
+        site_packages=site_packages,
+        distribution_name="index-package-12345",
+        direct_url=None,
+    )
+
+    monkeypatch.syspath_prepend(  # pyright: ignore[reportUnknownMemberType]
+        str(site_packages),
+    )
+    common.editable_source_directories.cache_clear()
+
+    try:
+        directories = common.editable_source_directories()
+    finally:
+        common.editable_source_directories.cache_clear()
+
+    # The environment the tests run in may have editable installs of its
+    # own, so we look only at the distributions we wrote.
+    written_names = {
+        "editable-package-12345",
+        "copied-package-12345",
+        "index-package-12345",
+    }
+    written_directories = {
+        directory: name
+        for directory, name in directories.items()
+        if name in written_names
+    }
+    assert written_directories == {
+        editable_source_directory.resolve(): "editable-package-12345",
+    }

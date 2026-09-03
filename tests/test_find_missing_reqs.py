@@ -7,11 +7,15 @@ import re
 import sys
 import textwrap
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pip  # This happens to be installed in the test environment.
 import pytest
 
 from pip_check_reqs import common, find_missing_reqs
+
+if TYPE_CHECKING:
+    from .conftest import EditableInstall
 
 
 def test_find_missing_reqs(tmp_path: Path) -> None:
@@ -518,3 +522,66 @@ def test_main_does_not_warn_when_run_from_the_active_environment(
     )
 
     assert capsys.readouterr().err == ""
+
+
+def test_editable_requirement_is_missing(
+    *,
+    editable_install: EditableInstall,
+    tmp_path: Path,
+) -> None:
+    """An import of an editable install which is not required is reported.
+
+    The files of an editable install are an import hook rather than the
+    modules of the distribution, so the modules it provides are only found by
+    looking at the project directory which it is installed from.
+    """
+    fake_requirements_file = tmp_path / "requirements.txt"
+    fake_requirements_file.write_text("")
+
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    source_file = source_dir / "source.py"
+    source_file.write_text(f"import {editable_install.module_name}\n")
+
+    result = find_missing_reqs.find_missing_reqs(
+        requirements_filename=fake_requirements_file,
+        paths=[source_dir],
+        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+    )
+
+    (name, uses) = next(iter(result))
+    assert name == editable_install.distribution_name
+    assert [use.modname for use in uses] == [editable_install.module_name]
+
+
+def test_own_source_installed_as_editable_is_not_missing(
+    *,
+    editable_install: EditableInstall,
+    tmp_path: Path,
+) -> None:
+    """The source we scan is not a requirement of itself.
+
+    A project is commonly installed in editable mode while it is worked on,
+    and its own modules are then provided by an editable install. They are
+    the source we check rather than a distribution it requires, so they are
+    not reported.
+    """
+    fake_requirements_file = tmp_path / "requirements.txt"
+    fake_requirements_file.write_text("")
+
+    source_file = (
+        editable_install.source_directory
+        / editable_install.module_name
+        / "uses_own_package.py"
+    )
+    source_file.write_text(f"import {editable_install.module_name}\n")
+
+    result = find_missing_reqs.find_missing_reqs(
+        requirements_filename=fake_requirements_file,
+        paths=[editable_install.source_directory],
+        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+    )
+
+    assert not result

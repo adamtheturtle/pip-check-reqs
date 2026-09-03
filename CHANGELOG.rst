@@ -32,6 +32,11 @@ Release History
   installed when it is made in a ``try`` block which catches
   ``ImportError``. Such an import is a soft dependency which the code
   tolerates being absent.
+- A requirement installed in editable mode, with ``pip install -e``, is now
+  matched to the modules it provides. ``pip-extra-reqs`` reported such a
+  requirement as extra even when the code imported it, and
+  ``pip-missing-reqs`` did not report an import of one which was not
+  required.
 - ``pip-extra-reqs`` no longer reports a requirement which is not installed
   as an extra requirement. Which modules a requirement provides is only
   known from the installed distribution, so an uninstalled requirement was

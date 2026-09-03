@@ -74,6 +74,14 @@ installed distribution, so it cannot check a requirement which is not
 installed in the environment. It warns about each such requirement rather
 than reporting it as extra.
 
+A requirement installed in editable mode, with ``pip install -e``, imports
+its modules from the directory it is installed from rather than from a copy
+in ``site-packages``. Both commands read that directory from the install, so
+an editable requirement is checked as any other requirement is. The source
+you give to the commands is the project being checked rather than a
+requirement of it, so a module of that source is not treated as a
+requirement even when the project itself is installed in editable mode.
+
 Sample tox.ini configuration
 ----------------------------
 
