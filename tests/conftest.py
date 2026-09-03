@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import textwrap
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
@@ -14,6 +15,14 @@ from pip_check_reqs import common
 if TYPE_CHECKING:
     from collections.abc import Iterator
     from pathlib import Path
+
+# On Python 3.10, pip reads the environment through ``pkg_resources``, whose
+# working set is a snapshot taken when it was first imported. A distribution
+# which a test installs is added to ``sys.path`` after that, so pip does not
+# see it. Ask pip for the ``importlib.metadata`` backend, which reads
+# ``sys.path`` as it is when it is asked. Python 3.14 uses that backend
+# already, and pip removes the other one in version 26.3.
+os.environ["_PIP_USE_IMPORTLIB_METADATA"] = "1"
 
 
 @dataclass(frozen=True)
