@@ -3,13 +3,10 @@
 from __future__ import annotations
 
 import argparse
-import collections
 import logging
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
-
-from packaging.utils import NormalizedName, canonicalize_name
 
 from pip_check_reqs import common
 
@@ -41,54 +38,10 @@ def find_extra_reqs(
         ignore_modules_function=ignore_modules_function,
     ).found
 
-    installed_files: dict[Path, str] = {}
-    packages_info = common.get_packages_info()
-    installed_names: set[NormalizedName] = set()
-
-    for package in packages_info:
-        package_name = package.name
-        package_location = package.location
-        installed_names.add(canonicalize_name(package_name))
-
-        log.debug(
-            "installed package: %s (at %s)",
-            package_name,
-            package_location,
-        )
-        for item in package.files or []:
-            path = Path(package_location) / item
-            path = common.cached_resolve_path(path=path)
-
-            installed_files[path] = package_name
-            package_path = common.package_path(path=path)
-            if package_path:
-                # we've seen a package file so add the bare package directory
-                # to the installed list as well as we might want to look up
-                # a package by its directory path later
-                installed_files[package_path] = package_name
+    installed_names = common.installed_distribution_names()
 
     # 3. match imported modules against those packages
-    used: collections.defaultdict[
-        NormalizedName,
-        list[common.FoundModule],
-    ] = collections.defaultdict(list)
-
-    for modname, info in used_modules.items():
-        # probably standard library if it's not in the files list
-        if info.filename in installed_files:
-            used_name = canonicalize_name(installed_files[info.filename])
-            log.debug(
-                "used module: %s (from package %s)",
-                modname,
-                installed_files[info.filename],
-            )
-            used[used_name].append(info)
-        else:
-            log.debug(
-                "used module: %s (from file %s, assuming stdlib or local)",
-                modname,
-                info.filename,
-            )
+    used = common.used_packages(used_modules=used_modules, paths=paths)
 
     # 4. compare with requirements
     explicit = common.find_required_modules(
