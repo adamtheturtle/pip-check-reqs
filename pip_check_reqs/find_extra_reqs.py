@@ -13,8 +13,6 @@ from pip_check_reqs import common
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
 
-    from pip._internal.req.req_file import ParsedRequirement
-
 log = logging.getLogger(__name__)
 
 
@@ -24,10 +22,7 @@ def find_extra_reqs(
     paths: Iterable[Path],
     ignore_files_function: Callable[[str], bool],
     ignore_modules_function: Callable[[str], bool],
-    ignore_requirements_function: Callable[
-        [str | ParsedRequirement],
-        bool,
-    ],
+    ignore_requirements_function: Callable[[str], bool],
     skip_incompatible: bool,
 ) -> list[str]:
     # 1. find files used by imports in the code (as best we can without

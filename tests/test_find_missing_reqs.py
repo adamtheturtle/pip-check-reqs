@@ -371,8 +371,43 @@ def test_main_unnamed_requirement(
     expected_code = 2
     assert excinfo.value.code == expected_code
     err = capsys.readouterr().err
-    hint = "Add an '#egg=<name>' fragment naming the distribution."
+    hint = (
+        "Install it, or add an '#egg=<name>' fragment naming the distribution."
+    )
     assert err.endswith(f"error: requirement has no name: {url}. {hint}\n")
+
+
+def test_main_editable_directory_requirement(
+    *,
+    caplog: pytest.LogCaptureFixture,
+    editable_install: EditableInstall,
+    tmp_path: Path,
+) -> None:
+    """An ``-e <directory>`` line satisfies the imports of the install.
+
+    Such a line carries no distribution name, so it previously stopped the
+    check with an error asking for one.
+    """
+    requirements_file = tmp_path / "requirements.txt"
+    # pip splits an editable line as a shell does, so a backslash in a
+    # Windows path is lost. Windows accepts a forward slash instead.
+    directory = editable_install.source_directory.as_posix()
+    requirements_file.write_text(f"-e {directory}\n")
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    (source_dir / "source.py").write_text(
+        f"import {editable_install.module_name}\n",
+    )
+
+    find_missing_reqs.main(
+        arguments=[
+            "--requirements",
+            str(requirements_file),
+            str(source_dir),
+        ],
+    )
+
+    assert not caplog.records
 
 
 def test_main_egg_fragment_names_requirement(

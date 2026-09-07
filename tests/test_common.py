@@ -10,6 +10,7 @@ import textwrap
 import types
 import uuid
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -17,6 +18,11 @@ import __main__
 from pip_check_reqs import __version__, common
 
 from .conftest import write_dist_info
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from .conftest import EditableInstall
 
 
 @pytest.mark.parametrize(
@@ -799,7 +805,9 @@ def test_find_required_modules_unnamed_requirement(tmp_path: Path) -> None:
             requirements_filename=fake_requirements_file,
         )
 
-    hint = "Add an '#egg=<name>' fragment naming the distribution."
+    hint = (
+        "Install it, or add an '#egg=<name>' fragment naming the distribution."
+    )
     expected_message = f"requirement has no name: {url}. {hint}"
     assert str(excinfo.value) == expected_message
 
@@ -817,6 +825,175 @@ def test_find_required_modules_egg_fragment_names_requirement(
         requirements_filename=fake_requirements_file,
     )
     assert reqs == {"foobar", "repo"}
+
+
+def _editable_line(directory: Path) -> str:
+    """Return an ``-e`` requirement line for a directory.
+
+    pip splits an editable line as a shell does, so a backslash in a Windows
+    path is lost. Windows accepts a forward slash instead.
+    """
+    return f"-e {directory.as_posix()}"
+
+
+def _file_url_line(directory: Path) -> str:
+    """Return a ``file`` URL requirement line for a directory."""
+    return directory.as_uri()
+
+
+@pytest.mark.parametrize(
+    "line_for_directory",
+    [
+        pytest.param(_editable_line, id="editable"),
+        pytest.param(str, id="not editable"),
+        pytest.param(_file_url_line, id="file URL"),
+    ],
+)
+def test_find_required_modules_installed_directory_requirement(
+    *,
+    editable_install: EditableInstall,
+    tmp_path: Path,
+    line_for_directory: Callable[[Path], str],
+) -> None:
+    """A local directory requirement is named by the install made from it.
+
+    ``-e .`` is a common line in a requirements file, and it carries no
+    distribution name. The install records the directory it was made from,
+    so the name is taken from the install.
+    """
+    fake_requirements_file = tmp_path / "requirements.txt"
+    line = line_for_directory(editable_install.source_directory)
+    fake_requirements_file.write_text(f"foobar==1\n{line}\n")
+
+    reqs = common.find_required_modules(
+        ignore_requirements_function=common.ignorer(ignore_cfg=[]),
+        skip_incompatible=False,
+        requirements_filename=fake_requirements_file,
+    )
+
+    assert reqs == {"foobar", editable_install.distribution_name}
+
+
+def test_find_required_modules_relative_directory_requirement(
+    *,
+    editable_install: EditableInstall,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """A directory requirement is matched to an install by its resolved path.
+
+    A requirements file usually names the project directory relative to the
+    working directory, as ``-e .`` does, while the install records an
+    absolute ``file`` URL.
+    """
+    monkeypatch.chdir(editable_install.source_directory)
+    fake_requirements_file = tmp_path / "requirements.txt"
+    fake_requirements_file.write_text("-e .\n")
+
+    reqs = common.find_required_modules(
+        ignore_requirements_function=common.ignorer(ignore_cfg=[]),
+        skip_incompatible=False,
+        requirements_filename=fake_requirements_file,
+    )
+
+    assert reqs == {editable_install.distribution_name}
+
+
+@pytest.mark.parametrize(
+    ("line", "direct_url"),
+    [
+        pytest.param(
+            "git+https://example.com/org/repo.git@v1.0#subdirectory=sub",
+            {
+                "url": "https://example.com/org/repo.git",
+                "vcs_info": {"vcs": "git", "commit_id": "abc123"},
+                "subdirectory": "sub",
+            },
+            id="git with revision and subdirectory",
+        ),
+        pytest.param(
+            "git+ssh://git@example.com/org/repo.git",
+            {
+                "url": "ssh://git@example.com/org/repo.git",
+                "vcs_info": {"vcs": "git", "commit_id": "abc123"},
+            },
+            id="git over ssh",
+        ),
+        pytest.param(
+            "https://example.com/downloads/repo-1.0.tar.gz",
+            {
+                "url": "https://example.com/downloads/repo-1.0.tar.gz",
+                "archive_info": {},
+            },
+            id="archive",
+        ),
+    ],
+)
+def test_find_required_modules_installed_url_requirement(
+    *,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    line: str,
+    direct_url: dict[str, object],
+) -> None:
+    """A URL requirement is named by the install made from that URL.
+
+    A requirement may pin a revision, which the install does not record as
+    part of the URL, so the revision is left out when matching. A repository
+    may hold several projects, so the subdirectory is matched too.
+    """
+    distribution_name = "url-package-12345"
+    site_packages = tmp_path / "site-packages"
+    write_dist_info(
+        site_packages=site_packages,
+        distribution_name=distribution_name,
+        direct_url=direct_url,
+    )
+    monkeypatch.syspath_prepend(  # pyright: ignore[reportUnknownMemberType]
+        str(site_packages),
+    )
+    common.direct_url_distribution_names.cache_clear()
+
+    fake_requirements_file = tmp_path / "requirements.txt"
+    fake_requirements_file.write_text(f"foobar==1\n{line}\n")
+
+    try:
+        reqs = common.find_required_modules(
+            ignore_requirements_function=common.ignorer(ignore_cfg=[]),
+            skip_incompatible=False,
+            requirements_filename=fake_requirements_file,
+        )
+    finally:
+        common.direct_url_distribution_names.cache_clear()
+
+    assert reqs == {"foobar", distribution_name}
+
+
+def test_find_required_modules_unparseable_requirement(tmp_path: Path) -> None:
+    """A requirement which pip cannot read is reported as an input error.
+
+    A directory with no ``pyproject.toml`` or ``setup.py`` is not a project,
+    so pip refuses it. That previously surfaced as a pip traceback.
+    """
+    empty_directory = tmp_path / "empty"
+    empty_directory.mkdir()
+    fake_requirements_file = tmp_path / "requirements.txt"
+    fake_requirements_file.write_text(f"{empty_directory}\n")
+
+    with pytest.raises(ValueError, match="could not parse") as excinfo:
+        common.find_required_modules(
+            ignore_requirements_function=common.ignorer(ignore_cfg=[]),
+            skip_incompatible=False,
+            requirements_filename=fake_requirements_file,
+        )
+
+    # pip quotes the directory as Python does, so a backslash in a Windows
+    # path is doubled.
+    expected_message = (
+        f"could not parse requirement: Directory {str(empty_directory)!r} is "
+        "not installable. Neither 'setup.py' nor 'pyproject.toml' found."
+    )
+    assert str(excinfo.value) == expected_message
 
 
 def test_version_info_shows_version_number() -> None:

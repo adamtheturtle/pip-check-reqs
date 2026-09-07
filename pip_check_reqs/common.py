@@ -22,17 +22,22 @@ from pip._internal.commands.show import (
     _PackageInfo,  # pyright: ignore[reportPrivateUsage]
     search_packages_info,
 )
+from pip._internal.exceptions import InstallationError
 from pip._internal.network.session import PipSession
 from pip._internal.req.constructors import install_req_from_line
-from pip._internal.req.req_file import ParsedRequirement, parse_requirements
+from pip._internal.req.req_file import parse_requirements
 from pip._internal.utils.urls import url_to_path
+from pip._internal.vcs.versioncontrol import vcs
 
 from . import __version__
 
 if TYPE_CHECKING:
     import argparse
-    from collections.abc import Callable, Generator, Iterable
-    from typing import NoReturn, TextIO
+    from collections.abc import Callable, Generator, Iterable, Iterator
+    from typing import Any, NoReturn, TextIO
+
+    from pip._internal.models.link import Link
+    from pip._internal.req.req_file import ParsedRequirement
 
 log = logging.getLogger(__name__)
 
@@ -414,6 +419,23 @@ def _installed_files() -> dict[Path, str]:
     return installed_files
 
 
+def _direct_urls() -> Iterator[tuple[str, dict[str, Any]]]:
+    """Yield the name and direct URL of each distribution installed from one.
+
+    A distribution installed from a URL, a local directory or a version
+    control repository, rather than from an index, records where it came from
+    in ``direct_url.json``, as described by PEP 610.
+    """
+    for distribution in importlib.metadata.distributions():
+        direct_url_text = distribution.read_text("direct_url.json")
+        if direct_url_text is None:
+            continue
+
+        name: str = distribution.metadata["Name"]
+        direct_url: dict[str, Any] = json.loads(direct_url_text)
+        yield name, direct_url
+
+
 @cache
 def editable_source_directories() -> dict[Path, str]:
     """Map the source directory of each editable install to its distribution.
@@ -426,12 +448,7 @@ def editable_source_directories() -> dict[Path, str]:
     described by PEP 610, so we take it from there.
     """
     directories: dict[Path, str] = {}
-    for distribution in importlib.metadata.distributions():
-        direct_url_text = distribution.read_text("direct_url.json")
-        if direct_url_text is None:
-            continue
-
-        direct_url = json.loads(direct_url_text)
+    for name, direct_url in _direct_urls():
         directory_info = direct_url.get("dir_info", {})
         if not directory_info.get("editable", False):
             continue
@@ -441,9 +458,111 @@ def editable_source_directories() -> dict[Path, str]:
         directory = cached_resolve_path(
             path=Path(url_to_path(direct_url["url"])),
         )
-        directories[directory] = distribution.metadata["Name"]
+        directories[directory] = name
 
     return directories
+
+
+def _direct_url_key(
+    *,
+    url: str,
+    vcs_name: str | None,
+    subdirectory: str | None,
+) -> str:
+    """Return a key which identifies the project a direct URL points at.
+
+    A local directory may be written as a relative path in one place and as
+    an absolute ``file`` URL in another, so it is keyed by its resolved path.
+    A version control URL is keyed with the name of the version control
+    system, as ``git+https://...`` is written in a requirements file.
+    A repository may hold several projects, each in its own subdirectory, so
+    the subdirectory is part of the key.
+    """
+    if vcs_name is not None:
+        key = f"{vcs_name}+{url}"
+    elif url.startswith("file:"):
+        key = str(cached_resolve_path(path=Path(url_to_path(url))))
+    else:
+        key = url
+
+    if subdirectory is not None:
+        key = f"{key}#subdirectory={subdirectory}"
+    return key
+
+
+@cache
+def direct_url_distribution_names() -> dict[str, str]:
+    """Map the direct URL each distribution was installed from to its name.
+
+    The keys are as ``_direct_url_key`` gives them.
+    """
+    names: dict[str, str] = {}
+    for name, direct_url in _direct_urls():
+        vcs_info = direct_url.get("vcs_info")
+        vcs_name = vcs_info["vcs"] if vcs_info is not None else None
+        key = _direct_url_key(
+            url=direct_url["url"],
+            vcs_name=vcs_name,
+            subdirectory=direct_url.get("subdirectory"),
+        )
+        names[key] = name
+    return names
+
+
+def _link_key(*, link: Link) -> str:
+    """Return the ``_direct_url_key`` of the project a requirement points at.
+
+    A requirement may pin a revision, as ``git+https://...@v1.0`` does, and
+    may carry an ``#egg=`` fragment. Neither is recorded in the install, so
+    both are left out of the key.
+    """
+    if link.is_vcs:
+        backend = vcs.get_backend_for_scheme(link.scheme)
+        assert backend is not None
+        url, _revision, _auth = backend.get_url_rev_and_auth(
+            link.url_without_fragment,
+        )
+        return _direct_url_key(
+            url=url,
+            vcs_name=backend.name,
+            subdirectory=link.subdirectory_fragment,
+        )
+    return _direct_url_key(
+        url=link.url_without_fragment,
+        vcs_name=None,
+        subdirectory=link.subdirectory_fragment,
+    )
+
+
+def _requirement_name(*, requirement: ParsedRequirement) -> str | None:
+    """Return the name of the distribution a requirement line asks for.
+
+    Return ``None`` when the name cannot be told from the line and the
+    requirement is not installed.
+
+    A direct URL such as ``git+ssh://git@example.com/org/repo.git`` or a
+    local directory such as ``-e .`` carries no distribution name, and pip
+    will not learn one without fetching or building the project. When such a
+    requirement is installed, the install records the URL it came from, so
+    we take the name from the install.
+    """
+    try:
+        install_requirement = install_req_from_line(requirement.requirement)
+    except InstallationError as exc:
+        # pip describes the problem over several lines, with a caret under
+        # the part of the line it could not read. We report the requirement
+        # as an input error, so we keep only the first line of the reason.
+        reason = str(exc).splitlines()[0]
+        msg = f"could not parse requirement: {reason}"
+        raise ValueError(msg) from exc
+
+    if install_requirement.name is not None:
+        return install_requirement.name
+
+    # A requirement with no name is a URL or a path, so it has a link.
+    link = install_requirement.link
+    assert link is not None
+    return direct_url_distribution_names().get(_link_key(link=link))
 
 
 def _editable_distribution_name(
@@ -508,10 +627,7 @@ def used_packages(
 
 def find_required_modules(
     *,
-    ignore_requirements_function: Callable[
-        [str | ParsedRequirement],
-        bool,
-    ],
+    ignore_requirements_function: Callable[[str], bool],
     skip_incompatible: bool,
     requirements_filename: Path,
 ) -> set[NormalizedName]:
@@ -520,20 +636,19 @@ def find_required_modules(
         str(requirements_filename),
         session=PipSession(),
     ):
-        requirement_name = install_req_from_line(
-            requirement.requirement,
-        ).name
+        requirement_name = _requirement_name(requirement=requirement)
         if requirement_name is None:
-            # A direct URL such as ``git+ssh://git@example.com/org/repo.git``
-            # carries no distribution name, and pip will not learn one without
-            # fetching the project. Skipping the line would silently drop a
-            # requirement and report the modules it provides as missing, so
-            # ask for the name instead of guessing at it.
-            hint = "Add an '#egg=<name>' fragment naming the distribution."
+            # Skipping the line would silently drop a requirement and report
+            # the modules it provides as missing, so ask for the name instead
+            # of guessing at it.
+            hint = (
+                "Install it, or add an '#egg=<name>' fragment naming the "
+                "distribution."
+            )
             msg = f"requirement has no name: {requirement.requirement}. {hint}"
             raise ValueError(msg)
 
-        if ignore_requirements_function(requirement):
+        if ignore_requirements_function(requirement_name):
             log.debug("ignoring requirement: %s", requirement_name)
             continue
 
@@ -580,29 +695,20 @@ def package_path(*, path: Path) -> Path | None:
     return path.parent
 
 
-def _null_ignorer(_: str | ParsedRequirement) -> bool:
+def _null_ignorer(_: str) -> bool:
     return False
 
 
-def ignorer(*, ignore_cfg: list[str]) -> Callable[..., bool]:
+def ignorer(*, ignore_cfg: list[str]) -> Callable[[str], bool]:
     if not ignore_cfg:
         return _null_ignorer
 
     def ignorer_function(
-        candidate: str | ParsedRequirement,
+        candidate_path: str,
         ignore_cfg: list[str] = ignore_cfg,
     ) -> bool:
         working_directory = Path.cwd()
         for ignore in ignore_cfg:
-            if isinstance(candidate, str):
-                candidate_path = candidate
-            else:
-                optional_candidate_path = install_req_from_line(
-                    candidate.requirement,
-                ).name
-                assert isinstance(optional_candidate_path, str)
-                candidate_path = optional_candidate_path
-
             if fnmatch.fnmatch(candidate_path, ignore):
                 return True
 

@@ -6,4 +6,5 @@ pytest
 reportPrivateUsage
 reportUnknownMemberType
 reqs
+subdirectory
 traceback

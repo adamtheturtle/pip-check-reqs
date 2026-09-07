@@ -82,6 +82,12 @@ you give to the commands is the project being checked rather than a
 requirement of it, so a module of that source is not treated as a
 requirement even when the project itself is installed in editable mode.
 
+A requirement given as a URL or a directory, such as ``-e .`` or
+``git+https://github.com/org/repo.git``, does not name a distribution. When
+the requirement is installed, both commands take the name from the install,
+which records where it came from. Otherwise, name the distribution with an
+``#egg=<name>`` fragment.
+
 Sample tox.ini configuration
 ----------------------------
 
