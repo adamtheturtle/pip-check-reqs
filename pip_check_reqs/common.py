@@ -295,7 +295,22 @@ class _ImportVisitor(ast.NodeVisitor):
         return self._uninstalled
 
 
+def _is_virtual_environment(*, directory: Path) -> bool:
+    """Return whether a directory is the root of a virtual environment.
+
+    The ``venv`` module, ``virtualenv`` and ``uv`` all write a
+    ``pyvenv.cfg`` file at the root of an environment they create.
+    """
+    return (directory / "pyvenv.cfg").is_file()
+
+
 def pyfiles(root: Path) -> Generator[Path, None, None]:
+    """Yield each Python source file within ``root``.
+
+    A virtual environment within ``root`` is skipped. Its files belong to
+    the installed distributions rather than to the project, and scanning
+    them reports every import the environment makes as a use.
+    """
     if not root.exists():
         msg = f"source path not found: {root}"
         raise FileNotFoundError(msg)
@@ -306,9 +321,25 @@ def pyfiles(root: Path) -> Generator[Path, None, None]:
         else:
             msg = f"{root} is not a python file or directory"
             raise ValueError(msg)
-    else:
-        for item in root.rglob("*.py"):
-            yield item.absolute()
+        return
+
+    for dirpath, dirnames, filenames in os.walk(root):
+        directory = Path(dirpath)
+        kept_dirnames: list[str] = []
+        for dirname in sorted(dirnames):
+            if _is_virtual_environment(directory=directory / dirname):
+                log.debug(
+                    "skipping virtual environment: %s",
+                    directory / dirname,
+                )
+                continue
+            kept_dirnames.append(dirname)
+        # Assigning in place prunes the directories ``os.walk`` descends
+        # into.
+        dirnames[:] = kept_dirnames
+        for filename in sorted(filenames):
+            if filename.endswith(".py"):
+                yield (directory / filename).absolute()
 
 
 def validate_requirements_file(*, path: Path) -> None:

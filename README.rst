@@ -111,6 +111,10 @@ don't want this tool to generate false hits for those.
 You may exclude those test files from your check using the `--ignore-file`
 option (shorthand is `-f`). Multiple instances of the option are allowed.
 
+A virtual environment within the checked directory is skipped automatically.
+A directory is treated as a virtual environment when it contains a
+``pyvenv.cfg`` file, which ``venv``, ``virtualenv`` and ``uv`` all create.
+
 
 Excluding modules from the check
 --------------------------------

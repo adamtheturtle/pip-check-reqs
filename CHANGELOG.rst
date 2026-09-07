@@ -4,6 +4,10 @@ Release History
 
 3.1.0
 
+- A virtual environment within the checked directory is now skipped. A
+  directory is treated as a virtual environment when it contains a
+  ``pyvenv.cfg`` file. Both commands previously scanned every installed
+  distribution in such an environment as if it were project source.
 - ``pip-missing-reqs`` accepts ``--requirements-file`` more than once, so
   requirements split across several files are checked as one set.
 - A missing requirements file or source path now reports a concise command
