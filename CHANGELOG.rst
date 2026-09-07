@@ -14,10 +14,14 @@ Release History
   ``SyntaxError`` traceback.
 - An import from a submodule that does not exist is no longer attributed to
   an installed parent distribution, which removed a class of false positives.
-- A requirement with no distribution name, such as a bare
-  ``git+ssh://...`` URL, now reports an error asking for an ``#egg=<name>``
-  fragment in both commands. It previously crashed with an
-  ``AssertionError``.
+- A requirement with no distribution name, such as ``-e .`` or a bare
+  ``git+ssh://...`` URL, is now matched to the installed distribution which
+  was installed from that directory or URL. When no such distribution is
+  installed, both commands report an error asking for an ``#egg=<name>``
+  fragment. They previously crashed with an ``AssertionError``.
+- A requirement which pip cannot read, such as a directory with no
+  ``pyproject.toml``, now reports a command line error. It previously showed
+  a pip traceback.
 - On Windows, an ignore glob no longer crashes with a ``ValueError`` when a
   source file is on a different drive to the working directory.
 - Both commands now warn when they are run from outside the active virtual

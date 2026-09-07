@@ -90,6 +90,19 @@ def editable_install(
     package_directory = source_directory / module_name
     package_directory.mkdir(parents=True)
     (package_directory / "__init__.py").touch()
+    # pip only accepts a directory as a requirement when it is a project, so
+    # the directory must have a ``pyproject.toml`` to be written in a
+    # requirements file.
+    (source_directory / "pyproject.toml").write_text(
+        textwrap.dedent(
+            f"""\
+            [project]
+            name = "{distribution_name}"
+            version = "1.0"
+            """,
+        ),
+        encoding="utf-8",
+    )
 
     site_packages = tmp_path / "editable-site-packages"
     write_dist_info(
@@ -110,6 +123,7 @@ def editable_install(
 
     common.get_packages_info.cache_clear()
     common.editable_source_directories.cache_clear()
+    common.direct_url_distribution_names.cache_clear()
 
     yield EditableInstall(
         distribution_name=distribution_name,
@@ -121,3 +135,4 @@ def editable_install(
     # must not describe it for the tests which follow.
     common.get_packages_info.cache_clear()
     common.editable_source_directories.cache_clear()
+    common.direct_url_distribution_names.cache_clear()
