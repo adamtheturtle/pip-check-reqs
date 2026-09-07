@@ -119,6 +119,25 @@ check by name (or glob pattern) using `--ignore-module` (shorthand is `-m`)::
     pip-missing-reqs --ignore-module=spam --ignore-module=spam.* sample
 
 
+Excluding requirements from the check
+-------------------------------------
+
+A project may need a requirement which its code never imports. A web
+application which lists ``gunicorn`` to serve it, or a plugin which is
+loaded by an entry point, is installed and used without an ``import``
+statement. ``pip-extra-reqs`` reports such a requirement as extra.
+
+You may exclude a requirement from the check by name (or glob pattern) using
+`--ignore-requirement` (shorthand is `-r`). The name is matched as it is
+written in the requirements file. Multiple instances of the option are
+allowed::
+
+    # ignore the requirement gunicorn
+    pip-extra-reqs --ignore-requirement=gunicorn sample
+    # ignore every requirement whose name starts with pytest
+    pip-extra-reqs --ignore-requirement=pytest --ignore-requirement=pytest-* sample
+
+
 Using pyproject.toml instead of requirements.txt
 ------------------------------------------------
 
