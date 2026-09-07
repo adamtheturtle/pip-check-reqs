@@ -134,6 +134,82 @@ def test_main_failure(
     assert caplog.records[1].message == expected_message
 
 
+def test_main_ignore_requirement(
+    *,
+    caplog: pytest.LogCaptureFixture,
+    tmp_path: Path,
+) -> None:
+    """A requirement given to ``--ignore-requirement`` is not reported.
+
+    A project may need a requirement which its code never imports, such as
+    a server which runs it, so the option lets a user exclude it by name.
+    """
+    ignored_package = pytest
+    reported_package = pip
+
+    requirements_file = tmp_path / "requirements.txt"
+    requirements_file.write_text(
+        textwrap.dedent(
+            f"""\
+            {ignored_package.__name__}
+            {reported_package.__name__}
+            """,
+        ),
+    )
+
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+
+    caplog.set_level(logging.WARNING)
+
+    with pytest.raises(SystemExit) as excinfo:
+        find_extra_reqs.main(
+            arguments=[
+                "--requirements",
+                str(requirements_file),
+                "--ignore-requirement",
+                ignored_package.__name__,
+                str(source_dir),
+            ],
+        )
+
+    assert excinfo.value.code == 1
+    expected_messages = [
+        "Extra requirements:",
+        f"{reported_package.__name__} in {requirements_file}",
+    ]
+    assert [record.message for record in caplog.records] == expected_messages
+
+
+def test_main_ignore_requirement_glob(
+    *,
+    caplog: pytest.LogCaptureFixture,
+    tmp_path: Path,
+) -> None:
+    """A glob given to ``--ignore-requirement`` matches requirement names."""
+    ignored_package = pytest
+
+    requirements_file = tmp_path / "requirements.txt"
+    requirements_file.write_text(f"{ignored_package.__name__}\n")
+
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+
+    caplog.set_level(logging.WARNING)
+
+    find_extra_reqs.main(
+        arguments=[
+            "--requirements",
+            str(requirements_file),
+            "--ignore-requirement",
+            ignored_package.__name__[:2] + "*",
+            str(source_dir),
+        ],
+    )
+
+    assert not caplog.records
+
+
 def test_main_no_spec(capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit) as excinfo:
         find_extra_reqs.main(arguments=[])
