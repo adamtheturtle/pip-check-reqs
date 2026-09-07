@@ -88,6 +88,53 @@ def test_pyfiles_package(tmp_path: Path) -> None:
     ]
 
 
+def test_pyfiles_skips_virtual_environment(
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A virtual environment within the scanned directory is not scanned.
+
+    Its files belong to installed distributions, not to the project.
+    A directory is a virtual environment when it holds a ``pyvenv.cfg``
+    file, which ``venv``, ``virtualenv`` and ``uv`` all write.
+    """
+    python_file = tmp_path / "example.py"
+    python_file.touch()
+
+    venv = tmp_path / "venv"
+    venv.mkdir()
+    (venv / "pyvenv.cfg").touch()
+    venv_python_file = venv / "lib" / "site-packages" / "spam.py"
+    venv_python_file.parent.mkdir(parents=True)
+    venv_python_file.touch()
+
+    # A directory which merely resembles a virtual environment by name is
+    # still scanned.
+    lookalike_python_file = tmp_path / ".venv" / "example.py"
+    lookalike_python_file.parent.mkdir()
+    lookalike_python_file.touch()
+
+    with caplog.at_level(level=logging.DEBUG):
+        found = list(common.pyfiles(root=tmp_path))
+
+    assert found == [python_file, lookalike_python_file]
+    assert f"skipping virtual environment: {venv}" in caplog.text
+
+
+def test_pyfiles_root_is_virtual_environment(tmp_path: Path) -> None:
+    """A virtual environment given directly as the source path is scanned.
+
+    Only environments found within the given path are skipped.
+    """
+    venv = tmp_path / "venv"
+    venv.mkdir()
+    (venv / "pyvenv.cfg").touch()
+    venv_python_file = venv / "spam.py"
+    venv_python_file.touch()
+
+    assert list(common.pyfiles(root=venv)) == [venv_python_file]
+
+
 @pytest.mark.parametrize(
     argnames=("statement", "expected_module_names"),
     argvalues=[
