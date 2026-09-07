@@ -148,6 +148,27 @@ allowed::
     pip-extra-reqs --ignore-requirement=pytest --ignore-requirement=pytest-* sample
 
 
+Checking transitive dependencies
+--------------------------------
+
+``pip-missing-reqs`` only looks for the requirements which the source imports.
+A dependency of one of those, which the source does not import itself, need
+not be listed.
+
+Some files must list every distribution, whether the source imports it or
+not. A constraints file, given to pip with ``-c``, which pins a minimum
+version of every distribution in a test environment is one. To check such a
+file, pass `--transitive` (shorthand is `-t`). The dependencies of each
+distribution the source imports are then followed, recursively, and any
+which is not listed is reported with the distribution which requires it::
+
+    pip-missing-reqs --requirements-file=minimum-constraints.txt --transitive sample
+
+A dependency is only followed when its environment marker holds in the
+environment which ``pip-missing-reqs`` runs in, and a dependency of an extra
+is only followed when that extra is asked for.
+
+
 Using pyproject.toml instead of requirements.txt
 ------------------------------------------------
 

@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from packaging.markers import Marker
+from packaging.requirements import Requirement
 from packaging.utils import NormalizedName, canonicalize_name
 from pip._internal.commands.show import (
     _PackageInfo,  # pyright: ignore[reportPrivateUsage]
@@ -654,6 +655,78 @@ def used_packages(
         used[canonicalize_name(name)].append(info)
 
     return used
+
+
+def _dependencies(
+    *,
+    distribution: importlib.metadata.Distribution,
+    extras: frozenset[str],
+) -> Iterator[tuple[NormalizedName, frozenset[str]]]:
+    """Yield each distribution which an installed distribution depends on.
+
+    Each dependency is yielded with the extras it is asked for, as
+    ``requests[socks]`` asks for the ``socks`` extra of ``requests``.
+
+    A dependency with an environment marker is only a dependency when the
+    marker holds in this environment, and a dependency of an extra is only
+    a dependency when that extra is asked for.
+    """
+    for requirement_string in distribution.requires or []:
+        requirement = Requirement(requirement_string)
+        if requirement.marker is not None and not any(
+            requirement.marker.evaluate(environment={"extra": extra})
+            for extra in ("", *extras)
+        ):
+            continue
+        yield (
+            canonicalize_name(requirement.name),
+            frozenset(requirement.extras),
+        )
+
+
+def transitive_dependencies(
+    *,
+    names: Iterable[NormalizedName],
+) -> dict[NormalizedName, set[NormalizedName]]:
+    """Map each dependency of ``names`` to the distributions which require it.
+
+    The dependencies are followed recursively, so a dependency of a
+    dependency is included. A distribution which is not installed has no
+    metadata to read, so its dependencies are not followed.
+    """
+    distributions = {
+        canonicalize_name(distribution.metadata["Name"]): distribution
+        for distribution in importlib.metadata.distributions()
+    }
+
+    required_by: dict[NormalizedName, set[NormalizedName]] = {}
+    seen: set[tuple[NormalizedName, frozenset[str]]] = set()
+    to_visit: list[tuple[NormalizedName, frozenset[str]]] = [
+        (name, frozenset()) for name in names
+    ]
+    while to_visit:
+        name, extras = to_visit.pop()
+        if (name, extras) in seen:
+            continue
+        seen.add((name, extras))
+
+        distribution = distributions.get(name)
+        if distribution is None:
+            log.debug(
+                "%s is not installed, so its dependencies are unknown",
+                name,
+            )
+            continue
+
+        for dependency, dependency_extras in _dependencies(
+            distribution=distribution,
+            extras=extras,
+        ):
+            log.debug("%s requires %s", name, dependency)
+            required_by.setdefault(dependency, set()).add(name)
+            to_visit.append((dependency, dependency_extras))
+
+    return required_by
 
 
 def find_required_modules(

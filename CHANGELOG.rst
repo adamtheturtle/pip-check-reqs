@@ -4,6 +4,10 @@ Release History
 
 3.1.0
 
+- ``pip-missing-reqs`` gains a ``--transitive`` option. It also reports the
+  dependencies of the distributions the source imports, followed recursively,
+  which no requirements file lists. This checks a constraints file which must
+  pin every distribution in an environment.
 - A virtual environment within the checked directory is now skipped. A
   directory is treated as a virtual environment when it contains a
   ``pyvenv.cfg`` file. Both commands previously scanned every installed
