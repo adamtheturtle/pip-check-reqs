@@ -20,6 +20,8 @@ from pip_check_reqs import __version__, common
 from .conftest import write_dist_info
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from .conftest import EditableInstall
 
 
@@ -825,19 +827,33 @@ def test_find_required_modules_egg_fragment_names_requirement(
     assert reqs == {"foobar", "repo"}
 
 
+def _editable_line(directory: Path) -> str:
+    """Return an ``-e`` requirement line for a directory.
+
+    pip splits an editable line as a shell does, so a backslash in a Windows
+    path is lost. Windows accepts a forward slash instead.
+    """
+    return f"-e {directory.as_posix()}"
+
+
+def _file_url_line(directory: Path) -> str:
+    """Return a ``file`` URL requirement line for a directory."""
+    return directory.as_uri()
+
+
 @pytest.mark.parametrize(
-    "line_template",
+    "line_for_directory",
     [
-        pytest.param("-e {directory}", id="editable"),
-        pytest.param("{directory}", id="not editable"),
-        pytest.param("file://{directory}", id="file URL"),
+        pytest.param(_editable_line, id="editable"),
+        pytest.param(str, id="not editable"),
+        pytest.param(_file_url_line, id="file URL"),
     ],
 )
 def test_find_required_modules_installed_directory_requirement(
     *,
     editable_install: EditableInstall,
     tmp_path: Path,
-    line_template: str,
+    line_for_directory: Callable[[Path], str],
 ) -> None:
     """A local directory requirement is named by the install made from it.
 
@@ -846,7 +862,7 @@ def test_find_required_modules_installed_directory_requirement(
     so the name is taken from the install.
     """
     fake_requirements_file = tmp_path / "requirements.txt"
-    line = line_template.format(directory=editable_install.source_directory)
+    line = line_for_directory(editable_install.source_directory)
     fake_requirements_file.write_text(f"foobar==1\n{line}\n")
 
     reqs = common.find_required_modules(
@@ -971,9 +987,11 @@ def test_find_required_modules_unparseable_requirement(tmp_path: Path) -> None:
             requirements_filename=fake_requirements_file,
         )
 
+    # pip quotes the directory as Python does, so a backslash in a Windows
+    # path is doubled.
     expected_message = (
-        f"could not parse requirement: Directory '{empty_directory}' is not "
-        "installable. Neither 'setup.py' nor 'pyproject.toml' found."
+        f"could not parse requirement: Directory {str(empty_directory)!r} is "
+        "not installable. Neither 'setup.py' nor 'pyproject.toml' found."
     )
     assert str(excinfo.value) == expected_message
 

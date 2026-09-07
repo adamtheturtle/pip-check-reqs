@@ -389,7 +389,10 @@ def test_main_editable_directory_requirement(
     check with an error asking for one.
     """
     requirements_file = tmp_path / "requirements.txt"
-    requirements_file.write_text(f"-e {editable_install.source_directory}\n")
+    # pip splits an editable line as a shell does, so a backslash in a
+    # Windows path is lost. Windows accepts a forward slash instead.
+    directory = editable_install.source_directory.as_posix()
+    requirements_file.write_text(f"-e {directory}\n")
     source_dir = tmp_path / "source"
     source_dir.mkdir()
     (source_dir / "source.py").write_text(
