@@ -52,6 +52,7 @@ def test_find_missing_reqs(tmp_path: Path) -> None:
         paths=[source_dir],
         ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        use_gitignore=False,
     )
     expected_result = [
         (
@@ -97,6 +98,7 @@ def test_uninstalled_import_is_reported(
         paths=[source_dir],
         ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        use_gitignore=False,
     )
 
     assert not result.used
@@ -130,6 +132,7 @@ def test_uninstalled_import_of_requirement_is_not_reported(
         paths=[source_dir],
         ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        use_gitignore=False,
     )
 
     assert not result.used
@@ -641,6 +644,7 @@ def test_editable_requirement_is_missing(
         paths=[source_dir],
         ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        use_gitignore=False,
     )
 
     (name, uses) = next(iter(result.used))
@@ -675,6 +679,7 @@ def test_own_source_installed_as_editable_is_not_missing(
         paths=[editable_install.source_directory],
         ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        use_gitignore=False,
     )
 
     assert not result.used
@@ -708,6 +713,7 @@ def test_transitive_dependencies_are_reported(
         ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
         transitive=True,
+        use_gitignore=False,
     )
 
     assert not result.used
@@ -738,6 +744,7 @@ def test_transitive_dependencies_are_not_checked_by_default(
         paths=[source_dir],
         ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        use_gitignore=False,
     )
 
     assert not result.used
@@ -774,6 +781,7 @@ def test_listed_transitive_dependencies_are_not_reported(
         ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
         transitive=True,
+        use_gitignore=False,
     )
 
     assert not result.used
@@ -806,6 +814,7 @@ def test_used_distribution_is_not_reported_as_transitive(
         ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
         transitive=True,
+        use_gitignore=False,
     )
 
     assert [name for name, _ in result.used] == [dependency_chain.top]
@@ -882,6 +891,7 @@ def test_import_installed_within_working_directory_is_missing(
         paths=[source_dir],
         ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        use_gitignore=False,
     )
 
     (name, uses) = next(iter(result.used))

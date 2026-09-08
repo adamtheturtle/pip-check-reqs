@@ -426,7 +426,7 @@ def _scan_directory(
 def pyfiles(
     root: Path,
     *,
-    use_gitignore: bool = False,
+    use_gitignore: bool,
 ) -> Generator[Path, None, None]:
     """Yield each Python source file within ``root``.
 
@@ -520,7 +520,7 @@ def log_level(*, debug: bool, verbose: bool) -> int:
 def source_module_names(
     *,
     paths: Iterable[Path],
-    use_gitignore: bool = False,
+    use_gitignore: bool,
 ) -> set[str]:
     """Return the top-level module names which the scanned source provides.
 
@@ -546,7 +546,7 @@ def find_imported_modules(
     paths: Iterable[Path],
     ignore_files_function: Callable[[Path], bool],
     ignore_modules_function: Callable[[str], bool],
-    use_gitignore: bool = False,
+    use_gitignore: bool,
 ) -> ImportedModules:
     # We take the names the source provides before scanning, as an ignored
     # file still gives a module which the source, and not an installed

@@ -44,7 +44,7 @@ def find_missing_reqs(
     additional_requirements_filenames: Iterable[Path] = (),
     *,
     transitive: bool = False,
-    use_gitignore: bool = False,
+    use_gitignore: bool,
 ) -> MissingRequirements:
     # 1. find files used by imports in the code (as best we can without
     #    executing)

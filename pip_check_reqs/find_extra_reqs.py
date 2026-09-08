@@ -24,7 +24,7 @@ def find_extra_reqs(
     ignore_modules_function: Callable[[str], bool],
     ignore_requirements_function: Callable[[str], bool],
     skip_incompatible: bool,
-    use_gitignore: bool = False,
+    use_gitignore: bool,
 ) -> list[str]:
     # 1. find files used by imports in the code (as best we can without
     #    executing)
