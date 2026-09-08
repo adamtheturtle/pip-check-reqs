@@ -121,6 +121,24 @@ def test_pyfiles_skips_virtual_environment(
     assert f"skipping virtual environment: {venv}" in caplog.text
 
 
+def test_pyfiles_does_not_follow_directory_symlink(tmp_path: Path) -> None:
+    """A symbolic link to a directory is not descended into.
+
+    A link back to a parent directory would otherwise be followed forever.
+    """
+    python_file = tmp_path / "example.py"
+    python_file.touch()
+    linked_directory = tmp_path / "linked"
+    linked_directory.mkdir()
+    (linked_directory / "spam.py").touch()
+    (linked_directory / "loop").symlink_to(target=tmp_path)
+
+    assert list(common.pyfiles(root=tmp_path)) == [
+        python_file,
+        linked_directory / "spam.py",
+    ]
+
+
 def test_pyfiles_root_is_virtual_environment(tmp_path: Path) -> None:
     """A virtual environment given directly as the source path is scanned.
 
