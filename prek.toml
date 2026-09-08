@@ -206,7 +206,7 @@ hooks = [
   {
     id = "snapper",
     name = "snapper",
-    entry = "uv run --group=dev snapper --max-width 0 --in-place",
+    entry = "uv run --group=snapper snapper --max-width 0 --in-place",
     language = "python",
     types_or = [
       "rst",
