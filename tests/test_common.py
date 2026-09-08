@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import platform
 import re
 import sys
@@ -146,6 +147,33 @@ def test_pyfiles_does_not_follow_directory_symlink(tmp_path: Path) -> None:
         python_file,
         linked_directory / "spam.py",
     ]
+
+
+def test_pyfiles_unreadable_directory(tmp_path: Path) -> None:
+    """A directory which cannot be read raises an error.
+
+    Skipping it silently would hide any missing requirement which only its
+    files import.
+    """
+    unreadable = tmp_path / "unreadable"
+    unreadable.mkdir()
+    (unreadable / "spam.py").touch()
+    unreadable.chmod(mode=0)
+    try:
+        # File mode bits do not restrict reading a directory on Windows, and
+        # the superuser can read a directory regardless of its mode.
+        # Coverage is measured on Windows too, so the lines only one of
+        # these platforms runs are excluded from it.
+        if os.access(unreadable, os.R_OK):
+            pytest.skip(  # pragma: no cover
+                reason="This user can read a directory with mode 0",
+            )
+        with pytest.raises(  # pragma: no cover
+            expected_exception=PermissionError,
+        ):
+            list(common.pyfiles(root=tmp_path, use_gitignore=False))
+    finally:
+        unreadable.chmod(mode=0o755)
 
 
 def test_pyfiles_root_is_virtual_environment(tmp_path: Path) -> None:

@@ -213,6 +213,43 @@ for example with the `setuptools` build backend:
    dependencies = { file = "requirements.txt" }
 
 
+Comparison with deptry
+----------------------
+
+`deptry`_ is another tool which finds missing and unused dependencies.
+It overlaps with ``pip-check-reqs``, and differs in ways which may decide
+which one suits a project.
+
+- ``deptry`` reads dependencies from ``pyproject.toml`` directly, whether
+  they follow PEP 621 or the Poetry or PDM format, as well as from
+  requirements files. ``pip-check-reqs`` reads requirements files only, so a
+  project which declares its dependencies in ``pyproject.toml`` must first
+  export them to a requirements file.
+- ``deptry`` runs more checks. As well as missing and unused dependencies,
+  it reports an import of a development dependency from non-development
+  code, an import of a standard library module which is listed as a
+  dependency, and an import of a transitive dependency which is not declared.
+  ``pip-check-reqs`` reports missing and extra requirements, and can check
+  that a file lists every transitive dependency with ``--transitive``.
+- ``deptry`` guesses the module name of a dependency which is not installed
+  by translating the distribution name, so it can run against an incomplete
+  environment at the cost of some accuracy. ``pip-check-reqs`` reads the
+  installed distribution only, and warns about each import or requirement it
+  cannot find.
+- ``deptry`` is configured in ``pyproject.toml`` and supports inline
+  ``# deptry: ignore`` comments. ``pip-check-reqs`` is configured on the
+  command line only.
+- ``deptry`` has a core written in Rust and is faster on a large codebase.
+  ``pip-check-reqs`` uses internals of ``pip`` which may change between
+  ``pip`` releases.
+
+For a new project, ``deptry`` is likely the better choice. ``pip-check-reqs``
+remains a good fit for a project which manages its dependencies with
+requirements files, or which needs the ``--transitive`` check.
+
+.. _`deptry`: https://github.com/fpgmaas/deptry
+
+
 With Thanks To
 --------------
 

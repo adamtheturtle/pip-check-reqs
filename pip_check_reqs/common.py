@@ -455,41 +455,62 @@ def pyfiles(
             raise ValueError(msg)
         return
 
-    # The ``.gitignore`` files which apply within each directory we walk.
-    # ``os.walk`` visits a directory before the directories within it, so
-    # the files which apply to a directory are those of its parent plus its
-    # own.
-    gitignores_by_directory: dict[Path, list[_GitIgnore]] = {}
+    gitignores: list[_GitIgnore] = []
     if use_gitignore:
-        gitignores_by_directory[root.parent] = _ancestor_gitignores(root=root)
+        gitignores = _ancestor_gitignores(root=root)
+    yield from _pyfiles_in_directory(
+        directory=root,
+        parent_gitignores=gitignores,
+        use_gitignore=use_gitignore,
+    )
 
-    for dirpath, dirnames, filenames in os.walk(root):
-        directory = Path(dirpath)
-        gitignores: list[_GitIgnore] = []
-        if use_gitignore:
-            gitignores = _directory_gitignores(
-                directory=directory,
-                parent_gitignores=gitignores_by_directory[directory.parent],
-            )
-            gitignores_by_directory[directory] = gitignores
 
-        # Assigning in place prunes the directories ``os.walk`` descends
-        # into.
-        dirnames[:] = [
-            dirname
-            for dirname in sorted(dirnames)
-            if _scan_directory(
-                directory=directory / dirname,
-                gitignores=gitignores,
-            )
-        ]
-        for filename in sorted(filenames):
-            if filename.endswith(".py") and not _is_gitignored(
-                path=directory / filename,
+def _pyfiles_in_directory(
+    *,
+    directory: Path,
+    parent_gitignores: Sequence[_GitIgnore],
+    use_gitignore: bool,
+) -> Generator[Path, None, None]:
+    """Yield each Python source file within a directory, recursively.
+
+    The files directly within the directory come before those within the
+    directories beneath it, and each group is in name order, so the output
+    is stable across file systems which list entries differently.
+
+    ``parent_gitignores`` holds the ``.gitignore`` files which apply within
+    the parent directory. With ``use_gitignore``, the file in ``directory``
+    itself is added to them, and what they ignore is skipped.
+    """
+    gitignores = list(parent_gitignores)
+    if use_gitignore:
+        gitignores = _directory_gitignores(
+            directory=directory,
+            parent_gitignores=parent_gitignores,
+        )
+    entries = sorted(directory.iterdir())
+    for entry in entries:
+        if (
+            entry.is_file()
+            and entry.name.endswith(".py")
+            and not _is_gitignored(
+                path=entry,
                 is_directory=False,
                 gitignores=gitignores,
-            ):
-                yield directory / filename
+            )
+        ):
+            yield entry
+    for entry in entries:
+        # A symbolic link to a directory is not descended into, as a link
+        # back to a parent directory would be followed forever.
+        if not entry.is_dir() or entry.is_symlink():
+            continue
+        if not _scan_directory(directory=entry, gitignores=gitignores):
+            continue
+        yield from _pyfiles_in_directory(
+            directory=entry,
+            parent_gitignores=gitignores,
+            use_gitignore=use_gitignore,
+        )
 
 
 def validate_requirements_file(*, path: Path) -> None:
