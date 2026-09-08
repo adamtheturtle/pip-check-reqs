@@ -50,7 +50,7 @@ def test_find_missing_reqs(tmp_path: Path) -> None:
     result = find_missing_reqs.find_missing_reqs(
         requirements_filename=fake_requirements_file,
         paths=[source_dir],
-        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
     expected_result = [
@@ -95,7 +95,7 @@ def test_uninstalled_import_is_reported(
     result = find_missing_reqs.find_missing_reqs(
         requirements_filename=fake_requirements_file,
         paths=[source_dir],
-        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
 
@@ -128,7 +128,7 @@ def test_uninstalled_import_of_requirement_is_not_reported(
     result = find_missing_reqs.find_missing_reqs(
         requirements_filename=fake_requirements_file,
         paths=[source_dir],
-        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
 
@@ -581,7 +581,7 @@ def test_editable_requirement_is_missing(
     result = find_missing_reqs.find_missing_reqs(
         requirements_filename=fake_requirements_file,
         paths=[source_dir],
-        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
 
@@ -615,7 +615,7 @@ def test_own_source_installed_as_editable_is_not_missing(
     result = find_missing_reqs.find_missing_reqs(
         requirements_filename=fake_requirements_file,
         paths=[editable_install.source_directory],
-        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
 
@@ -647,7 +647,7 @@ def test_transitive_dependencies_are_reported(
     result = find_missing_reqs.find_missing_reqs(
         requirements_filename=fake_requirements_file,
         paths=[source_dir],
-        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
         transitive=True,
     )
@@ -678,7 +678,7 @@ def test_transitive_dependencies_are_not_checked_by_default(
     result = find_missing_reqs.find_missing_reqs(
         requirements_filename=fake_requirements_file,
         paths=[source_dir],
-        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
 
@@ -713,7 +713,7 @@ def test_listed_transitive_dependencies_are_not_reported(
     result = find_missing_reqs.find_missing_reqs(
         requirements_filename=fake_requirements_file,
         paths=[source_dir],
-        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
         transitive=True,
     )
@@ -745,7 +745,7 @@ def test_used_distribution_is_not_reported_as_transitive(
     result = find_missing_reqs.find_missing_reqs(
         requirements_filename=fake_requirements_file,
         paths=[source_dir],
-        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
         transitive=True,
     )

@@ -20,7 +20,7 @@ def find_extra_reqs(
     *,
     requirements_filename: Path,
     paths: Iterable[Path],
-    ignore_files_function: Callable[[str], bool],
+    ignore_files_function: Callable[[Path], bool],
     ignore_modules_function: Callable[[str], bool],
     ignore_requirements_function: Callable[[str], bool],
     skip_incompatible: bool,
@@ -145,7 +145,9 @@ def main(arguments: list[str] | None = None) -> None:
     if not parse_result.paths:
         parser.error("no source files or directories specified")
 
-    ignore_files = common.ignorer(ignore_cfg=parse_result.ignore_files)
+    ignore_files = common.file_ignorer(
+        ignore_cfg=parse_result.ignore_files,
+    )
     ignore_mods = common.ignorer(ignore_cfg=parse_result.ignore_mods)
     ignore_reqs = common.ignorer(ignore_cfg=parse_result.ignore_reqs)
 

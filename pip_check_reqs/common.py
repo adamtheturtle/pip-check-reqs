@@ -395,7 +395,7 @@ def source_module_names(*, paths: Iterable[Path]) -> set[str]:
 def find_imported_modules(
     *,
     paths: Iterable[Path],
-    ignore_files_function: Callable[[str], bool],
+    ignore_files_function: Callable[[Path], bool],
     ignore_modules_function: Callable[[str], bool],
 ) -> ImportedModules:
     # We take the names the source provides before scanning, as an ignored
@@ -405,7 +405,7 @@ def find_imported_modules(
     vis = _ImportVisitor(ignore_modules_function=ignore_modules_function)
     for path in paths:
         for filename in pyfiles(path):
-            if ignore_files_function(str(filename)):
+            if ignore_files_function(filename):
                 log.info("ignoring: %s", filename)
                 continue
             log.debug("scanning: %s", filename)
@@ -803,42 +803,57 @@ def package_path(*, path: Path) -> Path | None:
     return path.parent
 
 
-def _null_ignorer(_: str) -> bool:
+def _null_ignorer(_: object) -> bool:
     return False
 
 
 def ignorer(*, ignore_cfg: list[str]) -> Callable[[str], bool]:
+    """Return a function which tells whether a name matches an ignore glob.
+
+    The name is a module or distribution name.
+    """
     if not ignore_cfg:
         return _null_ignorer
 
-    def ignorer_function(
-        candidate_path: str,
-        ignore_cfg: list[str] = ignore_cfg,
-    ) -> bool:
-        working_directory = Path.cwd()
-        for ignore in ignore_cfg:
-            if fnmatch.fnmatch(candidate_path, ignore):
-                return True
+    def ignorer_function(candidate: str) -> bool:
+        return any(fnmatch.fnmatch(candidate, ignore) for ignore in ignore_cfg)
 
-            # Files are given as absolute paths, while an ignore glob is
-            # usually written relative to the working directory, so we match
-            # against the relative path as well.
-            # A path may contain ``..``, for example when the source to scan
-            # was given as ``scripts/../src``, so we normalize it before
-            # comparing.
-            # We use ``Path`` rather than ``os.path.relpath``, which raises
-            # ``ValueError`` on Windows for a path on a different drive to the
-            # working directory.
-            absolute_candidate = Path(
-                os.path.normpath(working_directory / candidate_path),
+    return ignorer_function
+
+
+def file_ignorer(*, ignore_cfg: list[str]) -> Callable[[Path], bool]:
+    """Return a function which tells whether a file matches an ignore glob.
+
+    A glob is matched against the path as given, and against the path
+    relative to the working directory.
+    """
+    if not ignore_cfg:
+        return _null_ignorer
+
+    def ignorer_function(candidate_path: Path) -> bool:
+        working_directory = Path.cwd()
+        # Files are given as absolute paths, while an ignore glob is usually
+        # written relative to the working directory, so we match against the
+        # relative path as well.
+        # A path may contain ``..``, for example when the source to scan was
+        # given as ``scripts/../src``, so we normalize it before comparing.
+        # We use ``Path`` rather than ``os.path.relpath``, which raises
+        # ``ValueError`` on Windows for a path on a different drive to the
+        # working directory.
+        absolute_candidate = Path(
+            os.path.normpath(working_directory / candidate_path),
+        )
+        candidates = [str(candidate_path)]
+        if absolute_candidate.is_relative_to(working_directory):
+            relative_candidate = absolute_candidate.relative_to(
+                working_directory,
             )
-            if absolute_candidate.is_relative_to(working_directory):
-                relative_candidate = absolute_candidate.relative_to(
-                    working_directory,
-                )
-                if fnmatch.fnmatch(str(relative_candidate), ignore):
-                    return True
-        return False
+            candidates.append(str(relative_candidate))
+        return any(
+            fnmatch.fnmatch(candidate, ignore)
+            for candidate in candidates
+            for ignore in ignore_cfg
+        )
 
     return ignorer_function
 
