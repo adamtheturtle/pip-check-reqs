@@ -104,8 +104,6 @@ lint.unfixable = [
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
 "MESSAGES CONTROL".disable = [
-  # We will remove this in issue 97
-  "deprecated-module",
   # Too difficult to please
   "duplicate-code",
   # Let ruff handle long lines
