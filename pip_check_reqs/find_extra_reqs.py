@@ -44,7 +44,7 @@ def find_extra_reqs(
     explicit = common.find_required_modules(
         ignore_requirements_function=ignore_requirements_function,
         skip_incompatible=skip_incompatible,
-        specs=common.requirements_file_specs(path=requirements_filename),
+        specs=common.requirement_specs(path=requirements_filename),
     )
 
     extras: list[str] = []
@@ -79,7 +79,10 @@ def main(arguments: list[str] | None = None) -> None:
         type=Path,
         metavar="PATH",
         default=Path("requirements.txt"),
-        help='path to the requirements file (defaults to "requirements.txt")',
+        help=(
+            "path to the requirements file, or to a pyproject.toml file "
+            '(defaults to "requirements.txt")'
+        ),
     )
     parser.add_argument(
         "-f",

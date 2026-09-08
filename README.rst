@@ -184,7 +184,14 @@ Using pyproject.toml instead of requirements.txt
 
 If your project uses ``pyproject.toml``, there are multiple ways to use ``pip-check-reqs`` with it.
 
-One way is to use an external tool to convert ``pyproject.toml`` to ``requirements.txt``::
+The simplest way is to give the ``pyproject.toml`` file as the requirements file.
+The ``dependencies`` list of its ``[project]`` table is then checked::
+
+    pip-missing-reqs --requirements-file pyproject.toml src
+    pip-extra-reqs --requirements-file pyproject.toml src
+
+Optional dependencies and other tables are not read.
+For those, one way is to use an external tool to convert ``pyproject.toml`` to ``requirements.txt``::
 
     # requires `pip install pdm`
     pdm export --pyproject > requirements.txt

@@ -68,7 +68,7 @@ def find_missing_reqs(
         explicit |= common.find_required_modules(
             ignore_requirements_function=common.ignorer(ignore_cfg=[]),
             skip_incompatible=False,
-            specs=common.requirements_file_specs(path=filename),
+            specs=common.requirement_specs(path=filename),
         )
 
     _report_uninstalled_imports(
@@ -153,7 +153,8 @@ def main(arguments: list[str] | None = None) -> None:
         type=Path,
         action="append",
         help=(
-            "path to a requirements file; may be repeated "
+            "path to a requirements file, or to a pyproject.toml file; "
+            "may be repeated "
             '(defaults to "requirements.txt")'
         ),
     )

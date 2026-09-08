@@ -4,6 +4,10 @@ Release History
 
 3.1.0
 
+- Both commands accept a ``pyproject.toml`` file as ``--requirements-file``.
+  The ``dependencies`` list of its ``[project]`` table is then checked in
+  place of a requirements file, so a project which declares its dependencies
+  there no longer needs to export them to a requirements file first.
 - Both commands gain a ``--use-gitignore`` option. Files and directories which
   a ``.gitignore`` file ignores are then skipped, as they are by Git. Each
   ``.gitignore`` file from the repository root down applies.
