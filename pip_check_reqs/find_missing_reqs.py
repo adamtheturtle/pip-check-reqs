@@ -66,7 +66,7 @@ def find_missing_reqs(
         explicit |= common.find_required_modules(
             ignore_requirements_function=common.ignorer(ignore_cfg=[]),
             skip_incompatible=False,
-            requirements_filename=filename,
+            specs=common.requirements_file_specs(path=filename),
         )
 
     _report_uninstalled_imports(
