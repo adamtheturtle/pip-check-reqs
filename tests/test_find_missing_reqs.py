@@ -229,6 +229,39 @@ def test_main_multiple_requirements_files(
     assert not caplog.records
 
 
+def test_main_pyproject_requirements_file(
+    *,
+    caplog: pytest.LogCaptureFixture,
+    tmp_path: Path,
+) -> None:
+    """A ``pyproject.toml`` file given as the requirements file is read."""
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text(
+        data='[project]\nname = "spam"\ndependencies = ["pip"]\n',
+    )
+
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    (source_dir / "source.py").write_text("import pip\nimport pytest\n")
+
+    caplog.set_level(logging.WARNING)
+
+    with pytest.raises(SystemExit) as excinfo:
+        find_missing_reqs.main(
+            arguments=[
+                "--requirements-file",
+                str(pyproject),
+                str(source_dir),
+            ],
+        )
+
+    assert excinfo.value.code == 1
+    assert [record.message for record in caplog.records] == [
+        "Missing requirements:",
+        f"{source_dir / 'source.py'}:2 dist=pytest module=pytest",
+    ]
+
+
 def test_main_failure(
     *,
     caplog: pytest.LogCaptureFixture,

@@ -997,6 +997,17 @@ def pyproject_specs(*, path: Path) -> Iterator[RequirementSpec]:
         )
 
 
+def requirement_specs(*, path: Path) -> Iterator[RequirementSpec]:
+    """Yield each requirement a file declares.
+
+    A file named ``pyproject.toml`` is read as a project file, and any other
+    file as a requirements file.
+    """
+    if path.name == "pyproject.toml":
+        return pyproject_specs(path=path)
+    return requirements_file_specs(path=path)
+
+
 def find_required_modules(
     *,
     ignore_requirements_function: Callable[[str], bool],

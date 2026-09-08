@@ -136,6 +136,39 @@ def test_main_failure(
     assert caplog.records[1].message == expected_message
 
 
+def test_main_pyproject_requirements_file(
+    *,
+    caplog: pytest.LogCaptureFixture,
+    tmp_path: Path,
+) -> None:
+    """A ``pyproject.toml`` file given as the requirements file is read."""
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text(
+        data='[project]\nname = "spam"\ndependencies = ["pip", "pytest"]\n',
+    )
+
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    (source_dir / "source.py").write_text("import pip\n")
+
+    caplog.set_level(logging.WARNING)
+
+    with pytest.raises(SystemExit) as excinfo:
+        find_extra_reqs.main(
+            arguments=[
+                "--requirements-file",
+                str(pyproject),
+                str(source_dir),
+            ],
+        )
+
+    assert excinfo.value.code == 1
+    assert [record.message for record in caplog.records] == [
+        "Extra requirements:",
+        f"pytest in {pyproject}",
+    ]
+
+
 def test_main_ignore_requirement(
     *,
     caplog: pytest.LogCaptureFixture,

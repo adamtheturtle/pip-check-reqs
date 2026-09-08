@@ -1239,6 +1239,28 @@ def test_pyproject_specs_invalid_requirement(tmp_path: Path) -> None:
         list(common.pyproject_specs(path=pyproject))
 
 
+def test_requirement_specs_pyproject(tmp_path: Path) -> None:
+    """A file named ``pyproject.toml`` is read as a project file."""
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text(
+        data='[project]\nname = "spam"\ndependencies = ["foobar==1"]\n',
+    )
+
+    specs = list(common.requirement_specs(path=pyproject))
+
+    assert [spec.name for spec in specs] == ["foobar"]
+
+
+def test_requirement_specs_requirements_file(tmp_path: Path) -> None:
+    """Any other file is read as a requirements file."""
+    requirements_file = tmp_path / "requirements.txt"
+    requirements_file.write_text(data="foobar==1\n")
+
+    specs = list(common.requirement_specs(path=requirements_file))
+
+    assert [spec.name for spec in specs] == ["foobar"]
+
+
 def _editable_line(directory: Path) -> str:
     """Return an ``-e`` requirement line for a directory.
 
