@@ -170,7 +170,7 @@ def test_find_imported_modules_simple(
 
     result = common.find_imported_modules(
         paths=[tmp_path],
-        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     ).found
 
@@ -209,7 +209,7 @@ def test_find_imported_modules_frozen(
 
     result = common.find_imported_modules(
         paths=[tmp_path],
-        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     ).found
 
@@ -229,7 +229,7 @@ def test_find_imported_modules_built_in(
 
     result = common.find_imported_modules(
         paths=[tmp_path],
-        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     ).found
 
@@ -259,7 +259,7 @@ def test_find_imported_modules_main(
 
     result = common.find_imported_modules(
         paths=[tmp_path],
-        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     ).found
 
@@ -287,7 +287,7 @@ def test_find_imported_modules_no_spec(tmp_path: Path) -> None:
     try:
         result = common.find_imported_modules(
             paths=[tmp_path],
-            ignore_files_function=common.ignorer(ignore_cfg=[]),
+            ignore_files_function=common.file_ignorer(ignore_cfg=[]),
             ignore_modules_function=common.ignorer(ignore_cfg=[]),
         ).found
     finally:
@@ -315,7 +315,7 @@ def test_find_imported_modules_syntax_error(tmp_path: Path) -> None:
     ):
         common.find_imported_modules(
             paths=[tmp_path],
-            ignore_files_function=common.ignorer(ignore_cfg=[]),
+            ignore_files_function=common.file_ignorer(ignore_cfg=[]),
             ignore_modules_function=common.ignorer(ignore_cfg=[]),
         )
 
@@ -334,7 +334,7 @@ def test_find_imported_modules_period(tmp_path: Path) -> None:
 
     result = common.find_imported_modules(
         paths=[tmp_path],
-        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     ).found
 
@@ -361,7 +361,7 @@ def test_find_imported_modules_missing_from_submodule(
 
     result = common.find_imported_modules(
         paths=[source_dir],
-        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     ).found
 
@@ -422,8 +422,8 @@ def test_find_imported_modules_advanced(
 
     caplog.set_level(logging.INFO)
 
-    def ignore_files(path: str) -> bool:
-        return bool(Path(path).name == "ham.py" and ignore_ham)
+    def ignore_files(path: Path) -> bool:
+        return bool(path.name == "ham.py" and ignore_ham)
 
     def ignore_mods(module: str) -> bool:
         return bool(module == "hashlib" and ignore_hashlib)
@@ -463,7 +463,7 @@ def test_find_imported_modules_uninstalled(tmp_path: Path) -> None:
 
     result = common.find_imported_modules(
         paths=[source_dir],
-        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
 
@@ -502,7 +502,7 @@ def test_find_imported_modules_uninstalled_ignored(
 
     result = common.find_imported_modules(
         paths=[source_dir],
-        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(
             ignore_cfg=[ignore_glob.format(name=name)],
         ),
@@ -528,7 +528,7 @@ def test_find_imported_modules_uninstalled_no_spec(tmp_path: Path) -> None:
     try:
         result = common.find_imported_modules(
             paths=[source_dir],
-            ignore_files_function=common.ignorer(ignore_cfg=[]),
+            ignore_files_function=common.file_ignorer(ignore_cfg=[]),
             ignore_modules_function=common.ignorer(ignore_cfg=[]),
         )
     finally:
@@ -556,7 +556,7 @@ def test_find_imported_modules_uninstalled_submodule(tmp_path: Path) -> None:
 
     result = common.find_imported_modules(
         paths=[source_dir],
-        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
 
@@ -608,7 +608,7 @@ def test_find_imported_modules_uninstalled_optional(
 
     result = common.find_imported_modules(
         paths=[source_dir],
-        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
 
@@ -686,7 +686,7 @@ def test_find_imported_modules_uninstalled_not_optional(
 
     result = common.find_imported_modules(
         paths=[source_dir],
-        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
 
@@ -714,7 +714,7 @@ def test_find_imported_modules_optional_installed(tmp_path: Path) -> None:
 
     result = common.find_imported_modules(
         paths=[source_dir],
-        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
 
@@ -752,7 +752,9 @@ def test_find_imported_modules_source_module(
 
     result = common.find_imported_modules(
         paths=[source_dir],
-        ignore_files_function=common.ignorer(ignore_cfg=["*ignored.py"]),
+        ignore_files_function=common.file_ignorer(
+            ignore_cfg=["*ignored.py"],
+        ),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
 
@@ -780,11 +782,6 @@ def test_source_module_names_file(tmp_path: Path) -> None:
         (["spam*"], "spam", True),
         (["spam*"], "spam.ham", True),
         (["spam*"], "eggs", False),
-        (["spam"], str(Path.cwd() / "spam"), True),
-        (["eggs"], str(Path.cwd() / "spam"), False),
-        (["spam"], str(Path.cwd() / "eggs" / ".." / "spam"), True),
-        (["spam"], str(Path("eggs") / ".." / "spam"), True),
-        (["spam"], str(Path.cwd().parent / "spam"), False),
     ],
 )
 def test_ignorer(
@@ -794,6 +791,30 @@ def test_ignorer(
     result: bool,
 ) -> None:
     ignorer = common.ignorer(ignore_cfg=ignore_cfg)
+    assert ignorer(candidate) == result
+
+
+@pytest.mark.parametrize(
+    ("ignore_cfg", "candidate", "result"),
+    [
+        ([], Path("spam"), False),
+        (["spam"], Path("spam"), True),
+        (["spam"], Path("eggs"), False),
+        (["spam*"], Path("spam.py"), True),
+        (["spam"], Path.cwd() / "spam", True),
+        (["eggs"], Path.cwd() / "spam", False),
+        (["spam"], Path.cwd() / "eggs" / ".." / "spam", True),
+        (["spam"], Path("eggs") / ".." / "spam", True),
+        (["spam"], Path.cwd().parent / "spam", False),
+    ],
+)
+def test_file_ignorer(
+    *,
+    ignore_cfg: list[str],
+    candidate: Path,
+    result: bool,
+) -> None:
+    ignorer = common.file_ignorer(ignore_cfg=ignore_cfg)
     assert ignorer(candidate) == result
 
 
@@ -809,9 +830,9 @@ def test_ignorer_other_drive() -> None:  # pragma: no cover
     """
     working_directory_drive = Path.cwd().drive
     other_drive = "Y:" if working_directory_drive.upper() == "Z:" else "Z:"
-    ignorer = common.ignorer(ignore_cfg=["eggs"])
+    ignorer = common.file_ignorer(ignore_cfg=["eggs"])
 
-    assert not ignorer(rf"{other_drive}\eggs\spam.py")
+    assert not ignorer(Path(rf"{other_drive}\eggs\spam.py"))
 
 
 def test_find_required_modules(tmp_path: Path) -> None:

@@ -39,7 +39,7 @@ class MissingRequirements:
 def find_missing_reqs(
     requirements_filename: Path,
     paths: Iterable[Path],
-    ignore_files_function: Callable[[str], bool],
+    ignore_files_function: Callable[[Path], bool],
     ignore_modules_function: Callable[[str], bool],
     additional_requirements_filenames: Iterable[Path] = (),
     *,
@@ -219,7 +219,9 @@ def main(arguments: list[str] | None = None) -> None:
     requirements_filenames = parse_result.requirements_filenames or [
         Path("requirements.txt"),
     ]
-    ignore_files = common.ignorer(ignore_cfg=parse_result.ignore_files)
+    ignore_files = common.file_ignorer(
+        ignore_cfg=parse_result.ignore_files,
+    )
     ignore_mods = common.ignorer(ignore_cfg=parse_result.ignore_mods)
 
     logging.basicConfig(format="%(message)s")
