@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from pip_check_reqs import common
+from pip_check_reqs import common, requirements
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
@@ -41,10 +41,10 @@ def find_extra_reqs(
     used = common.used_packages(used_modules=used_modules, paths=paths)
 
     # 4. compare with requirements
-    explicit = common.find_required_modules(
+    explicit = requirements.find_required_modules(
         ignore_requirements_function=ignore_requirements_function,
         skip_incompatible=skip_incompatible,
-        specs=common.requirement_specs(path=requirements_filename),
+        specs=requirements.requirement_specs(path=requirements_filename),
     )
 
     extras: list[str] = []
@@ -171,12 +171,13 @@ def main(arguments: list[str] | None = None) -> None:
     )
     log.setLevel(level)
     common.log.setLevel(level)
+    requirements.log.setLevel(level)
 
     log.info(common.version_info())
     common.report_wrong_environment(stream=sys.stderr)
 
     try:
-        common.validate_requirements_file(
+        requirements.validate_requirements_file(
             path=parse_result.requirements_filename,
         )
         extras = find_extra_reqs(
