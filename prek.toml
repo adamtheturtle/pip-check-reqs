@@ -204,6 +204,19 @@ hooks = [
     stages = ["pre-commit"]
   },
   {
+    id = "snapper",
+    name = "snapper",
+    entry = "uv run --group=dev snapper --max-width 0 --in-place",
+    language = "python",
+    types_or = [
+      "rst",
+      "markdown"
+    ],
+    require_serial = true,
+    additional_dependencies = ["uv==0.12.10"],
+    stages = ["pre-commit"]
+  },
+  {
     id = "vale",
     name = "vale",
     entry = "uv run --extra=dev vale",

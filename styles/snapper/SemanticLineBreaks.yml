@@ -1,0 +1,11 @@
+---
+# Vale style rule: flag lines containing multiple sentences.
+# These should be broken at sentence boundaries.
+extends: existence
+message: Line contains multiple sentences. Run 'snapper --check' or reformat with
+  'snapper --in-place'.
+level: warning
+scope: paragraph
+# Match a sentence-ending punctuation followed by a space and a capital letter
+# on the same line (indicating two sentences on one line).
+tokens: ['[.!?]\\s+[A-Z]']

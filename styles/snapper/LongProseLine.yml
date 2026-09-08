@@ -1,0 +1,11 @@
+---
+# Vale style rule: flag prose lines that are suspiciously long.
+# Likely indicates wrapped text that should use semantic line breaks.
+extends: existence
+message: Prose line exceeds 120 characters. Consider running 'snapper' to break at
+  sentence boundaries.
+level: suggestion
+scope: paragraph
+# This catches lines > 120 chars that contain a period followed by a space.
+# Pure code or URLs are less likely to match.
+tokens: ['.{120,}']
