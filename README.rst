@@ -115,6 +115,16 @@ A virtual environment within the checked directory is skipped automatically.
 A directory is treated as a virtual environment when it contains a
 ``pyvenv.cfg`` file, which ``venv``, ``virtualenv`` and ``uv`` all create.
 
+Files which Git ignores can be skipped too, with `--use-gitignore` (shorthand
+is `-g`)::
+
+    pip-missing-reqs --use-gitignore sample
+    pip-extra-reqs --use-gitignore sample
+
+Each ``.gitignore`` file from the repository root down to the checked
+directory applies, as it does in Git. A file or directory which one ignores
+is not scanned. A file given directly on the command line is always scanned.
+
 
 Excluding modules from the check
 --------------------------------

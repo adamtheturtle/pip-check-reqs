@@ -210,6 +210,59 @@ def test_main_ignore_requirement_glob(
     assert not caplog.records
 
 
+def test_main_use_gitignore(
+    *,
+    caplog: pytest.LogCaptureFixture,
+    tmp_path: Path,
+) -> None:
+    """With ``--use-gitignore``, a file a ``.gitignore`` ignores is skipped.
+
+    A requirement which only an ignored file imports is then reported as
+    extra.
+    """
+    # We need to import something which is installed.
+    # We choose `pytest` because we know it is installed.
+    imported_package = pytest
+
+    requirements_file = tmp_path / "requirements.txt"
+    requirements_file.write_text(f"{imported_package.__name__}\n")
+
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    (source_dir / ".gitignore").write_text("ignored.py\n", encoding="utf-8")
+    (source_dir / "ignored.py").write_text(
+        f"import {imported_package.__name__}",
+    )
+
+    caplog.set_level(logging.WARNING)
+
+    find_extra_reqs.main(
+        arguments=[
+            "--requirements",
+            str(requirements_file),
+            str(source_dir),
+        ],
+    )
+
+    assert caplog.records == []
+
+    with pytest.raises(SystemExit) as excinfo:
+        find_extra_reqs.main(
+            arguments=[
+                "--requirements",
+                str(requirements_file),
+                "--use-gitignore",
+                str(source_dir),
+            ],
+        )
+
+    assert excinfo.value.code == 1
+    assert [record.message for record in caplog.records] == [
+        "Extra requirements:",
+        f"{imported_package.__name__} in {requirements_file}",
+    ]
+
+
 def test_main_no_spec(capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit) as excinfo:
         find_extra_reqs.main(arguments=[])

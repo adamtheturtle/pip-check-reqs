@@ -4,6 +4,9 @@ Release History
 
 3.1.0
 
+- Both commands gain a ``--use-gitignore`` option. Files and directories which
+  a ``.gitignore`` file ignores are then skipped, as they are by Git. Each
+  ``.gitignore`` file from the repository root down applies.
 - ``pip-missing-reqs`` gains a ``--transitive`` option. It also reports the
   dependencies of the distributions the source imports, followed recursively,
   which no requirements file lists. This checks a constraints file which must

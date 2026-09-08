@@ -262,6 +262,64 @@ def test_main_failure(
     )
 
 
+def test_main_use_gitignore(
+    *,
+    caplog: pytest.LogCaptureFixture,
+    tmp_path: Path,
+) -> None:
+    """With ``--use-gitignore``, a file a ``.gitignore`` ignores is skipped.
+
+    A module which only an ignored file provides is then not known to be
+    provided by the source, so an import of it is reported as uninstalled.
+    """
+    requirements_file = tmp_path / "requirements.txt"
+    requirements_file.touch()
+
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    (source_dir / ".gitignore").write_text("ignored.py\n", encoding="utf-8")
+    # We need to import something which is installed.
+    # We choose `pytest` because we know it is installed.
+    ignored_file = source_dir / "ignored.py"
+    ignored_file.write_text("import pytest")
+    source_file = source_dir / "source.py"
+    source_file.write_text("import ignored")
+
+    caplog.set_level(logging.WARNING)
+
+    with pytest.raises(SystemExit) as excinfo:
+        find_missing_reqs.main(
+            arguments=[
+                "--requirements",
+                str(requirements_file),
+                str(source_dir),
+            ],
+        )
+
+    assert excinfo.value.code == 1
+    assert [record.message for record in caplog.records] == [
+        "Missing requirements:",
+        f"{ignored_file}:1 dist=pytest module=pytest",
+    ]
+
+    caplog.clear()
+    find_missing_reqs.main(
+        arguments=[
+            "--requirements",
+            str(requirements_file),
+            "--use-gitignore",
+            str(source_dir),
+        ],
+    )
+
+    assert [record.message for record in caplog.records] == [
+        (
+            f"{source_file}:1 module=ignored is not installed, so we cannot "
+            "tell which requirement provides it"
+        ),
+    ]
+
+
 def test_main_no_spec(capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit) as excinfo:
         find_missing_reqs.main(arguments=[])

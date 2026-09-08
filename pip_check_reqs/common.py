@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING
 
 from packaging.requirements import Requirement
 from packaging.utils import NormalizedName, canonicalize_name
+from pathspec import GitIgnoreSpec
 from pip._internal.commands.show import (
     _PackageInfo,  # pyright: ignore[reportPrivateUsage]
     search_packages_info,
@@ -33,7 +34,13 @@ from . import __version__
 
 if TYPE_CHECKING:
     import argparse
-    from collections.abc import Callable, Generator, Iterable, Iterator
+    from collections.abc import (
+        Callable,
+        Generator,
+        Iterable,
+        Iterator,
+        Sequence,
+    )
     from typing import Any, NoReturn, TextIO
 
     from pip._internal.models.link import Link
@@ -305,12 +312,132 @@ def _is_virtual_environment(*, directory: Path) -> bool:
     return (directory / "pyvenv.cfg").is_file()
 
 
-def pyfiles(root: Path) -> Generator[Path, None, None]:
+@dataclass(frozen=True)
+class _GitIgnore:
+    """The patterns of one ``.gitignore`` file."""
+
+    directory: Path
+    """The directory holding the file, which its patterns are relative to."""
+
+    spec: GitIgnoreSpec
+
+
+def _read_gitignore(*, directory: Path) -> _GitIgnore | None:
+    """Return the ``.gitignore`` file in ``directory``, if there is one."""
+    gitignore_file = directory / ".gitignore"
+    if not gitignore_file.is_file():
+        return None
+    with gitignore_file.open(encoding="utf-8") as gitignore_lines:
+        spec = GitIgnoreSpec.from_lines(gitignore_lines)
+    return _GitIgnore(directory=directory, spec=spec)
+
+
+def _ancestor_gitignores(*, root: Path) -> list[_GitIgnore]:
+    """Return the ``.gitignore`` files above ``root`` within its repository.
+
+    The source to scan is often a directory within the repository, such as
+    ``src``, while the ``.gitignore`` file is at the repository root. Git
+    applies that file to every directory below it, so we do too. A
+    ``.gitignore`` file above the repository, or anywhere when ``root`` is
+    not within a repository, has no effect in Git, so we read no further
+    than the directory holding ``.git``.
+
+    The files are given from the repository root down, as a pattern in a
+    deeper file takes precedence over one in a shallower file.
+    """
+    repository_directories: list[Path] = []
+    for directory in root.parents:
+        repository_directories.append(directory)
+        if (directory / ".git").exists():
+            break
+    else:
+        return []
+
+    gitignores: list[_GitIgnore] = []
+    for directory in reversed(repository_directories):
+        gitignore = _read_gitignore(directory=directory)
+        if gitignore is not None:
+            gitignores.append(gitignore)
+    return gitignores
+
+
+def _is_gitignored(
+    *,
+    path: Path,
+    is_directory: bool,
+    gitignores: Sequence[_GitIgnore],
+) -> bool:
+    """Return whether the ``.gitignore`` files which apply ignore ``path``.
+
+    ``gitignores`` holds the files which apply to ``path``, from the
+    shallowest to the deepest. The last pattern to match decides, so a
+    deeper file overrides a shallower one, as it does in Git.
+    """
+    ignored = False
+    for gitignore in gitignores:
+        relative_path = path.relative_to(gitignore.directory).as_posix()
+        # A pattern with a trailing slash matches only a directory, and a
+        # directory is told apart by a trailing slash on the path.
+        if is_directory:
+            relative_path += "/"
+        result = gitignore.spec.check_file(relative_path)
+        if result.include is not None:
+            ignored = result.include
+    if ignored:
+        log.debug("skipping ignored by .gitignore: %s", path)
+    return ignored
+
+
+def _directory_gitignores(
+    *,
+    directory: Path,
+    parent_gitignores: Sequence[_GitIgnore],
+) -> list[_GitIgnore]:
+    """Return the ``.gitignore`` files which apply within ``directory``.
+
+    Those are the files which apply within the parent directory, plus the
+    file in ``directory`` itself, if there is one.
+    """
+    gitignores = list(parent_gitignores)
+    gitignore = _read_gitignore(directory=directory)
+    if gitignore is not None:
+        gitignores.append(gitignore)
+    return gitignores
+
+
+def _scan_directory(
+    *,
+    directory: Path,
+    gitignores: Sequence[_GitIgnore],
+) -> bool:
+    """Return whether to look for Python files within ``directory``."""
+    if _is_virtual_environment(directory=directory):
+        log.debug("skipping virtual environment: %s", directory)
+        return False
+    # Git does not look within an ignored directory, so no pattern can
+    # bring back anything in it, and we need not descend into it.
+    return not _is_gitignored(
+        path=directory,
+        is_directory=True,
+        gitignores=gitignores,
+    )
+
+
+def pyfiles(
+    root: Path,
+    *,
+    use_gitignore: bool = False,
+) -> Generator[Path, None, None]:
     """Yield each Python source file within ``root``.
 
     A virtual environment within ``root`` is skipped. Its files belong to
     the installed distributions rather than to the project, and scanning
     them reports every import the environment makes as a use.
+
+    With ``use_gitignore``, a file or directory which a ``.gitignore`` file
+    ignores is skipped as well. A ``.gitignore`` file in any directory of
+    the repository applies, from the repository root down to the directory
+    of the file. A file given directly as ``root`` is always scanned.
     """
     if not root.exists():
         msg = f"source path not found: {root}"
@@ -328,22 +455,40 @@ def pyfiles(root: Path) -> Generator[Path, None, None]:
             raise ValueError(msg)
         return
 
+    # The ``.gitignore`` files which apply within each directory we walk.
+    # ``os.walk`` visits a directory before the directories within it, so
+    # the files which apply to a directory are those of its parent plus its
+    # own.
+    gitignores_by_directory: dict[Path, list[_GitIgnore]] = {}
+    if use_gitignore:
+        gitignores_by_directory[root.parent] = _ancestor_gitignores(root=root)
+
     for dirpath, dirnames, filenames in os.walk(root):
         directory = Path(dirpath)
-        kept_dirnames: list[str] = []
-        for dirname in sorted(dirnames):
-            if _is_virtual_environment(directory=directory / dirname):
-                log.debug(
-                    "skipping virtual environment: %s",
-                    directory / dirname,
-                )
-                continue
-            kept_dirnames.append(dirname)
+        gitignores: list[_GitIgnore] = []
+        if use_gitignore:
+            gitignores = _directory_gitignores(
+                directory=directory,
+                parent_gitignores=gitignores_by_directory[directory.parent],
+            )
+            gitignores_by_directory[directory] = gitignores
+
         # Assigning in place prunes the directories ``os.walk`` descends
         # into.
-        dirnames[:] = kept_dirnames
+        dirnames[:] = [
+            dirname
+            for dirname in sorted(dirnames)
+            if _scan_directory(
+                directory=directory / dirname,
+                gitignores=gitignores,
+            )
+        ]
         for filename in sorted(filenames):
-            if filename.endswith(".py"):
+            if filename.endswith(".py") and not _is_gitignored(
+                path=directory / filename,
+                is_directory=False,
+                gitignores=gitignores,
+            ):
                 yield directory / filename
 
 
@@ -372,7 +517,11 @@ def log_level(*, debug: bool, verbose: bool) -> int:
     return logging.WARNING
 
 
-def source_module_names(*, paths: Iterable[Path]) -> set[str]:
+def source_module_names(
+    *,
+    paths: Iterable[Path],
+    use_gitignore: bool = False,
+) -> set[str]:
     """Return the top-level module names which the scanned source provides.
 
     A module of the source we scan is not expected to be installed, so we
@@ -383,7 +532,7 @@ def source_module_names(*, paths: Iterable[Path]) -> set[str]:
     names: set[str] = set()
     for path in paths:
         absolute_path = path.absolute()
-        for filename in pyfiles(path):
+        for filename in pyfiles(path, use_gitignore=use_gitignore):
             names.add(filename.stem)
             if absolute_path.is_dir():
                 relative_filename = filename.relative_to(absolute_path)
@@ -397,14 +546,18 @@ def find_imported_modules(
     paths: Iterable[Path],
     ignore_files_function: Callable[[Path], bool],
     ignore_modules_function: Callable[[str], bool],
+    use_gitignore: bool = False,
 ) -> ImportedModules:
     # We take the names the source provides before scanning, as an ignored
     # file still gives a module which the source, and not an installed
     # distribution, provides.
-    provided_names = source_module_names(paths=paths)
+    provided_names = source_module_names(
+        paths=paths,
+        use_gitignore=use_gitignore,
+    )
     vis = _ImportVisitor(ignore_modules_function=ignore_modules_function)
     for path in paths:
-        for filename in pyfiles(path):
+        for filename in pyfiles(path, use_gitignore=use_gitignore):
             if ignore_files_function(filename):
                 log.info("ignoring: %s", filename)
                 continue

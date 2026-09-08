@@ -160,6 +160,139 @@ def test_pyfiles_root_is_virtual_environment(tmp_path: Path) -> None:
     assert list(common.pyfiles(root=venv)) == [venv_python_file]
 
 
+def test_pyfiles_use_gitignore(
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """With ``use_gitignore``, what a ``.gitignore`` file ignores is skipped.
+
+    A pattern applies from the directory of its ``.gitignore`` file down,
+    a later pattern overrides an earlier one, and a ``.gitignore`` file in
+    a deeper directory overrides one above it. An ignored directory is not
+    looked within, so a deeper file cannot bring back anything in it.
+    Without ``use_gitignore``, a ``.gitignore`` file has no effect.
+    """
+    (tmp_path / ".gitignore").write_text(
+        textwrap.dedent(
+            """\
+            build/
+            generated_*.py
+            !generated_keep.py
+            """,
+        ),
+        encoding="utf-8",
+    )
+    kept = tmp_path / "kept.py"
+    kept.touch()
+    generated = tmp_path / "generated_spam.py"
+    generated.touch()
+    generated_keep = tmp_path / "generated_keep.py"
+    generated_keep.touch()
+
+    build = tmp_path / "build"
+    build.mkdir()
+    built = build / "built.py"
+    built.touch()
+    # Git ignores everything within an ignored directory, so a deeper file
+    # cannot bring anything in it back.
+    (build / ".gitignore").write_text("!built.py\n", encoding="utf-8")
+
+    # A pattern ending in a slash matches only a directory, so a file of
+    # the same name is kept.
+    build_file = tmp_path / "subdir" / "build"
+    build_file.parent.mkdir()
+    build_file.touch()
+    nested_generated = tmp_path / "subdir" / "generated_eggs.py"
+    nested_generated.touch()
+    # A deeper file overrides a shallower one.
+    (tmp_path / "subdir" / ".gitignore").write_text(
+        "!generated_eggs.py\n",
+        encoding="utf-8",
+    )
+
+    assert list(common.pyfiles(root=tmp_path)) == [
+        generated_keep,
+        generated,
+        kept,
+        built,
+        nested_generated,
+    ]
+
+    with caplog.at_level(level=logging.DEBUG):
+        found = list(common.pyfiles(root=tmp_path, use_gitignore=True))
+
+    assert found == [generated_keep, kept, nested_generated]
+    assert f"skipping ignored by .gitignore: {build}" in caplog.text
+    assert f"skipping ignored by .gitignore: {generated}" in caplog.text
+
+
+def test_pyfiles_use_gitignore_above_root(tmp_path: Path) -> None:
+    """A ``.gitignore`` file above the scanned directory applies.
+
+    The source to scan is often a directory within the repository, such as
+    a package under ``src``, while the ``.gitignore`` file is at the
+    repository root. A pattern anchored to the repository root is matched
+    from there, and a directory in between need not have a ``.gitignore``
+    file of its own. A ``.gitignore`` file above the repository has no
+    effect.
+    """
+    (tmp_path / ".gitignore").write_text("outside.py\n", encoding="utf-8")
+    repository = tmp_path / "repository"
+    (repository / ".git").mkdir(parents=True)
+    (repository / ".gitignore").write_text(
+        textwrap.dedent(
+            """\
+            /src/anchored.py
+            unanchored.py
+            """,
+        ),
+        encoding="utf-8",
+    )
+    source = repository / "src" / "package"
+    source.mkdir(parents=True)
+    outside = source / "outside.py"
+    outside.touch()
+    # The anchored pattern names a file directly under ``src``, not one in
+    # a directory below it.
+    anchored = source / "anchored.py"
+    anchored.touch()
+    (source / "unanchored.py").touch()
+
+    assert list(common.pyfiles(root=source, use_gitignore=True)) == [
+        anchored,
+        outside,
+    ]
+
+
+def test_pyfiles_use_gitignore_outside_repository(tmp_path: Path) -> None:
+    """Outside a repository, only ``.gitignore`` files within the root apply.
+
+    Git reads no ``.gitignore`` file outside a repository, so one above the
+    scanned directory has no effect when no ``.git`` is found above it.
+    """
+    (tmp_path / ".gitignore").write_text("above.py\n", encoding="utf-8")
+    source = tmp_path / "source"
+    source.mkdir()
+    (source / ".gitignore").write_text("within.py\n", encoding="utf-8")
+    above = source / "above.py"
+    above.touch()
+    (source / "within.py").touch()
+
+    assert list(common.pyfiles(root=source, use_gitignore=True)) == [above]
+
+
+def test_pyfiles_use_gitignore_root_file(tmp_path: Path) -> None:
+    """A file given directly as the source path is scanned even if ignored.
+
+    The user has named the file, so it is what they want checked.
+    """
+    (tmp_path / ".gitignore").write_text("ignored.py\n", encoding="utf-8")
+    ignored = tmp_path / "ignored.py"
+    ignored.touch()
+
+    assert list(common.pyfiles(root=ignored, use_gitignore=True)) == [ignored]
+
+
 @pytest.mark.parametrize(
     argnames=("statement", "expected_module_names"),
     argvalues=[
