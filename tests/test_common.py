@@ -871,6 +871,26 @@ def test_file_ignorer(
     assert ignorer(candidate) == result
 
 
+def test_file_ignorer_symlink(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A file is matched by the path it was found under, not its target.
+
+    A symbolic link within the path is not followed, so a glob written for
+    the path as it appears in the project matches.
+    """
+    project = tmp_path / "project"
+    project.mkdir()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (project / "link").symlink_to(target=outside)
+    monkeypatch.chdir(path=project)
+    ignorer = common.file_ignorer(ignore_cfg=["link/*"])
+
+    assert ignorer(Path.cwd() / "link" / "spam.py")
+
+
 @pytest.mark.skipif(
     condition=platform.system() != "Windows",
     reason="Only Windows has drives, which is what this test is about",
