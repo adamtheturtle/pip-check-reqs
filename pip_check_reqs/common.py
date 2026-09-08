@@ -316,9 +316,13 @@ def pyfiles(root: Path) -> Generator[Path, None, None]:
         msg = f"source path not found: {root}"
         raise FileNotFoundError(msg)
 
+    # We keep every path absolute from here on, so a caller can compare the
+    # files we yield against other absolute paths without converting again.
+    root = root.absolute()
+
     if root.is_file():
         if root.suffix == ".py":
-            yield root.absolute()
+            yield root
         else:
             msg = f"{root} is not a python file or directory"
             raise ValueError(msg)
@@ -340,7 +344,7 @@ def pyfiles(root: Path) -> Generator[Path, None, None]:
         dirnames[:] = kept_dirnames
         for filename in sorted(filenames):
             if filename.endswith(".py"):
-                yield (directory / filename).absolute()
+                yield directory / filename
 
 
 def validate_requirements_file(*, path: Path) -> None:
