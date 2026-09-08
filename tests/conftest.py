@@ -122,9 +122,13 @@ def editable_install(
         },
     )
 
+    # The parameter has no annotation until
+    # https://github.com/pytest-dev/pytest/pull/14988 is released.
     monkeypatch.syspath_prepend(  # pyright: ignore[reportUnknownMemberType]
         str(source_directory),
     )
+    # The parameter has no annotation until
+    # https://github.com/pytest-dev/pytest/pull/14988 is released.
     monkeypatch.syspath_prepend(  # pyright: ignore[reportUnknownMemberType]
         str(site_packages),
     )
@@ -216,6 +220,8 @@ def dependency_chain(
     with record.open("a", encoding="utf-8") as record_file:
         record_file.write(f"{chain.top_module}/__init__.py,,\n")
 
+    # The parameter has no annotation until
+    # https://github.com/pytest-dev/pytest/pull/14988 is released.
     monkeypatch.syspath_prepend(  # pyright: ignore[reportUnknownMemberType]
         str(site_packages),
     )

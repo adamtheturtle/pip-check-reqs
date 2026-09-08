@@ -1024,6 +1024,8 @@ def test_find_required_modules_installed_url_requirement(
         distribution_name=distribution_name,
         direct_url=direct_url,
     )
+    # The parameter has no annotation until
+    # https://github.com/pytest-dev/pytest/pull/14988 is released.
     monkeypatch.syspath_prepend(  # pyright: ignore[reportUnknownMemberType]
         str(site_packages),
     )
@@ -1184,6 +1186,8 @@ def test_used_packages_other_case_path(  # pragma: no cover
     source_file = tmp_path / "source.py"
     source_file.write_text(f"import {module_name}\n", encoding="utf-8")
 
+    # The parameter has no annotation until
+    # https://github.com/pytest-dev/pytest/pull/14988 is released.
     monkeypatch.syspath_prepend(  # pyright: ignore[reportUnknownMemberType]
         str(other_spelling),
     )
@@ -1241,6 +1245,8 @@ def test_editable_source_directories(
         direct_url=None,
     )
 
+    # The parameter has no annotation until
+    # https://github.com/pytest-dev/pytest/pull/14988 is released.
     monkeypatch.syspath_prepend(  # pyright: ignore[reportUnknownMemberType]
         str(site_packages),
     )
