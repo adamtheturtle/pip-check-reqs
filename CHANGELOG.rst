@@ -5,69 +5,47 @@ Release History
 3.1.0
 
 - Both commands accept a ``pyproject.toml`` file as ``--requirements-file``.
-  The ``dependencies`` list of its ``[project]`` table is then checked in
-  place of a requirements file, so a project which declares its dependencies
-  there no longer needs to export them to a requirements file first.
-- Both commands gain a ``--use-gitignore`` option. Files and directories which
-  a ``.gitignore`` file ignores are then skipped, as they are by Git. Each
-  ``.gitignore`` file from the repository root down applies.
-- A directory within the checked path which cannot be read now reports a
-  command line error. It was previously skipped silently, which hid any
-  missing requirement imported only by the files within it.
-- ``pip-missing-reqs`` gains a ``--transitive`` option. It also reports the
-  dependencies of the distributions the source imports, followed recursively,
-  which no requirements file lists. This checks a constraints file which must
-  pin every distribution in an environment.
-- A virtual environment within the checked directory is now skipped. A
-  directory is treated as a virtual environment when it contains a
-  ``pyvenv.cfg`` file. Both commands previously scanned every installed
-  distribution in such an environment as if it were project source.
-- ``pip-missing-reqs`` accepts ``--requirements-file`` more than once, so
-  requirements split across several files are checked as one set.
-- A missing requirements file or source path now reports a concise command
-  line error. A missing requirements file previously surfaced an internal
-  pip exception, and a missing source path was silently ignored.
-- A source file which cannot be parsed now reports a command line error
-  naming the file and the line at fault. It previously showed a
-  ``SyntaxError`` traceback.
-- An import from a submodule that does not exist is no longer attributed to
-  an installed parent distribution, which removed a class of false positives.
-- A requirement with no distribution name, such as ``-e .`` or a bare
-  ``git+ssh://...`` URL, is now matched to the installed distribution which
-  was installed from that directory or URL. When no such distribution is
-  installed, both commands report an error asking for an ``#egg=<name>``
-  fragment. They previously crashed with an ``AssertionError``.
-- A requirement which pip cannot read, such as a directory with no
-  ``pyproject.toml``, now reports a command line error. It previously showed
-  a pip traceback.
-- On Windows, an ignore glob no longer crashes with a ``ValueError`` when a
-  source file is on a different drive to the working directory.
-- Both commands now warn when they are run from outside the active virtual
-  environment, as the results then describe the environment the command is
-  installed in rather than the active one.
-- ``pip-missing-reqs`` now warns about an import of a module which is not
-  installed, giving the file and line. Such an import was silently ignored,
-  so a package uninstalled by mistake, or an import of the wrong name, gave
-  no output at all. A module which the scanned source provides is not
-  reported, and ``--ignore-module`` silences the warning.
-- ``pip-missing-reqs`` no longer warns about an import which is not
-  installed when it is made in a ``try`` block which catches
-  ``ImportError``. Such an import is a soft dependency which the code
-  tolerates being absent.
-- A requirement installed in editable mode, with ``pip install -e``, is now
-  matched to the modules it provides. ``pip-extra-reqs`` reported such a
-  requirement as extra even when the code imported it, and
-  ``pip-missing-reqs`` did not report an import of one which was not
-  required.
-- ``pip-extra-reqs`` no longer reports a requirement which is not installed
-  as an extra requirement. Which modules a requirement provides is only
-  known from the installed distribution, so an uninstalled requirement was
-  reported as extra even when the code imported it. It is now reported as a
-  warning saying that it could not be checked.
+  The ``dependencies`` list of its ``[project]`` table is then checked in place of a requirements file, so a project which declares its dependencies there no longer needs to export them to a requirements file first.
+- Both commands gain a ``--use-gitignore`` option.
+  Files and directories which a ``.gitignore`` file ignores are then skipped, as they are by Git.
+  Each ``.gitignore`` file from the repository root down applies.
+- A directory within the checked path which cannot be read now reports a command line error.
+  It was previously skipped silently, which hid any missing requirement imported only by the files within it.
+- ``pip-missing-reqs`` gains a ``--transitive`` option.
+  It also reports the dependencies of the distributions the source imports, followed recursively, which no requirements file lists.
+  This checks a constraints file which must pin every distribution in an environment.
+- A virtual environment within the checked directory is now skipped.
+  A directory is treated as a virtual environment when it contains a ``pyvenv.cfg`` file.
+  Both commands previously scanned every installed distribution in such an environment as if it were project source.
+- ``pip-missing-reqs`` accepts ``--requirements-file`` more than once, so requirements split across several files are checked as one set.
+- A missing requirements file or source path now reports a concise command line error.
+  A missing requirements file previously surfaced an internal pip exception, and a missing source path was silently ignored.
+- A source file which cannot be parsed now reports a command line error naming the file and the line at fault.
+  It previously showed a ``SyntaxError`` traceback.
+- An import from a submodule that does not exist is no longer attributed to an installed parent distribution, which removed a class of false positives.
+- A requirement with no distribution name, such as ``-e .`` or a bare ``git+ssh://...``
+  URL, is now matched to the installed distribution which was installed from that directory or URL.
+  When no such distribution is installed, both commands report an error asking for an ``#egg=<name>`` fragment.
+  They previously crashed with an ``AssertionError``.
+- A requirement which pip cannot read, such as a directory with no ``pyproject.toml``, now reports a command line error.
+  It previously showed a pip traceback.
+- On Windows, an ignore glob no longer crashes with a ``ValueError`` when a source file is on a different drive to the working directory.
+- Both commands now warn when they are run from outside the active virtual environment, as the results then describe the environment the command is installed in rather than the active one.
+- ``pip-missing-reqs`` now warns about an import of a module which is not installed, giving the file and line.
+  Such an import was silently ignored, so a package uninstalled by mistake, or an import of the wrong name, gave no output at all.
+  A module which the scanned source provides is not reported, and ``--ignore-module`` silences the warning.
+- ``pip-missing-reqs`` no longer warns about an import which is not installed when it is made in a ``try`` block which catches ``ImportError``.
+  Such an import is a soft dependency which the code tolerates being absent.
+- A requirement installed in editable mode, with ``pip install -e``, is now matched to the modules it provides.
+  ``pip-extra-reqs`` reported such a requirement as extra even when the code imported it, and ``pip-missing-reqs`` did not report an import of one which was not required.
+- ``pip-extra-reqs`` no longer reports a requirement which is not installed as an extra requirement.
+  Which modules a requirement provides is only known from the installed distribution, so an uninstalled requirement was reported as extra even when the code imported it.
+  It is now reported as a warning saying that it could not be checked.
 
 3.0.0
 
-- Drop support for Python 3.9. Python 3.10 or later is now required.
+- Drop support for Python 3.9.
+  Python 3.10 or later is now required.
 - Require pip 26.2 or later.
 - Require packaging 26.2 or later.
 
@@ -104,7 +82,8 @@ Release History
 
 2.4.4
 
-- Bump ``packaging`` requirement to >= 20.5. Older versions of ``pip-check-reqs`` may be broken with the previously-specified version requirements.
+- Bump ``packaging`` requirement to >= 20.5.
+  Older versions of ``pip-check-reqs`` may be broken with the previously-specified version requirements.
 
 2.4.3
 
@@ -113,11 +92,8 @@ Release History
 2.4.2
 
 - Added support for Python 3.11.
-- Added ``python_requires`` to metadata; from now on, releases of
-  ``pip-check-reqs`` are marked as compatible with Python 3.8.0 and up.
-- Made ``--version`` flag show interpretter version and path to the package which
-  pip-check-reqs is running from, similar to information shown by `pip
-  --version`.
+- Added ``python_requires`` to metadata; from now on, releases of ``pip-check-reqs`` are marked as compatible with Python 3.8.0 and up.
+- Made ``--version`` flag show interpretter version and path to the package which pip-check-reqs is running from, similar to information shown by ``pip --version``.
 - ``-V`` is now an alias of ``--version``.
 
 2.3.2
@@ -135,22 +111,18 @@ Release History
 
 2.2.2
 
-- AST parsing failures will now report tracebacks with a proper filename for
-  the parsed frame, instead of ``<unknown>``.
+- AST parsing failures will now report tracebacks with a proper filename for the parsed frame, instead of ``<unknown>``.
 
 2.2.1
 
-- Python source is now always read using utf-8, even if default encoding for
-  reading files is set otherwise.
+- Python source is now always read using utf-8, even if default encoding for reading files is set otherwise.
 
 2.2.0
 
-- Added ``--skip-incompatible`` flag to ``pip-extra-reqs``, which makes it ignore
-  requirements with environment markers that are incompatible with the current
-  environment.
-- Added ``--requirements-file`` flag to ``pip-extra-reqs`` and ``pip-missing-reqs``
-  commands. This flag makes it possible to specify a path to the requirements
-  file. Previously, ``"requirements.txt"`` was always used.
+- Added ``--skip-incompatible`` flag to ``pip-extra-reqs``, which makes it ignore requirements with environment markers that are incompatible with the current environment.
+- Added ``--requirements-file`` flag to ``pip-extra-reqs`` and ``pip-missing-reqs`` commands.
+  This flag makes it possible to specify a path to the requirements file.
+  Previously, ``"requirements.txt"`` was always used.
 - Fixed some of the logs not being visible with ``-d`` and ``-v`` flags.
 
 2.1.1
@@ -174,8 +146,7 @@ Release History
 
 2.0 **renamed package to pip_check_reqs**
 
-- added tool pip-extra-reqs to find packages installed but not used
-  (contributed by Josh Hesketh)
+- added tool pip-extra-reqs to find packages installed but not used (contributed by Josh Hesketh)
 
 1.2.1
 
@@ -226,10 +197,8 @@ Release History
 
 - fixed handling of import from __future__
 - self-tested and added own requirements.txt
-- cleaned up usage to require a file or directory to scan (rather than
-  defaulting to ".")
-- vendored code from pip 1.6dev which fixes bug in search_packages_info
-  until pip 1.6 is released
+- cleaned up usage to require a file or directory to scan (rather than defaulting to ".")
+- vendored code from pip 1.6dev which fixes bug in search_packages_info until pip 1.6 is released
 
 1.1.0
 
