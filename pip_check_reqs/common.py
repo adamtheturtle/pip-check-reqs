@@ -328,23 +328,29 @@ def pyfiles(root: Path) -> Generator[Path, None, None]:
             raise ValueError(msg)
         return
 
-    for dirpath, dirnames, filenames in os.walk(root):
-        directory = Path(dirpath)
-        kept_dirnames: list[str] = []
-        for dirname in sorted(dirnames):
-            if _is_virtual_environment(directory=directory / dirname):
-                log.debug(
-                    "skipping virtual environment: %s",
-                    directory / dirname,
-                )
-                continue
-            kept_dirnames.append(dirname)
-        # Assigning in place prunes the directories ``os.walk`` descends
-        # into.
-        dirnames[:] = kept_dirnames
-        for filename in sorted(filenames):
-            if filename.endswith(".py"):
-                yield directory / filename
+    yield from _pyfiles_in_directory(directory=root)
+
+
+def _pyfiles_in_directory(directory: Path) -> Generator[Path, None, None]:
+    """Yield each Python source file within a directory, recursively.
+
+    The files directly within the directory come before those within the
+    directories beneath it, and each group is in name order, so the output
+    is stable across file systems which list entries differently.
+    """
+    entries = sorted(directory.iterdir())
+    for entry in entries:
+        if entry.is_file() and entry.name.endswith(".py"):
+            yield entry
+    for entry in entries:
+        # A symbolic link to a directory is not descended into, as a link
+        # back to a parent directory would be followed forever.
+        if not entry.is_dir() or entry.is_symlink():
+            continue
+        if _is_virtual_environment(directory=entry):
+            log.debug("skipping virtual environment: %s", entry)
+            continue
+        yield from _pyfiles_in_directory(directory=entry)
 
 
 def validate_requirements_file(*, path: Path) -> None:
