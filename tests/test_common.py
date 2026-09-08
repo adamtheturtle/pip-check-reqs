@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
+from packaging.utils import canonicalize_name
 
 import __main__
 from pip_check_reqs import __version__, common
@@ -23,6 +24,12 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from .conftest import EditableInstall
+
+# The file system is case-insensitive when this file is found under another
+# spelling of its name, as it is on macOS and Windows by default.
+_CASE_INSENSITIVE_FILESYSTEM = (
+    Path(__file__).with_name(Path(__file__).name.upper()).exists()
+)
 
 
 @pytest.mark.parametrize(
@@ -1138,6 +1145,65 @@ def test_wrong_environment_warning_in_color(tmp_path: Path) -> None:
     yellow = "\033[33m"
     reset = "\033[0m"
     assert warning == f"{yellow}{plain_warning}{reset}"
+
+
+@pytest.mark.skipif(
+    condition=not _CASE_INSENSITIVE_FILESYSTEM,
+    reason="Only a case-insensitive file system has two spellings of a path",
+)
+def test_used_packages_other_case_path(  # pragma: no cover
+    *,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A module imported under another spelling of its path is attributed.
+
+    On a case-insensitive file system, which macOS and Windows have by
+    default, a directory on ``sys.path`` may be spelled with different case
+    to how it is on disk. The module is then found at a path which differs
+    by case from the one on disk, and it used to be taken for a standard
+    library or local module because the installed file was recorded with
+    the other spelling.
+    """
+    distribution_name = "case-package-12345"
+    module_name = "case_package_12345"
+    site_packages = tmp_path / "site-packages"
+    write_dist_info(
+        site_packages=site_packages,
+        distribution_name=distribution_name,
+        direct_url=None,
+    )
+    module_file = site_packages / f"{module_name}.py"
+    module_file.touch()
+    record = site_packages / f"{module_name}-1.0.dist-info" / "RECORD"
+    with record.open("a", encoding="utf-8") as record_file:
+        record_file.write(f"{module_file.name},,\n")
+
+    other_spelling = site_packages.with_name(site_packages.name.upper())
+
+    source_file = tmp_path / "source.py"
+    source_file.write_text(f"import {module_name}\n", encoding="utf-8")
+
+    monkeypatch.syspath_prepend(  # pyright: ignore[reportUnknownMemberType]
+        str(other_spelling),
+    )
+    common.get_packages_info.cache_clear()
+    try:
+        imported = common.find_imported_modules(
+            paths=[source_file],
+            ignore_files_function=common.file_ignorer(ignore_cfg=[]),
+            ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        )
+        used = common.used_packages(
+            used_modules=imported.found,
+            paths=[source_file],
+        )
+    finally:
+        common.get_packages_info.cache_clear()
+
+    assert module_name in imported.found
+    uses = used[canonicalize_name(distribution_name)]
+    assert [info.modname for info in uses] == [module_name]
 
 
 def test_editable_source_directories(
