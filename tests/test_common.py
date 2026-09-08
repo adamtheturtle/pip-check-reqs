@@ -64,7 +64,9 @@ def test_found_module() -> None:
 def test_pyfiles_file(tmp_path: Path) -> None:
     python_file = tmp_path / "example.py"
     python_file.touch()
-    assert list(common.pyfiles(root=python_file)) == [python_file]
+    assert list(common.pyfiles(root=python_file, use_gitignore=False)) == [
+        python_file,
+    ]
 
 
 def test_pyfiles_file_no_dice(tmp_path: Path) -> None:
@@ -77,7 +79,7 @@ def test_pyfiles_file_no_dice(tmp_path: Path) -> None:
             f"{not_python_file} is not a python file or directory",
         ),
     ):
-        list(common.pyfiles(root=not_python_file))
+        list(common.pyfiles(root=not_python_file, use_gitignore=False))
 
 
 def test_pyfiles_package(tmp_path: Path) -> None:
@@ -91,7 +93,7 @@ def test_pyfiles_package(tmp_path: Path) -> None:
 
     not_python_file.touch()
 
-    assert list(common.pyfiles(root=tmp_path)) == [
+    assert list(common.pyfiles(root=tmp_path, use_gitignore=False)) == [
         python_file,
         nested_python_file,
     ]
@@ -124,7 +126,7 @@ def test_pyfiles_skips_virtual_environment(
     lookalike_python_file.touch()
 
     with caplog.at_level(level=logging.DEBUG):
-        found = list(common.pyfiles(root=tmp_path))
+        found = list(common.pyfiles(root=tmp_path, use_gitignore=False))
 
     assert found == [python_file, lookalike_python_file]
     assert f"skipping virtual environment: {venv}" in caplog.text
@@ -142,7 +144,7 @@ def test_pyfiles_does_not_follow_directory_symlink(tmp_path: Path) -> None:
     (linked_directory / "spam.py").touch()
     (linked_directory / "loop").symlink_to(target=tmp_path)
 
-    assert list(common.pyfiles(root=tmp_path)) == [
+    assert list(common.pyfiles(root=tmp_path, use_gitignore=False)) == [
         python_file,
         linked_directory / "spam.py",
     ]
@@ -170,7 +172,7 @@ def test_pyfiles_unreadable_directory(tmp_path: Path) -> None:
         with pytest.raises(  # pragma: no cover
             expected_exception=PermissionError,
         ):
-            list(common.pyfiles(root=tmp_path))
+            list(common.pyfiles(root=tmp_path, use_gitignore=False))
     finally:
         unreadable.chmod(mode=0o755)
 
@@ -186,7 +188,142 @@ def test_pyfiles_root_is_virtual_environment(tmp_path: Path) -> None:
     venv_python_file = venv / "spam.py"
     venv_python_file.touch()
 
-    assert list(common.pyfiles(root=venv)) == [venv_python_file]
+    assert list(common.pyfiles(root=venv, use_gitignore=False)) == [
+        venv_python_file,
+    ]
+
+
+def test_pyfiles_use_gitignore(
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """With ``use_gitignore``, what a ``.gitignore`` file ignores is skipped.
+
+    A pattern applies from the directory of its ``.gitignore`` file down,
+    a later pattern overrides an earlier one, and a ``.gitignore`` file in
+    a deeper directory overrides one above it. An ignored directory is not
+    looked within, so a deeper file cannot bring back anything in it.
+    Without ``use_gitignore``, a ``.gitignore`` file has no effect.
+    """
+    (tmp_path / ".gitignore").write_text(
+        textwrap.dedent(
+            """\
+            build/
+            generated_*.py
+            !generated_keep.py
+            """,
+        ),
+        encoding="utf-8",
+    )
+    kept = tmp_path / "kept.py"
+    kept.touch()
+    generated = tmp_path / "generated_spam.py"
+    generated.touch()
+    generated_keep = tmp_path / "generated_keep.py"
+    generated_keep.touch()
+
+    build = tmp_path / "build"
+    build.mkdir()
+    built = build / "built.py"
+    built.touch()
+    # Git ignores everything within an ignored directory, so a deeper file
+    # cannot bring anything in it back.
+    (build / ".gitignore").write_text("!built.py\n", encoding="utf-8")
+
+    # A pattern ending in a slash matches only a directory, so a file of
+    # the same name is kept.
+    build_file = tmp_path / "subdir" / "build"
+    build_file.parent.mkdir()
+    build_file.touch()
+    nested_generated = tmp_path / "subdir" / "generated_eggs.py"
+    nested_generated.touch()
+    # A deeper file overrides a shallower one.
+    (tmp_path / "subdir" / ".gitignore").write_text(
+        "!generated_eggs.py\n",
+        encoding="utf-8",
+    )
+
+    assert list(common.pyfiles(root=tmp_path, use_gitignore=False)) == [
+        generated_keep,
+        generated,
+        kept,
+        built,
+        nested_generated,
+    ]
+
+    with caplog.at_level(level=logging.DEBUG):
+        found = list(common.pyfiles(root=tmp_path, use_gitignore=True))
+
+    assert found == [generated_keep, kept, nested_generated]
+    assert f"skipping ignored by .gitignore: {build}" in caplog.text
+    assert f"skipping ignored by .gitignore: {generated}" in caplog.text
+
+
+def test_pyfiles_use_gitignore_above_root(tmp_path: Path) -> None:
+    """A ``.gitignore`` file above the scanned directory applies.
+
+    The source to scan is often a directory within the repository, such as
+    a package under ``src``, while the ``.gitignore`` file is at the
+    repository root. A pattern anchored to the repository root is matched
+    from there, and a directory in between need not have a ``.gitignore``
+    file of its own. A ``.gitignore`` file above the repository has no
+    effect.
+    """
+    (tmp_path / ".gitignore").write_text("outside.py\n", encoding="utf-8")
+    repository = tmp_path / "repository"
+    (repository / ".git").mkdir(parents=True)
+    (repository / ".gitignore").write_text(
+        textwrap.dedent(
+            """\
+            /src/anchored.py
+            unanchored.py
+            """,
+        ),
+        encoding="utf-8",
+    )
+    source = repository / "src" / "package"
+    source.mkdir(parents=True)
+    outside = source / "outside.py"
+    outside.touch()
+    # The anchored pattern names a file directly under ``src``, not one in
+    # a directory below it.
+    anchored = source / "anchored.py"
+    anchored.touch()
+    (source / "unanchored.py").touch()
+
+    assert list(common.pyfiles(root=source, use_gitignore=True)) == [
+        anchored,
+        outside,
+    ]
+
+
+def test_pyfiles_use_gitignore_outside_repository(tmp_path: Path) -> None:
+    """Outside a repository, only ``.gitignore`` files within the root apply.
+
+    Git reads no ``.gitignore`` file outside a repository, so one above the
+    scanned directory has no effect when no ``.git`` is found above it.
+    """
+    (tmp_path / ".gitignore").write_text("above.py\n", encoding="utf-8")
+    source = tmp_path / "source"
+    source.mkdir()
+    (source / ".gitignore").write_text("within.py\n", encoding="utf-8")
+    above = source / "above.py"
+    above.touch()
+    (source / "within.py").touch()
+
+    assert list(common.pyfiles(root=source, use_gitignore=True)) == [above]
+
+
+def test_pyfiles_use_gitignore_root_file(tmp_path: Path) -> None:
+    """A file given directly as the source path is scanned even if ignored.
+
+    The user has named the file, so it is what they want checked.
+    """
+    (tmp_path / ".gitignore").write_text("ignored.py\n", encoding="utf-8")
+    ignored = tmp_path / "ignored.py"
+    ignored.touch()
+
+    assert list(common.pyfiles(root=ignored, use_gitignore=True)) == [ignored]
 
 
 @pytest.mark.parametrize(
@@ -226,6 +363,7 @@ def test_find_imported_modules_simple(
         paths=[tmp_path],
         ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        use_gitignore=False,
     ).found
 
     assert set(result.keys()) == expected_module_names
@@ -265,6 +403,7 @@ def test_find_imported_modules_frozen(
         paths=[tmp_path],
         ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        use_gitignore=False,
     ).found
 
     assert set(result.keys()) == set()
@@ -285,6 +424,7 @@ def test_find_imported_modules_built_in(
         paths=[tmp_path],
         ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        use_gitignore=False,
     ).found
 
     assert set(result.keys()) == set()
@@ -315,6 +455,7 @@ def test_find_imported_modules_main(
         paths=[tmp_path],
         ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        use_gitignore=False,
     ).found
 
     assert set(result.keys()) == set()
@@ -343,6 +484,7 @@ def test_find_imported_modules_no_spec(tmp_path: Path) -> None:
             paths=[tmp_path],
             ignore_files_function=common.file_ignorer(ignore_cfg=[]),
             ignore_modules_function=common.ignorer(ignore_cfg=[]),
+            use_gitignore=False,
         ).found
     finally:
         del sys.modules[name]
@@ -371,6 +513,7 @@ def test_find_imported_modules_syntax_error(tmp_path: Path) -> None:
             paths=[tmp_path],
             ignore_files_function=common.file_ignorer(ignore_cfg=[]),
             ignore_modules_function=common.ignorer(ignore_cfg=[]),
+            use_gitignore=False,
         )
 
 
@@ -390,6 +533,7 @@ def test_find_imported_modules_period(tmp_path: Path) -> None:
         paths=[tmp_path],
         ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        use_gitignore=False,
     ).found
 
     assert set(result.keys()) == {"ruamel.yaml"}
@@ -417,6 +561,7 @@ def test_find_imported_modules_missing_from_submodule(
         paths=[source_dir],
         ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        use_gitignore=False,
     ).found
 
     assert not result
@@ -486,6 +631,7 @@ def test_find_imported_modules_advanced(
         paths=[root],
         ignore_files_function=ignore_files,
         ignore_modules_function=ignore_mods,
+        use_gitignore=False,
     ).found
     assert set(result) == set(expect)
     absolute_locations = result["ast"].locations
@@ -519,6 +665,7 @@ def test_find_imported_modules_uninstalled(tmp_path: Path) -> None:
         paths=[source_dir],
         ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        use_gitignore=False,
     )
 
     assert set(result.found) == {"re"}
@@ -560,6 +707,7 @@ def test_find_imported_modules_uninstalled_ignored(
         ignore_modules_function=common.ignorer(
             ignore_cfg=[ignore_glob.format(name=name)],
         ),
+        use_gitignore=False,
     )
 
     assert not result.uninstalled
@@ -584,6 +732,7 @@ def test_find_imported_modules_uninstalled_no_spec(tmp_path: Path) -> None:
             paths=[source_dir],
             ignore_files_function=common.file_ignorer(ignore_cfg=[]),
             ignore_modules_function=common.ignorer(ignore_cfg=[]),
+            use_gitignore=False,
         )
     finally:
         del sys.modules[name]
@@ -612,6 +761,7 @@ def test_find_imported_modules_uninstalled_submodule(tmp_path: Path) -> None:
         paths=[source_dir],
         ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        use_gitignore=False,
     )
 
     assert not result.uninstalled
@@ -664,6 +814,7 @@ def test_find_imported_modules_uninstalled_optional(
         paths=[source_dir],
         ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        use_gitignore=False,
     )
 
     assert not result.uninstalled
@@ -742,6 +893,7 @@ def test_find_imported_modules_uninstalled_not_optional(
         paths=[source_dir],
         ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        use_gitignore=False,
     )
 
     assert set(result.uninstalled) == {name}
@@ -770,6 +922,7 @@ def test_find_imported_modules_optional_installed(tmp_path: Path) -> None:
         paths=[source_dir],
         ignore_files_function=common.file_ignorer(ignore_cfg=[]),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        use_gitignore=False,
     )
 
     assert set(result.found) == {"pytest"}
@@ -810,6 +963,7 @@ def test_find_imported_modules_source_module(
             ignore_cfg=["*ignored.py"],
         ),
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        use_gitignore=False,
     )
 
     assert not result.uninstalled
@@ -820,7 +974,10 @@ def test_source_module_names_file(tmp_path: Path) -> None:
     source_file = tmp_path / "spam.py"
     source_file.touch()
 
-    result = common.source_module_names(paths=[source_file])
+    result = common.source_module_names(
+        paths=[source_file],
+        use_gitignore=False,
+    )
 
     assert result == {"spam"}
 
@@ -1315,6 +1472,7 @@ def test_used_packages_other_case_path(  # pragma: no cover
             paths=[source_file],
             ignore_files_function=common.file_ignorer(ignore_cfg=[]),
             ignore_modules_function=common.ignorer(ignore_cfg=[]),
+            use_gitignore=False,
         )
         used = common.used_packages(
             used_modules=imported.found,

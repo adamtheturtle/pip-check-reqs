@@ -24,6 +24,7 @@ def find_extra_reqs(
     ignore_modules_function: Callable[[str], bool],
     ignore_requirements_function: Callable[[str], bool],
     skip_incompatible: bool,
+    use_gitignore: bool,
 ) -> list[str]:
     # 1. find files used by imports in the code (as best we can without
     #    executing)
@@ -31,6 +32,7 @@ def find_extra_reqs(
         paths=paths,
         ignore_files_function=ignore_files_function,
         ignore_modules_function=ignore_modules_function,
+        use_gitignore=use_gitignore,
     ).found
 
     installed_names = common.installed_distribution_names()
@@ -104,6 +106,14 @@ def main(arguments: list[str] | None = None) -> None:
         help="reqs in requirements to ignore",
     )
     parser.add_argument(
+        "-g",
+        "--use-gitignore",
+        dest="use_gitignore",
+        action="store_true",
+        default=False,
+        help="skip files and directories which a .gitignore file ignores",
+    )
+    parser.add_argument(
         "-s",
         "--skip-incompatible",
         dest="skip_incompatible",
@@ -173,6 +183,7 @@ def main(arguments: list[str] | None = None) -> None:
             ignore_modules_function=ignore_mods,
             ignore_requirements_function=ignore_reqs,
             skip_incompatible=parse_result.skip_incompatible,
+            use_gitignore=parse_result.use_gitignore,
         )
     except (OSError, ValueError) as error:
         common.report_input_error(

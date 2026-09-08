@@ -44,6 +44,7 @@ def find_missing_reqs(
     additional_requirements_filenames: Iterable[Path] = (),
     *,
     transitive: bool = False,
+    use_gitignore: bool,
 ) -> MissingRequirements:
     # 1. find files used by imports in the code (as best we can without
     #    executing)
@@ -51,6 +52,7 @@ def find_missing_reqs(
         paths=paths,
         ignore_files_function=ignore_files_function,
         ignore_modules_function=ignore_modules_function,
+        use_gitignore=use_gitignore,
     )
     used_modules = imported_modules.found
 
@@ -172,6 +174,14 @@ def main(arguments: list[str] | None = None) -> None:
         help="used module names (globs are ok) to ignore",
     )
     parser.add_argument(
+        "-g",
+        "--use-gitignore",
+        dest="use_gitignore",
+        action="store_true",
+        default=False,
+        help="skip files and directories which a .gitignore file ignores",
+    )
+    parser.add_argument(
         "-t",
         "--transitive",
         dest="transitive",
@@ -245,6 +255,7 @@ def main(arguments: list[str] | None = None) -> None:
             ignore_modules_function=ignore_mods,
             additional_requirements_filenames=requirements_filenames[1:],
             transitive=parse_result.transitive,
+            use_gitignore=parse_result.use_gitignore,
         )
     except (OSError, ValueError) as error:
         common.report_input_error(

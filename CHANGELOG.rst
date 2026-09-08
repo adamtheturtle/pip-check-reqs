@@ -4,6 +4,9 @@ Release History
 
 3.1.0
 
+- Both commands gain a ``--use-gitignore`` option. Files and directories which
+  a ``.gitignore`` file ignores are then skipped, as they are by Git. Each
+  ``.gitignore`` file from the repository root down applies.
 - A directory within the checked path which cannot be read now reports a
   command line error. It was previously skipped silently, which hid any
   missing requirement imported only by the files within it.
