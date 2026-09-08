@@ -886,6 +886,24 @@ def test_find_required_modules_env_markers(tmp_path: Path) -> None:
     assert reqs == {"ham", "eggs"}
 
 
+def test_find_required_modules_marker_with_quoted_semicolon(
+    tmp_path: Path,
+) -> None:
+    """A ``;`` inside a quoted marker value does not end the marker."""
+    fake_requirements_file = tmp_path / "requirements.txt"
+    fake_requirements_file.write_text(
+        'spam==1; python_version < "2.0" or platform_release == "a;b"\n'
+        'eggs==3; python_version > "2.0" or platform_release == "a;b"\n',
+    )
+
+    reqs = common.find_required_modules(
+        ignore_requirements_function=common.ignorer(ignore_cfg=[]),
+        skip_incompatible=True,
+        requirements_filename=fake_requirements_file,
+    )
+    assert reqs == {"eggs"}
+
+
 def test_find_required_modules_unnamed_requirement(tmp_path: Path) -> None:
     fake_requirements_file = tmp_path / "requirements.txt"
     url = "git+ssh://git@example.com/org/repo.git"

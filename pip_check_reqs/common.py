@@ -16,7 +16,6 @@ from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from packaging.markers import Marker
 from packaging.requirements import Requirement
 from packaging.utils import NormalizedName, canonicalize_name
 from pip._internal.commands.show import (
@@ -39,6 +38,7 @@ if TYPE_CHECKING:
 
     from pip._internal.models.link import Link
     from pip._internal.req.req_file import ParsedRequirement
+    from pip._internal.req.req_install import InstallRequirement
 
 log = logging.getLogger(__name__)
 
@@ -570,8 +570,31 @@ def _link_key(*, link: Link) -> str:
     )
 
 
-def _requirement_name(*, requirement: ParsedRequirement) -> str | None:
-    """Return the name of the distribution a requirement line asks for.
+def _install_requirement(
+    *,
+    requirement: ParsedRequirement,
+) -> InstallRequirement:
+    """Return pip's reading of a requirement line.
+
+    pip splits the line into the name, the version specifiers, the URL and
+    the environment marker, so we do not parse the line ourselves.
+    """
+    try:
+        return install_req_from_line(requirement.requirement)
+    except InstallationError as exc:
+        # pip describes the problem over several lines, with a caret under
+        # the part of the line it could not read. We report the requirement
+        # as an input error, so we keep only the first line of the reason.
+        reason = str(exc).splitlines()[0]
+        msg = f"could not parse requirement: {reason}"
+        raise ValueError(msg) from exc
+
+
+def _requirement_name(
+    *,
+    install_requirement: InstallRequirement,
+) -> str | None:
+    """Return the name of the distribution a requirement asks for.
 
     Return ``None`` when the name cannot be told from the line and the
     requirement is not installed.
@@ -582,16 +605,6 @@ def _requirement_name(*, requirement: ParsedRequirement) -> str | None:
     requirement is installed, the install records the URL it came from, so
     we take the name from the install.
     """
-    try:
-        install_requirement = install_req_from_line(requirement.requirement)
-    except InstallationError as exc:
-        # pip describes the problem over several lines, with a caret under
-        # the part of the line it could not read. We report the requirement
-        # as an input error, so we keep only the first line of the reason.
-        reason = str(exc).splitlines()[0]
-        msg = f"could not parse requirement: {reason}"
-        raise ValueError(msg) from exc
-
     if install_requirement.name is not None:
         return install_requirement.name
 
@@ -744,7 +757,10 @@ def find_required_modules(
         str(requirements_filename),
         session=PipSession(),
     ):
-        requirement_name = _requirement_name(requirement=requirement)
+        install_requirement = _install_requirement(requirement=requirement)
+        requirement_name = _requirement_name(
+            install_requirement=install_requirement,
+        )
         if requirement_name is None:
             # Skipping the line would silently drop a requirement and report
             # the modules it provides as missing, so ask for the name instead
@@ -760,31 +776,19 @@ def find_required_modules(
             log.debug("ignoring requirement: %s", requirement_name)
             continue
 
-        if skip_incompatible:
-            requirement_string = requirement.requirement
-            if not has_compatible_markers(full_requirement=requirement_string):
-                log.debug(
-                    "ignoring requirement (incompatible environment "
-                    "marker): %s",
-                    requirement_string,
-                )
-                continue
+        # A requirement with no environment marker applies everywhere.
+        marker = install_requirement.markers
+        if skip_incompatible and marker is not None and not marker.evaluate():
+            log.debug(
+                "ignoring requirement (incompatible environment marker): %s",
+                requirement.requirement,
+            )
+            continue
 
         log.debug("found requirement: %s", requirement_name)
         explicit.add(canonicalize_name(requirement_name))
 
     return explicit
-
-
-def has_compatible_markers(*, full_requirement: str) -> bool:
-    if ";" not in full_requirement:
-        return True  # No environment marker.
-
-    enviroment_marker = full_requirement.split(";")[1]
-    if not enviroment_marker:
-        return True  # Empty environment marker.
-
-    return Marker(enviroment_marker).evaluate()
 
 
 def package_path(*, path: Path) -> Path | None:
