@@ -328,23 +328,34 @@ def pyfiles(root: Path) -> Generator[Path, None, None]:
             raise ValueError(msg)
         return
 
-    for dirpath, dirnames, filenames in os.walk(root):
-        directory = Path(dirpath)
-        kept_dirnames: list[str] = []
-        for dirname in sorted(dirnames):
-            if _is_virtual_environment(directory=directory / dirname):
-                log.debug(
-                    "skipping virtual environment: %s",
-                    directory / dirname,
-                )
+    yield from _python_files_within(directory=root)
+
+
+def _python_files_within(*, directory: Path) -> Iterator[Path]:
+    """Yield each Python file within ``directory``, files before directories.
+
+    A symbolic link to a directory is not followed, so a link back to a
+    parent directory does not loop forever.
+    """
+    # Once the minimum Python version is 3.12, replace this function with
+    # ``Path.walk``. Like ``os.walk``, it does not follow a symbolic link to
+    # a directory unless asked to, and assigning to the ``dirnames`` list it
+    # yields prunes the directories it descends into. The virtual environment
+    # check would then be a few lines within one loop rather than a recursive
+    # function.
+    subdirectories: list[Path] = []
+    for child in sorted(directory.iterdir()):
+        if child.is_dir():
+            if child.is_symlink():
                 continue
-            kept_dirnames.append(dirname)
-        # Assigning in place prunes the directories ``os.walk`` descends
-        # into.
-        dirnames[:] = kept_dirnames
-        for filename in sorted(filenames):
-            if filename.endswith(".py"):
-                yield directory / filename
+            if _is_virtual_environment(directory=child):
+                log.debug("skipping virtual environment: %s", child)
+                continue
+            subdirectories.append(child)
+        elif child.suffix == ".py":
+            yield child
+    for subdirectory in subdirectories:
+        yield from _python_files_within(directory=subdirectory)
 
 
 def validate_requirements_file(*, path: Path) -> None:
