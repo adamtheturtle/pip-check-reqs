@@ -39,6 +39,7 @@ if TYPE_CHECKING:
     from pip._internal.models.link import Link
     from pip._internal.req.req_file import ParsedRequirement
     from pip._internal.req.req_install import InstallRequirement
+    from pip._vendor.packaging.markers import Marker
 
 log = logging.getLogger(__name__)
 
@@ -752,17 +753,31 @@ def transitive_dependencies(
     return required_by
 
 
-def find_required_modules(
-    *,
-    ignore_requirements_function: Callable[[str], bool],
-    skip_incompatible: bool,
-    requirements_filename: Path,
-) -> set[NormalizedName]:
-    explicit: set[NormalizedName] = set()
-    for requirement in parse_requirements(
-        str(requirements_filename),
-        session=PipSession(),
-    ):
+@dataclass(frozen=True)
+class RequirementSpec:
+    """One requirement a project declares.
+
+    A requirement comes from a line of a requirements file today. Keeping it
+    as a plain record lets another source, such as ``pyproject.toml``, give
+    requirements in the same form later.
+    """
+
+    #: The distribution the requirement asks for.
+    name: str
+    #: The environment marker, or ``None`` when the requirement applies
+    #: everywhere.
+    marker: Marker | None
+    #: The requirement as the project wrote it, for messages.
+    text: str
+
+
+def requirements_file_specs(*, path: Path) -> Iterator[RequirementSpec]:
+    """Yield each requirement in a requirements file.
+
+    Raise ``ValueError`` for a requirement which cannot be read, or whose
+    name cannot be told.
+    """
+    for requirement in parse_requirements(str(path), session=PipSession()):
         install_requirement = _install_requirement(requirement=requirement)
         requirement_name = _requirement_name(
             install_requirement=install_requirement,
@@ -778,21 +793,39 @@ def find_required_modules(
             msg = f"requirement has no name: {requirement.requirement}. {hint}"
             raise ValueError(msg)
 
-        if ignore_requirements_function(requirement_name):
-            log.debug("ignoring requirement: %s", requirement_name)
+        yield RequirementSpec(
+            name=requirement_name,
+            marker=install_requirement.markers,
+            text=requirement.requirement,
+        )
+
+
+def find_required_modules(
+    *,
+    ignore_requirements_function: Callable[[str], bool],
+    skip_incompatible: bool,
+    requirements_filename: Path,
+) -> set[NormalizedName]:
+    explicit: set[NormalizedName] = set()
+    for spec in requirements_file_specs(path=requirements_filename):
+        if ignore_requirements_function(spec.name):
+            log.debug("ignoring requirement: %s", spec.name)
             continue
 
         # A requirement with no environment marker applies everywhere.
-        marker = install_requirement.markers
-        if skip_incompatible and marker is not None and not marker.evaluate():
+        if (
+            skip_incompatible
+            and spec.marker is not None
+            and not spec.marker.evaluate()
+        ):
             log.debug(
                 "ignoring requirement (incompatible environment marker): %s",
-                requirement.requirement,
+                spec.text,
             )
             continue
 
-        log.debug("found requirement: %s", requirement_name)
-        explicit.add(canonicalize_name(requirement_name))
+        log.debug("found requirement: %s", spec.name)
+        explicit.add(canonicalize_name(spec.name))
 
     return explicit
 
