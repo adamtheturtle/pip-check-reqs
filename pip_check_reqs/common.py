@@ -54,8 +54,7 @@ def cached_resolve_path(path: Path) -> Path:
 @cache
 def get_packages_info() -> list[_PackageInfo]:
     all_pkgs: list[str] = [
-        dist.metadata["Name"]  # pyright: ignore[reportUnknownMemberType]
-        for dist in importlib.metadata.distributions()
+        dist.metadata["Name"] for dist in importlib.metadata.distributions()
     ]
 
     return list(search_packages_info(query=all_pkgs, include_files=True))

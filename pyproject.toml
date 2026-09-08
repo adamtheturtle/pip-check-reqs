@@ -175,6 +175,8 @@ strict = true
 
 [tool.pyright]
 typeCheckingMode = "strict"
+enableTypeIgnoreComments = false
+reportUnnecessaryTypeIgnoreComment = true
 
 [tool.coverage]
 run.branch = true
