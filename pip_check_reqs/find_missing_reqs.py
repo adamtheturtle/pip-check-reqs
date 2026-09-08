@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 
 from packaging.utils import NormalizedName, canonicalize_name
 
-from pip_check_reqs import common
+from pip_check_reqs import common, requirements
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
@@ -65,10 +65,10 @@ def find_missing_reqs(
         requirements_filename,
         *additional_requirements_filenames,
     ]:
-        explicit |= common.find_required_modules(
+        explicit |= requirements.find_required_modules(
             ignore_requirements_function=common.ignorer(ignore_cfg=[]),
             skip_incompatible=False,
-            specs=common.requirement_specs(path=filename),
+            specs=requirements.requirement_specs(path=filename),
         )
 
     _report_uninstalled_imports(
@@ -242,13 +242,14 @@ def main(arguments: list[str] | None = None) -> None:
     )
     log.setLevel(level)
     common.log.setLevel(level)
+    requirements.log.setLevel(level)
 
     log.info(common.version_info())
     common.report_wrong_environment(stream=sys.stderr)
 
     try:
         for requirements_filename in requirements_filenames:
-            common.validate_requirements_file(path=requirements_filename)
+            requirements.validate_requirements_file(path=requirements_filename)
         missing = find_missing_reqs(
             requirements_filename=requirements_filenames[0],
             paths=parse_result.paths,

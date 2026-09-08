@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from pip_check_reqs import common
+from pip_check_reqs import common, requirements
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -135,7 +135,7 @@ def editable_install(
 
     common.get_packages_info.cache_clear()
     common.editable_source_directories.cache_clear()
-    common.direct_url_distribution_names.cache_clear()
+    requirements.direct_url_distribution_names.cache_clear()
 
     yield EditableInstall(
         distribution_name=distribution_name,
@@ -147,7 +147,7 @@ def editable_install(
     # must not describe it for the tests which follow.
     common.get_packages_info.cache_clear()
     common.editable_source_directories.cache_clear()
-    common.direct_url_distribution_names.cache_clear()
+    requirements.direct_url_distribution_names.cache_clear()
 
 
 @dataclass(frozen=True)
