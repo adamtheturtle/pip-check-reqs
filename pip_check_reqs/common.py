@@ -19,10 +19,7 @@ from typing import TYPE_CHECKING
 from packaging.requirements import Requirement
 from packaging.utils import NormalizedName, canonicalize_name
 from pathspec import GitIgnoreSpec
-from pip._internal.commands.show import (
-    _PackageInfo,  # pyright: ignore[reportPrivateUsage]
-    search_packages_info,
-)
+from pip._internal.commands.show import search_packages_info
 from pip._internal.utils.urls import url_to_path
 
 from . import __version__
@@ -42,6 +39,15 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
+@dataclass(frozen=True)
+class _InstalledPackage:
+    """The installed-package fields used from pip's show command."""
+
+    name: str
+    location: str
+    files: list[str] | None
+
+
 @cache
 def cached_resolve_path(path: Path) -> Path:
     return path.resolve()
@@ -52,12 +58,19 @@ def cached_resolve_path(path: Path) -> Path:
 # tests.
 # We cache the result to speed up tests.
 @cache
-def get_packages_info() -> list[_PackageInfo]:
+def get_packages_info() -> list[_InstalledPackage]:
     all_pkgs: list[str] = [
         dist.metadata["Name"] for dist in importlib.metadata.distributions()
     ]
 
-    return list(search_packages_info(query=all_pkgs, include_files=True))
+    return [
+        _InstalledPackage(
+            name=package.name,
+            location=package.location,
+            files=package.files,
+        )
+        for package in search_packages_info(query=all_pkgs, include_files=True)
+    ]
 
 
 @dataclass
