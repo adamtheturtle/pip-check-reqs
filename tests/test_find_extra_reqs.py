@@ -15,7 +15,7 @@ import pytest
 from pip_check_reqs import common, find_extra_reqs
 
 if TYPE_CHECKING:
-    from .conftest import EditableInstall
+    from .conftest import EditableInstall, NestedInstall
 
 
 def test_find_extra_reqs(tmp_path: Path) -> None:
@@ -484,3 +484,37 @@ def test_editable_requirement_not_imported_is_extra(
     )
 
     assert result == [editable_install.distribution_name]
+
+
+def test_requirement_installed_within_working_directory_is_not_extra(
+    *,
+    nested_install: NestedInstall,
+    tmp_path: Path,
+) -> None:
+    """A requirement imported from a nested environment is not extra.
+
+    The environment is inside the working directory, as when it is created
+    with ``python -m venv env`` in the project directory.
+
+    See https://github.com/adamtheturtle/pip-check-reqs/issues/75.
+    """
+    fake_requirements_file = tmp_path / "requirements.txt"
+    fake_requirements_file.write_text(
+        nested_install.distribution_name + "\n",
+    )
+
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    source_file = source_dir / "source.py"
+    source_file.write_text(f"import {nested_install.module_name}\n")
+
+    result = find_extra_reqs.find_extra_reqs(
+        requirements_filename=fake_requirements_file,
+        paths=[source_dir],
+        ignore_files_function=common.file_ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        ignore_requirements_function=common.ignorer(ignore_cfg=[]),
+        skip_incompatible=False,
+    )
+
+    assert not result

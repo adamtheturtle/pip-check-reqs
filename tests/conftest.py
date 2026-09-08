@@ -151,6 +151,59 @@ def editable_install(
 
 
 @dataclass(frozen=True)
+class NestedInstall:
+    """A distribution installed under the working directory."""
+
+    distribution_name: str
+    module_name: str
+
+
+@pytest.fixture
+def nested_install(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> Iterator[NestedInstall]:
+    """Install a distribution in an environment inside the working directory.
+
+    A virtual environment is often created inside the project directory, as
+    ``python -m venv env`` or ``tox`` does, and the commands are run from the
+    project directory. The files of an installed distribution used to be
+    made relative to the working directory and then joined to the
+    distribution location again, which doubled the path to the environment,
+    so no import was attributed to a distribution installed there.
+    """
+    distribution_name = "nested-package-12345"
+    module_name = "nested_package_12345"
+
+    site_packages = tmp_path / "env" / "lib" / "site-packages"
+    write_dist_info(
+        site_packages=site_packages,
+        distribution_name=distribution_name,
+        direct_url=None,
+    )
+    module_file = site_packages / f"{module_name}.py"
+    module_file.touch()
+    record = site_packages / f"{module_name}-1.0.dist-info" / "RECORD"
+    with record.open("a", encoding="utf-8") as record_file:
+        record_file.write(f"{module_file.name},,\n")
+
+    monkeypatch.chdir(tmp_path)
+    # The parameter has no annotation until
+    # https://github.com/pytest-dev/pytest/pull/14988 is released.
+    monkeypatch.syspath_prepend(  # pyright: ignore[reportUnknownMemberType]
+        str(site_packages),
+    )
+    common.get_packages_info.cache_clear()
+
+    yield NestedInstall(
+        distribution_name=distribution_name,
+        module_name=module_name,
+    )
+
+    common.get_packages_info.cache_clear()
+
+
+@dataclass(frozen=True)
 class DependencyChain:
     """Installed distributions which depend on one another.
 
