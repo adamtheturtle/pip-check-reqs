@@ -28,6 +28,7 @@ from pip._internal.exceptions import InstallationError
 from pip._internal.network.session import PipSession
 from pip._internal.req.constructors import install_req_from_line
 from pip._internal.req.req_file import parse_requirements
+from pip._internal.utils.compat import tomllib
 from pip._internal.utils.urls import url_to_path
 from pip._internal.vcs.versioncontrol import vcs
 
@@ -925,9 +926,9 @@ def transitive_dependencies(
 class RequirementSpec:
     """One requirement a project declares.
 
-    A requirement comes from a line of a requirements file today. Keeping it
-    as a plain record lets another source, such as ``pyproject.toml``, give
-    requirements in the same form later.
+    A requirement comes from a line of a requirements file, or from the
+    ``dependencies`` list of a ``pyproject.toml`` file. Keeping it as a plain
+    record lets each source give requirements in the same form.
     """
 
     #: The distribution the requirement asks for.
@@ -969,6 +970,30 @@ def requirements_file_specs(*, path: Path) -> Iterator[RequirementSpec]:
             name=requirement_name,
             marker=None if markers is None else Marker(str(markers)),
             text=requirement.requirement,
+        )
+
+
+def pyproject_specs(*, path: Path) -> Iterator[RequirementSpec]:
+    """Yield each ``[project]`` dependency in a ``pyproject.toml`` file.
+
+    Only the ``dependencies`` list is read. A file with no ``[project]``
+    table, or one with no ``dependencies`` list, gives no requirements.
+
+    Raise ``ValueError`` for a requirement which cannot be parsed.
+    """
+    with path.open(mode="rb") as pyproject_file:
+        pyproject = tomllib.load(pyproject_file)
+
+    # ``tomllib`` gives ``dict[str, Any]``, so the values it holds have no
+    # type. ``Requirement`` rejects anything which is not a requirement
+    # string.
+    project_table = pyproject.get("project", {})
+    for text in project_table.get("dependencies", []):
+        requirement = Requirement(text)
+        yield RequirementSpec(
+            name=requirement.name,
+            marker=requirement.marker,
+            text=text,
         )
 
 
