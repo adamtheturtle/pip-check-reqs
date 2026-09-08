@@ -15,7 +15,7 @@ import pytest
 from pip_check_reqs import common, find_missing_reqs
 
 if TYPE_CHECKING:
-    from .conftest import DependencyChain, EditableInstall
+    from .conftest import DependencyChain, EditableInstall, NestedInstall
 
 
 def test_find_missing_reqs(tmp_path: Path) -> None:
@@ -797,3 +797,35 @@ def test_main_transitive(
             f"{dependency_chain.middle}"
         ),
     ]
+
+
+def test_import_installed_within_working_directory_is_missing(
+    *,
+    nested_install: NestedInstall,
+    tmp_path: Path,
+) -> None:
+    """An unlisted import from a nested environment is reported.
+
+    The environment is inside the working directory, as when it is created
+    with ``python -m venv env`` in the project directory.
+
+    See https://github.com/adamtheturtle/pip-check-reqs/issues/75.
+    """
+    fake_requirements_file = tmp_path / "requirements.txt"
+    fake_requirements_file.write_text("")
+
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    source_file = source_dir / "source.py"
+    source_file.write_text(f"import {nested_install.module_name}\n")
+
+    result = find_missing_reqs.find_missing_reqs(
+        requirements_filename=fake_requirements_file,
+        paths=[source_dir],
+        ignore_files_function=common.file_ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+    )
+
+    (name, uses) = next(iter(result.used))
+    assert name == nested_install.distribution_name
+    assert [use.modname for use in uses] == [nested_install.module_name]
