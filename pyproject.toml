@@ -46,6 +46,11 @@ urls.Homepage = "https://github.com/adamtheturtle/pip-check-reqs"
 scripts.pip-extra-reqs = "pip_check_reqs.find_extra_reqs:main"
 scripts.pip-missing-reqs = "pip_check_reqs.find_missing_reqs:main"
 
+[dependency-groups]
+dev = [
+  "snapper-fmt @ git+https://github.com/TurtleTech-ehf/snapper.git@bcd3458e27e4156ce4e0a0b55a227400328fb3b1",
+]
+
 [tool.setuptools]
 packages = [
   "pip_check_reqs",
