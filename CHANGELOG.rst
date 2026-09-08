@@ -93,18 +93,18 @@ Release History
 
 2.5.1
 
-- Fix an issue with importing `__main__`.
+- Fix an issue with importing ``__main__``.
 - Fix an issue with importing packages with periods in their names.
 
 2.5.0
 
 - Support Python 3.10.
 - Remove support for Python 3.8.
-- Bump `pip` requirement to 23.2.
+- Bump ``pip`` requirement to 23.2.
 
 2.4.4
 
-- Bump `packaging` requirement to >= 20.5. Older versions of `pip-check-reqs` may be broken with the previously-specified version requirements.
+- Bump ``packaging`` requirement to >= 20.5. Older versions of ``pip-check-reqs`` may be broken with the previously-specified version requirements.
 
 2.4.3
 
@@ -113,12 +113,12 @@ Release History
 2.4.2
 
 - Added support for Python 3.11.
-- Added `python_requires` to metadata; from now on, releases of
-  `pip-check-reqs` are marked as compatible with Python 3.8.0 and up.
-- Made `--version` flag show interpretter version and path to the package which
+- Added ``python_requires`` to metadata; from now on, releases of
+  ``pip-check-reqs`` are marked as compatible with Python 3.8.0 and up.
+- Made ``--version`` flag show interpretter version and path to the package which
   pip-check-reqs is running from, similar to information shown by `pip
   --version`.
-- `-V` is now an alias of `--version`.
+- ``-V`` is now an alias of ``--version``.
 
 2.3.2
 
@@ -126,7 +126,7 @@ Release History
 
 2.3.1
 
-- Fixed `--skip-incompatible` skipping other requirements too.
+- Fixed ``--skip-incompatible`` skipping other requirements too.
 - Support pip >= 21.3
 
 2.3.0
@@ -136,7 +136,7 @@ Release History
 2.2.2
 
 - AST parsing failures will now report tracebacks with a proper filename for
-  the parsed frame, instead of `<unknown>`.
+  the parsed frame, instead of ``<unknown>``.
 
 2.2.1
 
@@ -145,13 +145,13 @@ Release History
 
 2.2.0
 
-- Added `--skip-incompatible` flag to `pip-extra-reqs`, which makes it ignore
+- Added ``--skip-incompatible`` flag to ``pip-extra-reqs``, which makes it ignore
   requirements with environment markers that are incompatible with the current
   environment.
-- Added `--requirements-file` flag to `pip-extra-reqs` and `pip-missing-reqs`
+- Added ``--requirements-file`` flag to ``pip-extra-reqs`` and ``pip-missing-reqs``
   commands. This flag makes it possible to specify a path to the requirements
-  file. Previously, `"requirements.txt"` was always used.
-- Fixed some of the logs not being visible with `-d` and `-v` flags.
+  file. Previously, ``"requirements.txt"`` was always used.
+- Fixed some of the logs not being visible with ``-d`` and ``-v`` flags.
 
 2.1.1
 

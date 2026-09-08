@@ -18,63 +18,42 @@ jobs:
   build:
     strategy:
       matrix:
-        uv-resolution: ["highest", "lowest-direct"]
-        # The minimum version should be represented in pyproject.toml.
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        python-version: ["3.14"]
         os: [ubuntu-latest, windows-latest]
+        hook-stage: [pre-commit, pre-push, manual]
 
     runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: "Install uv"
         uses: astral-sh/setup-uv@v10.0.1
         with:
-          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+          cache-dependency-glob: "**/*requirements.txt"
 
       - name: "Lint"
-        # Use bash to ensure the step fails if any command fails.
-        # PowerShell does not fail on intermediate command failures by default.
-        shell: bash
-        run: |
-          uv run --resolution=${{ matrix.uv-resolution }} --extra dev mypy .
-          uv run --resolution=${{ matrix.uv-resolution }} --extra dev ruff check .
-          uv run --resolution=${{ matrix.uv-resolution }} --extra dev ruff format --check .
-          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pip-extra-reqs pip_check_reqs
-          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pip-missing-reqs pip_check_reqs
-          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pylint pip_check_reqs tests
-          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pyroma --min=10 .
-          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pyproject-fmt --check .
-          uv run --resolution=${{ matrix.uv-resolution }} --extra dev pyright .
-          uv run --resolution=${{ matrix.uv-resolution }} --extra dev actionlint
-
-  prose:
-    name: Vale
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: "Install uv"
-        uses: astral-sh/setup-uv@v10.0.1
-
-      # ai-tells bans em dashes and other AI-written prose patterns.  The style package is pinned in
-      # ``.vale.ini`` and ``vale sync`` downloads it into the gitignored
-      # ``styles`` directory.  Vale needs ``rst2html`` from Docutils on the
-      # ``PATH`` to parse reStructuredText.
-      - name: "Lint prose"
-        run: |
-          uvx --with docutils vale@3.13.0.0 sync
-          git ls-files '*.rst' '*.md' | xargs --no-run-if-empty uvx --with docutils vale@3.13.0.0
+        uses: j178/prek-action@v3.0.0
+        with:
+          prek-version: 0.5.2
+          cache: false
+          extra-args: >-
+            --all-files --hook-stage ${{ matrix.hook-stage }} --verbose
+        env:
+          UV_NO_CACHE: "1"
+          UV_PYTHON: ${{ matrix.python-version }}
 
   completion-lint:
-    needs: [build, prose]
+    needs: build
     runs-on: ubuntu-latest
     if: always()
     steps:
       - name: Check matrix job status
         run: |
-          if ! ${{ needs.build.result == 'success' && needs.prose.result == 'success' }}; then
+          if ! ${{ needs.build.result == 'success' }}; then
             echo "One or more matrix jobs failed"
             exit 1
           fi

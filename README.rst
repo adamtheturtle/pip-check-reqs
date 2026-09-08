@@ -108,15 +108,15 @@ application source ("sample" in the above examples). The requirements for
 those tests generally should not be in the requirements.txt file, and you
 don't want this tool to generate false hits for those.
 
-You may exclude those test files from your check using the `--ignore-file`
-option (shorthand is `-f`). Multiple instances of the option are allowed.
+You may exclude those test files from your check using the ``--ignore-file``
+option (shorthand is ``-f``). Multiple instances of the option are allowed.
 
 A virtual environment within the checked directory is skipped automatically.
 A directory is treated as a virtual environment when it contains a
 ``pyvenv.cfg`` file, which ``venv``, ``virtualenv`` and ``uv`` all create.
 
-Files which Git ignores can be skipped too, with `--use-gitignore` (shorthand
-is `-g`)::
+Files which Git ignores can be skipped too, with ``--use-gitignore`` (shorthand
+is ``-g``)::
 
     pip-missing-reqs --use-gitignore sample
     pip-extra-reqs --use-gitignore sample
@@ -131,7 +131,7 @@ Excluding modules from the check
 
 If your project has modules which are conditionally imported, or requirements
 which are conditionally included, you may exclude certain modules from the
-check by name (or glob pattern) using `--ignore-module` (shorthand is `-m`)::
+check by name (or glob pattern) using ``--ignore-module`` (shorthand is ``-m``)::
 
     # ignore the module spam
     pip-missing-reqs --ignore-module=spam sample
@@ -148,7 +148,7 @@ loaded by an entry point, is installed and used without an ``import``
 statement. ``pip-extra-reqs`` reports such a requirement as extra.
 
 You may exclude a requirement from the check by name (or glob pattern) using
-`--ignore-requirement` (shorthand is `-r`). The name is matched as it is
+``--ignore-requirement`` (shorthand is ``-r``). The name is matched as it is
 written in the requirements file. Multiple instances of the option are
 allowed::
 
@@ -168,7 +168,7 @@ not be listed.
 Some files must list every distribution, whether the source imports it or
 not. A constraints file, given to pip with ``-c``, which pins a minimum
 version of every distribution in a test environment is one. To check such a
-file, pass `--transitive` (shorthand is `-t`). The dependencies of each
+file, pass ``--transitive`` (shorthand is ``-t``). The dependencies of each
 distribution the source imports are then followed, recursively, and any
 which is not listed is reported with the distribution which requires it::
 
@@ -202,7 +202,7 @@ For those, one way is to use an external tool to convert ``pyproject.toml`` to `
 Then you can use ``pip-missing-reqs`` and ``pip-extra-reqs`` as usual.
 
 Another way is to use a ``requirements.txt`` file within your ``pyproject.toml`` file,
-for example with the `setuptools` build backend:
+for example with the ``setuptools`` build backend:
 
 .. code:: toml
 
