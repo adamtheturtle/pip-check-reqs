@@ -42,7 +42,7 @@ def find_extra_reqs(
     explicit = common.find_required_modules(
         ignore_requirements_function=ignore_requirements_function,
         skip_incompatible=skip_incompatible,
-        requirements_filename=requirements_filename,
+        specs=common.requirements_file_specs(path=requirements_filename),
     )
 
     extras: list[str] = []

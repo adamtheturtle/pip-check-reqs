@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
+from packaging.requirements import Requirement
 from packaging.utils import canonicalize_name
 
 import __main__
@@ -927,33 +928,59 @@ def test_requirements_file_specs(tmp_path: Path) -> None:
     assert not specs[1].marker.evaluate()
 
 
-def test_find_required_modules(tmp_path: Path) -> None:
-    fake_requirements_file = tmp_path / "requirements.txt"
-    fake_requirements_file.write_text("foobar==1\nbarfoo==2")
+def _spec(text: str) -> common.RequirementSpec:
+    """Return a requirement record for a requirement string."""
+    requirement = Requirement(text)
+    return common.RequirementSpec(
+        name=requirement.name,
+        marker=requirement.marker,
+        text=text,
+    )
 
+
+def test_find_required_modules() -> None:
     reqs = common.find_required_modules(
         ignore_requirements_function=common.ignorer(ignore_cfg=["barfoo"]),
         skip_incompatible=False,
-        requirements_filename=fake_requirements_file,
+        specs=[_spec("foobar==1"), _spec("barfoo==2")],
     )
     assert reqs == {"foobar"}
 
 
-def test_find_required_modules_env_markers(tmp_path: Path) -> None:
-    fake_requirements_file = tmp_path / "requirements.txt"
-    fake_requirements_file.write_text(
-        'spam==1; python_version<"2.0"\nham==2;\neggs==3\n',
+def test_find_required_modules_normalizes_names() -> None:
+    """A name is normalized so that it matches an installed distribution."""
+    reqs = common.find_required_modules(
+        ignore_requirements_function=common.ignorer(ignore_cfg=[]),
+        skip_incompatible=False,
+        specs=[_spec("Foo_Bar==1")],
     )
+    assert reqs == {"foo-bar"}
 
+
+def test_find_required_modules_env_markers() -> None:
     reqs = common.find_required_modules(
         ignore_requirements_function=common.ignorer(ignore_cfg=[]),
         skip_incompatible=True,
-        requirements_filename=fake_requirements_file,
+        specs=[
+            _spec('spam==1; python_version<"2.0"'),
+            _spec("ham==2"),
+            _spec("eggs==3"),
+        ],
     )
     assert reqs == {"ham", "eggs"}
 
 
-def test_find_required_modules_marker_with_quoted_semicolon(
+def test_find_required_modules_keeps_incompatible() -> None:
+    """An incompatible requirement is kept unless asked to skip it."""
+    reqs = common.find_required_modules(
+        ignore_requirements_function=common.ignorer(ignore_cfg=[]),
+        skip_incompatible=False,
+        specs=[_spec('spam==1; python_version<"2.0"')],
+    )
+    assert reqs == {"spam"}
+
+
+def test_requirements_file_specs_marker_with_quoted_semicolon(
     tmp_path: Path,
 ) -> None:
     """A ``;`` inside a quoted marker value does not end the marker."""
@@ -963,25 +990,23 @@ def test_find_required_modules_marker_with_quoted_semicolon(
         'eggs==3; python_version > "2.0" or platform_release == "a;b"\n',
     )
 
-    reqs = common.find_required_modules(
-        ignore_requirements_function=common.ignorer(ignore_cfg=[]),
-        skip_incompatible=True,
-        requirements_filename=fake_requirements_file,
-    )
-    assert reqs == {"eggs"}
+    specs = list(common.requirements_file_specs(path=fake_requirements_file))
+
+    assert [spec.name for spec in specs] == ["spam", "eggs"]
+    spam_marker, eggs_marker = (spec.marker for spec in specs)
+    assert spam_marker is not None
+    assert eggs_marker is not None
+    assert not spam_marker.evaluate()
+    assert eggs_marker.evaluate()
 
 
-def test_find_required_modules_unnamed_requirement(tmp_path: Path) -> None:
+def test_requirements_file_specs_unnamed_requirement(tmp_path: Path) -> None:
     fake_requirements_file = tmp_path / "requirements.txt"
     url = "git+ssh://git@example.com/org/repo.git"
     fake_requirements_file.write_text(f"foobar==1\n{url}\n")
 
     with pytest.raises(ValueError, match="requirement has no name") as excinfo:
-        common.find_required_modules(
-            ignore_requirements_function=common.ignorer(ignore_cfg=[]),
-            skip_incompatible=False,
-            requirements_filename=fake_requirements_file,
-        )
+        list(common.requirements_file_specs(path=fake_requirements_file))
 
     hint = (
         "Install it, or add an '#egg=<name>' fragment naming the distribution."
@@ -990,19 +1015,16 @@ def test_find_required_modules_unnamed_requirement(tmp_path: Path) -> None:
     assert str(excinfo.value) == expected_message
 
 
-def test_find_required_modules_egg_fragment_names_requirement(
+def test_requirements_file_specs_egg_fragment_names_requirement(
     tmp_path: Path,
 ) -> None:
     fake_requirements_file = tmp_path / "requirements.txt"
     url = "git+ssh://git@example.com/org/repo.git#egg=repo"
     fake_requirements_file.write_text(f"foobar==1\n{url}\n")
 
-    reqs = common.find_required_modules(
-        ignore_requirements_function=common.ignorer(ignore_cfg=[]),
-        skip_incompatible=False,
-        requirements_filename=fake_requirements_file,
-    )
-    assert reqs == {"foobar", "repo"}
+    specs = common.requirements_file_specs(path=fake_requirements_file)
+
+    assert [spec.name for spec in specs] == ["foobar", "repo"]
 
 
 def _editable_line(directory: Path) -> str:
@@ -1027,7 +1049,7 @@ def _file_url_line(directory: Path) -> str:
         pytest.param(_file_url_line, id="file URL"),
     ],
 )
-def test_find_required_modules_installed_directory_requirement(
+def test_requirements_file_specs_installed_directory_requirement(
     *,
     editable_install: EditableInstall,
     tmp_path: Path,
@@ -1043,16 +1065,15 @@ def test_find_required_modules_installed_directory_requirement(
     line = line_for_directory(editable_install.source_directory)
     fake_requirements_file.write_text(f"foobar==1\n{line}\n")
 
-    reqs = common.find_required_modules(
-        ignore_requirements_function=common.ignorer(ignore_cfg=[]),
-        skip_incompatible=False,
-        requirements_filename=fake_requirements_file,
-    )
+    specs = common.requirements_file_specs(path=fake_requirements_file)
 
-    assert reqs == {"foobar", editable_install.distribution_name}
+    assert [spec.name for spec in specs] == [
+        "foobar",
+        editable_install.distribution_name,
+    ]
 
 
-def test_find_required_modules_relative_directory_requirement(
+def test_requirements_file_specs_relative_directory_requirement(
     *,
     editable_install: EditableInstall,
     monkeypatch: pytest.MonkeyPatch,
@@ -1068,13 +1089,11 @@ def test_find_required_modules_relative_directory_requirement(
     fake_requirements_file = tmp_path / "requirements.txt"
     fake_requirements_file.write_text("-e .\n")
 
-    reqs = common.find_required_modules(
-        ignore_requirements_function=common.ignorer(ignore_cfg=[]),
-        skip_incompatible=False,
-        requirements_filename=fake_requirements_file,
-    )
+    specs = common.requirements_file_specs(path=fake_requirements_file)
 
-    assert reqs == {editable_install.distribution_name}
+    assert [spec.name for spec in specs] == [
+        editable_install.distribution_name,
+    ]
 
 
 @pytest.mark.parametrize(
@@ -1107,7 +1126,7 @@ def test_find_required_modules_relative_directory_requirement(
         ),
     ],
 )
-def test_find_required_modules_installed_url_requirement(
+def test_requirements_file_specs_installed_url_requirement(
     *,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1138,18 +1157,18 @@ def test_find_required_modules_installed_url_requirement(
     fake_requirements_file.write_text(f"foobar==1\n{line}\n")
 
     try:
-        reqs = common.find_required_modules(
-            ignore_requirements_function=common.ignorer(ignore_cfg=[]),
-            skip_incompatible=False,
-            requirements_filename=fake_requirements_file,
+        specs = list(
+            common.requirements_file_specs(path=fake_requirements_file),
         )
     finally:
         common.direct_url_distribution_names.cache_clear()
 
-    assert reqs == {"foobar", distribution_name}
+    assert [spec.name for spec in specs] == ["foobar", distribution_name]
 
 
-def test_find_required_modules_unparseable_requirement(tmp_path: Path) -> None:
+def test_requirements_file_specs_unparseable_requirement(
+    tmp_path: Path,
+) -> None:
     """A requirement which pip cannot read is reported as an input error.
 
     A directory with no ``pyproject.toml`` or ``setup.py`` is not a project,
@@ -1161,11 +1180,7 @@ def test_find_required_modules_unparseable_requirement(tmp_path: Path) -> None:
     fake_requirements_file.write_text(f"{empty_directory}\n")
 
     with pytest.raises(ValueError, match="could not parse") as excinfo:
-        common.find_required_modules(
-            ignore_requirements_function=common.ignorer(ignore_cfg=[]),
-            skip_incompatible=False,
-            requirements_filename=fake_requirements_file,
-        )
+        list(common.requirements_file_specs(path=fake_requirements_file))
 
     # pip quotes the directory as Python does, so a backslash in a Windows
     # path is doubled.

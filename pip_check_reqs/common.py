@@ -16,6 +16,7 @@ from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from packaging.markers import Marker
 from packaging.requirements import Requirement
 from packaging.utils import NormalizedName, canonicalize_name
 from pip._internal.commands.show import (
@@ -39,7 +40,6 @@ if TYPE_CHECKING:
     from pip._internal.models.link import Link
     from pip._internal.req.req_file import ParsedRequirement
     from pip._internal.req.req_install import InstallRequirement
-    from pip._vendor.packaging.markers import Marker
 
 log = logging.getLogger(__name__)
 
@@ -793,9 +793,13 @@ def requirements_file_specs(*, path: Path) -> Iterator[RequirementSpec]:
             msg = f"requirement has no name: {requirement.requirement}. {hint}"
             raise ValueError(msg)
 
+        # pip gives a marker from its own copy of ``packaging``. The
+        # record holds the public one, so a reader which does not go through
+        # pip can give the same type.
+        markers = install_requirement.markers
         yield RequirementSpec(
             name=requirement_name,
-            marker=install_requirement.markers,
+            marker=None if markers is None else Marker(str(markers)),
             text=requirement.requirement,
         )
 
@@ -804,10 +808,15 @@ def find_required_modules(
     *,
     ignore_requirements_function: Callable[[str], bool],
     skip_incompatible: bool,
-    requirements_filename: Path,
+    specs: Iterable[RequirementSpec],
 ) -> set[NormalizedName]:
+    """Return the normalized names of the requirements which apply.
+
+    The requirements are given as records rather than as a file, so any
+    source which yields ``RequirementSpec`` records can be filtered here.
+    """
     explicit: set[NormalizedName] = set()
-    for spec in requirements_file_specs(path=requirements_filename):
+    for spec in specs:
         if ignore_requirements_function(spec.name):
             log.debug("ignoring requirement: %s", spec.name)
             continue
