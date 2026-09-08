@@ -813,6 +813,20 @@ def package_path(*, path: Path) -> Path | None:
     return path.parent
 
 
+def _normalized(*, path: Path) -> Path:
+    """Return an absolute path with each ``..`` component collapsed.
+
+    This is done on the path alone, without touching the file system, so a
+    symbolic link within the path is kept rather than followed. A ``..``
+    directly beneath the anchor is dropped, as there is nowhere above the
+    anchor to go.
+    """
+    normalized = Path(path.anchor)
+    for part in path.parts[len(normalized.parts) :]:
+        normalized = normalized.parent if part == ".." else normalized / part
+    return normalized
+
+
 def _null_ignorer(_: object) -> bool:
     return False
 
@@ -850,8 +864,8 @@ def file_ignorer(*, ignore_cfg: list[str]) -> Callable[[Path], bool]:
         # We use ``Path`` rather than ``os.path.relpath``, which raises
         # ``ValueError`` on Windows for a path on a different drive to the
         # working directory.
-        absolute_candidate = Path(
-            os.path.normpath(working_directory / candidate_path),
+        absolute_candidate = _normalized(
+            path=working_directory / candidate_path,
         )
         candidates = [str(candidate_path)]
         if absolute_candidate.is_relative_to(working_directory):
