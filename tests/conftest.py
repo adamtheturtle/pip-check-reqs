@@ -13,7 +13,7 @@ import pytest
 from pip_check_reqs import common
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterable, Iterator
     from pathlib import Path
 
 # On Python 3.10, pip reads the environment through ``pkg_resources``, whose
@@ -40,14 +40,21 @@ def write_dist_info(
     site_packages: Path,
     distribution_name: str,
     direct_url: dict[str, object] | None,
+    requires: Iterable[str] = (),
 ) -> None:
-    """Write the ``.dist-info`` directory of an installed distribution."""
+    """Write the ``.dist-info`` directory of an installed distribution.
+
+    ``requires`` gives the dependencies as ``Requires-Dist`` lines.
+    """
     # A ``.dist-info`` directory is named after the normalized distribution
     # name, in which a hyphen is written as an underscore.
     normalized_name = distribution_name.replace("-", "_")
     dist_info = site_packages / f"{normalized_name}-1.0.dist-info"
     dist_info.mkdir(parents=True)
     (dist_info / "INSTALLER").write_text("pip\n", encoding="utf-8")
+    requires_dist = "".join(
+        f"Requires-Dist: {requirement}\n" for requirement in requires
+    )
     (dist_info / "METADATA").write_text(
         textwrap.dedent(
             f"""\
@@ -55,7 +62,8 @@ def write_dist_info(
             Name: {distribution_name}
             Version: 1.0
             """,
-        ),
+        )
+        + requires_dist,
         encoding="utf-8",
     )
     # An editable install records the import hook which pip installed, and
@@ -136,3 +144,83 @@ def editable_install(
     common.get_packages_info.cache_clear()
     common.editable_source_directories.cache_clear()
     common.direct_url_distribution_names.cache_clear()
+
+
+@dataclass(frozen=True)
+class DependencyChain:
+    """Installed distributions which depend on one another.
+
+    The source imports ``top``, which requires ``middle``, which requires
+    the ``fast`` extra of ``bottom`` and a distribution which is not
+    installed. ``bottom`` requires ``top`` in turn, so the chain has a cycle.
+    """
+
+    top: str
+    top_module: str
+    middle: str
+    bottom: str
+    fast: str
+    """A dependency of the ``fast`` extra of ``bottom``."""
+    uninstalled: str
+    """A dependency of ``middle`` which is not installed."""
+    unasked_extra: str
+    """A dependency of an extra of ``top`` which nothing asks for."""
+    incompatible: str
+    """A dependency of ``top`` whose environment marker does not hold."""
+
+
+@pytest.fixture
+def dependency_chain(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> Iterator[DependencyChain]:
+    """Install distributions which depend on one another."""
+    chain = DependencyChain(
+        top="top-package-12345",
+        top_module="top_package_12345",
+        middle="middle-package-12345",
+        bottom="bottom-package-12345",
+        fast="fast-package-12345",
+        uninstalled="uninstalled-package-12345",
+        unasked_extra="unasked-extra-package-12345",
+        incompatible="incompatible-package-12345",
+    )
+    site_packages = tmp_path / "chain-site-packages"
+
+    requires = {
+        chain.top: [
+            chain.middle,
+            f'{chain.unasked_extra}; extra == "socks"',
+            f'{chain.incompatible}; python_version < "3"',
+        ],
+        chain.middle: [f"{chain.bottom}[fast]", chain.uninstalled],
+        chain.bottom: [f'{chain.fast}; extra == "fast"', chain.top],
+        chain.fast: [],
+        chain.unasked_extra: [],
+        chain.incompatible: [],
+    }
+    for distribution_name, distribution_requires in requires.items():
+        write_dist_info(
+            site_packages=site_packages,
+            distribution_name=distribution_name,
+            direct_url=None,
+            requires=distribution_requires,
+        )
+
+    # The source imports a module of ``top``, so the install must record
+    # the module file for the import to be attributed to the distribution.
+    module_directory = site_packages / chain.top_module
+    module_directory.mkdir()
+    (module_directory / "__init__.py").touch()
+    record = site_packages / f"{chain.top_module}-1.0.dist-info" / "RECORD"
+    with record.open("a", encoding="utf-8") as record_file:
+        record_file.write(f"{chain.top_module}/__init__.py,,\n")
+
+    monkeypatch.syspath_prepend(  # pyright: ignore[reportUnknownMemberType]
+        str(site_packages),
+    )
+    common.get_packages_info.cache_clear()
+
+    yield chain
+
+    common.get_packages_info.cache_clear()

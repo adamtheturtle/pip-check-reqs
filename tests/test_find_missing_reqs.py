@@ -15,7 +15,7 @@ import pytest
 from pip_check_reqs import common, find_missing_reqs
 
 if TYPE_CHECKING:
-    from .conftest import EditableInstall
+    from .conftest import DependencyChain, EditableInstall
 
 
 def test_find_missing_reqs(tmp_path: Path) -> None:
@@ -67,7 +67,7 @@ def test_find_missing_reqs(tmp_path: Path) -> None:
             ],
         ),
     ]
-    assert result == expected_result
+    assert result.used == expected_result
 
 
 def test_uninstalled_import_is_reported(
@@ -99,7 +99,7 @@ def test_uninstalled_import_is_reported(
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
 
-    assert not result
+    assert not result.used
     expected_message = (
         f"{source_file}:1 module=not_installed_package_12345 is not "
         "installed, so we cannot tell which requirement provides it"
@@ -132,7 +132,7 @@ def test_uninstalled_import_of_requirement_is_not_reported(
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
 
-    assert not result
+    assert not result.used
     assert not caplog.records
 
 
@@ -585,7 +585,7 @@ def test_editable_requirement_is_missing(
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
 
-    (name, uses) = next(iter(result))
+    (name, uses) = next(iter(result.used))
     assert name == editable_install.distribution_name
     assert [use.modname for use in uses] == [editable_install.module_name]
 
@@ -619,4 +619,181 @@ def test_own_source_installed_as_editable_is_not_missing(
         ignore_modules_function=common.ignorer(ignore_cfg=[]),
     )
 
-    assert not result
+    assert not result.used
+
+
+def test_transitive_dependencies_are_reported(
+    *,
+    dependency_chain: DependencyChain,
+    tmp_path: Path,
+) -> None:
+    """Unlisted dependencies of a used distribution are reported.
+
+    They are followed recursively and each is reported with the
+    distributions which require it. A dependency which is not installed is
+    reported but cannot be followed further. A dependency of an extra is
+    only followed when the extra is asked for, and a dependency with an
+    environment marker is only followed when the marker holds.
+    """
+    fake_requirements_file = tmp_path / "requirements.txt"
+    fake_requirements_file.write_text(f"{dependency_chain.top}\n")
+
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    (source_dir / "source.py").write_text(
+        f"import {dependency_chain.top_module}\n",
+    )
+
+    result = find_missing_reqs.find_missing_reqs(
+        requirements_filename=fake_requirements_file,
+        paths=[source_dir],
+        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        transitive=True,
+    )
+
+    assert not result.used
+    assert result.transitive == {
+        dependency_chain.middle: {dependency_chain.top},
+        dependency_chain.bottom: {dependency_chain.middle},
+        dependency_chain.uninstalled: {dependency_chain.middle},
+        dependency_chain.fast: {dependency_chain.bottom},
+    }
+
+
+def test_transitive_dependencies_are_not_checked_by_default(
+    *,
+    dependency_chain: DependencyChain,
+    tmp_path: Path,
+) -> None:
+    fake_requirements_file = tmp_path / "requirements.txt"
+    fake_requirements_file.write_text(f"{dependency_chain.top}\n")
+
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    (source_dir / "source.py").write_text(
+        f"import {dependency_chain.top_module}\n",
+    )
+
+    result = find_missing_reqs.find_missing_reqs(
+        requirements_filename=fake_requirements_file,
+        paths=[source_dir],
+        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+    )
+
+    assert not result.used
+    assert not result.transitive
+
+
+def test_listed_transitive_dependencies_are_not_reported(
+    *,
+    dependency_chain: DependencyChain,
+    tmp_path: Path,
+) -> None:
+    fake_requirements_file = tmp_path / "requirements.txt"
+    fake_requirements_file.write_text(
+        textwrap.dedent(
+            f"""\
+            {dependency_chain.top}
+            {dependency_chain.middle}
+            {dependency_chain.bottom}
+            {dependency_chain.fast}
+            {dependency_chain.uninstalled}
+            """,
+        ),
+    )
+
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    (source_dir / "source.py").write_text(
+        f"import {dependency_chain.top_module}\n",
+    )
+
+    result = find_missing_reqs.find_missing_reqs(
+        requirements_filename=fake_requirements_file,
+        paths=[source_dir],
+        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        transitive=True,
+    )
+
+    assert not result.used
+    assert not result.transitive
+
+
+def test_used_distribution_is_not_reported_as_transitive(
+    *,
+    dependency_chain: DependencyChain,
+    tmp_path: Path,
+) -> None:
+    """A used distribution is reported once, with the imports which use it.
+
+    ``bottom`` requires ``top``, which the source imports, so ``top`` is also
+    a transitive dependency. It is reported as a missing requirement of the
+    source and not a second time as a dependency.
+    """
+    fake_requirements_file = tmp_path / "requirements.txt"
+    fake_requirements_file.write_text("")
+
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    (source_dir / "source.py").write_text(
+        f"import {dependency_chain.top_module}\n",
+    )
+
+    result = find_missing_reqs.find_missing_reqs(
+        requirements_filename=fake_requirements_file,
+        paths=[source_dir],
+        ignore_files_function=common.ignorer(ignore_cfg=[]),
+        ignore_modules_function=common.ignorer(ignore_cfg=[]),
+        transitive=True,
+    )
+
+    assert [name for name, _ in result.used] == [dependency_chain.top]
+    assert dependency_chain.top not in result.transitive
+    assert dependency_chain.middle in result.transitive
+
+
+def test_main_transitive(
+    *,
+    dependency_chain: DependencyChain,
+    caplog: pytest.LogCaptureFixture,
+    tmp_path: Path,
+) -> None:
+    """Each unlisted dependency is reported with what requires it."""
+    requirements_file = tmp_path / "requirements.txt"
+    requirements_file.write_text(f"{dependency_chain.top}\n")
+
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    (source_dir / "source.py").write_text(
+        f"import {dependency_chain.top_module}\n",
+    )
+
+    caplog.set_level(logging.WARNING)
+
+    with pytest.raises(SystemExit) as excinfo:
+        find_missing_reqs.main(
+            arguments=[
+                "--requirements-file",
+                str(requirements_file),
+                "--transitive",
+                str(source_dir),
+            ],
+        )
+
+    assert excinfo.value.code == 1
+    assert [record.message for record in caplog.records] == [
+        "Missing requirements:",
+        (
+            f"dist={dependency_chain.bottom} required by "
+            f"{dependency_chain.middle}"
+        ),
+        f"dist={dependency_chain.fast} required by {dependency_chain.bottom}",
+        f"dist={dependency_chain.middle} required by {dependency_chain.top}",
+        (
+            f"dist={dependency_chain.uninstalled} required by "
+            f"{dependency_chain.middle}"
+        ),
+    ]
