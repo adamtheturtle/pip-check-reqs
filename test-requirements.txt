@@ -1,5 +1,7 @@
 actionlint-py==1.7.12.24
+docutils==0.23
 mypy==2.3.1
+prek==0.5.2
 pyenchant==3.3.0
 pylint==4.0.8
 pyproject-fmt==2.29.3
@@ -9,3 +11,9 @@ pytest==9.1.1
 pytest-cov==7.1.0
 ruamel.yaml==0.19.1
 ruff==0.16.6
+# We add shellcheck-py not only for shell scripts, but also because having it
+# installed means that ``actionlint-py`` will use it to lint shell commands in
+# GitHub workflow files.
+shellcheck-py==0.11.0.1
+shfmt-py==4.1.0
+vale==3.20.0.0

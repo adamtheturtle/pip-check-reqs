@@ -1,0 +1,254 @@
+# Configuration file for `prek`, a git hook framework written in Rust.
+# See https://prek.j178.dev for more information.
+#:schema https://www.schemastore.org/prek.json
+
+fail_fast = true
+default_install_hook_types = [
+  "pre-commit",
+  "pre-push"
+  ]
+
+[[repos]]
+repo = "meta"
+hooks = [
+  {
+    id = "check-useless-excludes",
+    stages = ["pre-commit"]
+  }
+]
+
+[[repos]]
+repo = "https://github.com/pre-commit/pre-commit-hooks"
+rev = "v6.0.0"
+hooks = [
+  {
+    id = "check-added-large-files",
+    stages = ["pre-commit"]
+  },
+  {
+    id = "check-case-conflict",
+    stages = ["pre-commit"]
+  },
+  {
+    id = "check-executables-have-shebangs",
+    stages = ["pre-commit"]
+  },
+  {
+    id = "check-merge-conflict",
+    stages = ["pre-commit"]
+  },
+  {
+    id = "check-shebang-scripts-are-executable",
+    stages = ["pre-commit"]
+  },
+  {
+    id = "check-symlinks",
+    stages = ["pre-commit"]
+  },
+  {
+    id = "check-json",
+    stages = ["pre-commit"]
+  },
+  {
+    id = "check-toml",
+    stages = ["pre-commit"]
+  },
+  {
+    id = "check-vcs-permalinks",
+    stages = ["pre-commit"]
+  },
+  {
+    id = "check-yaml",
+    stages = ["pre-commit"]
+  },
+  {
+    id = "end-of-file-fixer",
+    stages = ["pre-commit"]
+  },
+  {
+    id = "file-contents-sorter",
+    files = 'spelling_private_dict\.txt$',
+    stages = ["pre-commit"]
+  },
+  {
+    id = "trailing-whitespace",
+    stages = ["pre-commit"]
+  }
+]
+
+[[repos]]
+repo = "https://github.com/pre-commit/pygrep-hooks"
+rev = "v1.10.0"
+hooks = [
+  {
+    id = "rst-directive-colons",
+    stages = ["pre-commit"]
+  },
+  {
+    id = "rst-inline-touching-normal",
+    stages = ["pre-commit"]
+  },
+  {
+    id = "text-unicode-replacement-char",
+    stages = ["pre-commit"]
+  },
+  {
+    id = "rst-backticks",
+    stages = ["pre-commit"]
+  }
+]
+
+[[repos]]
+repo = "local"
+hooks = [
+  {
+    id = "actionlint",
+    name = "actionlint",
+    entry = "uv run --extra=dev actionlint",
+    language = "python",
+    pass_filenames = false,
+    types_or = ["yaml"],
+    additional_dependencies = ["uv==0.12.10"],
+    stages = ["pre-commit"]
+  },
+  {
+    id = "shellcheck",
+    name = "shellcheck",
+    entry = "uv run --extra=dev shellcheck --shell=bash",
+    language = "python",
+    types_or = ["shell"],
+    additional_dependencies = ["uv==0.12.10"],
+    stages = ["pre-commit"]
+  },
+  {
+    id = "shfmt",
+    name = "shfmt",
+    entry = "uv run --extra=dev shfmt --write --space-redirects --indent=4",
+    language = "python",
+    types_or = ["shell"],
+    additional_dependencies = ["uv==0.12.10"],
+    stages = ["pre-commit"]
+  },
+  {
+    id = "ruff-check-fix",
+    name = "Ruff check fix",
+    entry = "uv run --extra=dev -m ruff check --fix",
+    language = "python",
+    types_or = ["python"],
+    additional_dependencies = ["uv==0.12.10"],
+    stages = ["pre-commit"]
+  },
+  {
+    id = "ruff-format-fix",
+    name = "Ruff format",
+    entry = "uv run --extra=dev -m ruff format",
+    language = "python",
+    types_or = ["python"],
+    additional_dependencies = ["uv==0.12.10"],
+    stages = ["pre-commit"]
+  },
+  {
+    id = "pyproject-fmt-fix",
+    name = "pyproject-fmt",
+    entry = "uv run --extra=dev pyproject-fmt",
+    language = "python",
+    types_or = ["toml"],
+    files = "pyproject.toml",
+    additional_dependencies = ["uv==0.12.10"],
+    stages = ["pre-commit"]
+  },
+  {
+    id = "pyroma",
+    name = "pyroma",
+    entry = "uv run --extra=dev -m pyroma --min 10 .",
+    language = "python",
+    pass_filenames = false,
+    types_or = ["toml"],
+    additional_dependencies = ["uv==0.12.10"],
+    stages = ["pre-commit"]
+  },
+  {
+    id = "pip-extra-reqs",
+    name = "pip-extra-reqs",
+    entry = "uv run --extra=dev pip-extra-reqs pip_check_reqs",
+    language = "python",
+    pass_filenames = false,
+    types_or = [
+      "python",
+      "text"
+    ],
+    additional_dependencies = ["uv==0.12.10"],
+    stages = ["pre-commit"]
+  },
+  {
+    id = "pip-missing-reqs",
+    name = "pip-missing-reqs",
+    entry = "uv run --extra=dev pip-missing-reqs pip_check_reqs",
+    language = "python",
+    pass_filenames = false,
+    types_or = [
+      "python",
+      "text"
+    ],
+    additional_dependencies = ["uv==0.12.10"],
+    stages = ["pre-commit"]
+  },
+  {
+    id = "vale-sync",
+    name = "vale sync",
+    entry = "uv run --extra=dev vale sync",
+    language = "python",
+    pass_filenames = false,
+    files = '(\.(rst|md)$|^\.vale\.ini$)',
+    additional_dependencies = ["uv==0.12.10"],
+    stages = ["pre-commit"]
+  },
+  {
+    id = "vale",
+    name = "vale",
+    entry = "uv run --extra=dev vale",
+    language = "python",
+    types_or = [
+      "rst",
+      "markdown"
+    ],
+    require_serial = true,
+    additional_dependencies = ["uv==0.12.10"],
+    stages = ["pre-commit"]
+  },
+  {
+    id = "mypy",
+    name = "mypy",
+    stages = ["pre-push"],
+    entry = "uv run --extra=dev -m mypy .",
+    language = "python",
+    types_or = [
+      "python",
+      "toml"
+    ],
+    pass_filenames = false,
+    additional_dependencies = ["uv==0.12.10"]
+  },
+  {
+    id = "pyright",
+    name = "pyright",
+    stages = ["pre-push"],
+    entry = "uv run --extra=dev -m pyright .",
+    language = "python",
+    types_or = [
+      "python",
+      "toml"
+    ],
+    pass_filenames = false,
+    additional_dependencies = ["uv==0.12.10"]
+  },
+  {
+    id = "pylint",
+    name = "pylint",
+    entry = "uv run --extra=dev -m pylint pip_check_reqs tests",
+    language = "python",
+    stages = ["manual"],
+    pass_filenames = false,
+    additional_dependencies = ["uv==0.12.10"]
+  }
+]
