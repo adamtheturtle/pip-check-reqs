@@ -908,6 +908,25 @@ def test_ignorer_other_drive() -> None:  # pragma: no cover
     assert not ignorer(Path(rf"{other_drive}\eggs\spam.py"))
 
 
+def test_requirements_file_specs(tmp_path: Path) -> None:
+    """Each line of a requirements file gives a record of the requirement."""
+    fake_requirements_file = tmp_path / "requirements.txt"
+    fake_requirements_file.write_text(
+        'foobar==1\nbarfoo==2; python_version < "2.0"\n',
+    )
+
+    specs = list(common.requirements_file_specs(path=fake_requirements_file))
+
+    assert [spec.name for spec in specs] == ["foobar", "barfoo"]
+    assert [spec.text for spec in specs] == [
+        "foobar==1",
+        'barfoo==2; python_version < "2.0"',
+    ]
+    assert specs[0].marker is None
+    assert specs[1].marker is not None
+    assert not specs[1].marker.evaluate()
+
+
 def test_find_required_modules(tmp_path: Path) -> None:
     fake_requirements_file = tmp_path / "requirements.txt"
     fake_requirements_file.write_text("foobar==1\nbarfoo==2")
