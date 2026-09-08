@@ -160,11 +160,15 @@ def test_pyfiles_unreadable_directory(tmp_path: Path) -> None:
     try:
         # File mode bits do not restrict reading a directory on Windows, and
         # the superuser can read a directory regardless of its mode.
+        # Coverage is measured on Windows too, so the lines only one of
+        # these platforms runs are excluded from it.
         if os.access(unreadable, os.R_OK):
             pytest.skip(  # pragma: no cover
                 reason="This user can read a directory with mode 0",
             )
-        with pytest.raises(expected_exception=PermissionError):
+        with pytest.raises(  # pragma: no cover
+            expected_exception=PermissionError,
+        ):
             list(common.pyfiles(root=tmp_path))
     finally:
         unreadable.chmod(mode=0o755)
