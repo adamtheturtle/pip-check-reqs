@@ -48,7 +48,7 @@ scripts.pip-missing-reqs = "pip_check_reqs.find_missing_reqs:main"
 
 [dependency-groups]
 snapper = [
-  "snapper-fmt @ git+https://github.com/TurtleTech-ehf/snapper.git@bcd3458e27e4156ce4e0a0b55a227400328fb3b1",
+  "snapper-fmt==0.11.0",
 ]
 
 [tool.setuptools]
