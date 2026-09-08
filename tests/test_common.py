@@ -1184,6 +1184,61 @@ def test_requirements_file_specs_egg_fragment_names_requirement(
     assert [spec.name for spec in specs] == ["foobar", "repo"]
 
 
+def test_pyproject_specs(tmp_path: Path) -> None:
+    """Each ``[project]`` dependency gives a record of the requirement."""
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text(
+        data=textwrap.dedent(
+            text="""\
+            [project]
+            name = "spam"
+            dependencies = [
+                "foobar==1",
+                'barfoo==2; python_version < "2.0"',
+            ]
+            """,
+        ),
+    )
+
+    specs = list(common.pyproject_specs(path=pyproject))
+
+    assert [spec.name for spec in specs] == ["foobar", "barfoo"]
+    assert [spec.text for spec in specs] == [
+        "foobar==1",
+        'barfoo==2; python_version < "2.0"',
+    ]
+    assert specs[0].marker is None
+    assert specs[1].marker is not None
+    assert not specs[1].marker.evaluate()
+
+
+def test_pyproject_specs_no_project_table(tmp_path: Path) -> None:
+    """A file with no ``[project]`` table declares no requirements."""
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text(data='[build-system]\nrequires = ["setuptools"]\n')
+
+    assert not list(common.pyproject_specs(path=pyproject))
+
+
+def test_pyproject_specs_no_dependencies(tmp_path: Path) -> None:
+    """A ``[project]`` table with no dependencies declares no requirements."""
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text(data='[project]\nname = "spam"\n')
+
+    assert not list(common.pyproject_specs(path=pyproject))
+
+
+def test_pyproject_specs_invalid_requirement(tmp_path: Path) -> None:
+    """A dependency which is not a requirement string gives an error."""
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text(
+        data='[project]\nname = "spam"\ndependencies = ["foo bar =="]\n',
+    )
+
+    with pytest.raises(expected_exception=ValueError, match="foo bar =="):
+        list(common.pyproject_specs(path=pyproject))
+
+
 def _editable_line(directory: Path) -> str:
     """Return an ``-e`` requirement line for a directory.
 
