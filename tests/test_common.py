@@ -147,9 +147,7 @@ def test_pyfiles_does_not_follow_directory_symlink(tmp_path: Path) -> None:
     ]
 
 
-def test_pyfiles_unreadable_directory(
-    tmp_path: Path,
-) -> None:  # pragma: no cover
+def test_pyfiles_unreadable_directory(tmp_path: Path) -> None:
     """A directory which cannot be read raises an error.
 
     Skipping it silently would hide any missing requirement which only its
@@ -163,7 +161,9 @@ def test_pyfiles_unreadable_directory(
         # File mode bits do not restrict reading a directory on Windows, and
         # the superuser can read a directory regardless of its mode.
         if os.access(unreadable, os.R_OK):
-            pytest.skip(reason="This user can read a directory with mode 0")
+            pytest.skip(  # pragma: no cover
+                reason="This user can read a directory with mode 0",
+            )
         with pytest.raises(expected_exception=PermissionError):
             list(common.pyfiles(root=tmp_path))
     finally:
