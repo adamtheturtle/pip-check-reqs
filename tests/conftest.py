@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from pip_check_reqs import common, requirements
+from tests._monkeypatch import syspath_prepend
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -122,16 +123,8 @@ def editable_install(
         },
     )
 
-    # The parameter has no annotation until
-    # https://github.com/pytest-dev/pytest/pull/14988 is released.
-    monkeypatch.syspath_prepend(  # pyright: ignore[reportUnknownMemberType]
-        str(source_directory),
-    )
-    # The parameter has no annotation until
-    # https://github.com/pytest-dev/pytest/pull/14988 is released.
-    monkeypatch.syspath_prepend(  # pyright: ignore[reportUnknownMemberType]
-        str(site_packages),
-    )
+    syspath_prepend(monkeypatch=monkeypatch, path=str(source_directory))
+    syspath_prepend(monkeypatch=monkeypatch, path=str(site_packages))
 
     common.get_packages_info.cache_clear()
     common.editable_source_directories.cache_clear()
@@ -188,11 +181,7 @@ def nested_install(
         record_file.write(f"{module_file.name},,\n")
 
     monkeypatch.chdir(tmp_path)
-    # The parameter has no annotation until
-    # https://github.com/pytest-dev/pytest/pull/14988 is released.
-    monkeypatch.syspath_prepend(  # pyright: ignore[reportUnknownMemberType]
-        str(site_packages),
-    )
+    syspath_prepend(monkeypatch=monkeypatch, path=str(site_packages))
     common.get_packages_info.cache_clear()
 
     yield NestedInstall(
@@ -273,11 +262,7 @@ def dependency_chain(
     with record.open("a", encoding="utf-8") as record_file:
         record_file.write(f"{chain.top_module}/__init__.py,,\n")
 
-    # The parameter has no annotation until
-    # https://github.com/pytest-dev/pytest/pull/14988 is released.
-    monkeypatch.syspath_prepend(  # pyright: ignore[reportUnknownMemberType]
-        str(site_packages),
-    )
+    syspath_prepend(monkeypatch=monkeypatch, path=str(site_packages))
     common.get_packages_info.cache_clear()
 
     yield chain

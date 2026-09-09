@@ -17,6 +17,7 @@ from packaging.utils import canonicalize_name
 
 import __main__
 from pip_check_reqs import __version__, common
+from tests._monkeypatch import syspath_prepend
 
 from .conftest import write_dist_info
 
@@ -1172,11 +1173,7 @@ def test_used_packages_other_case_path(  # pragma: no cover
     source_file = tmp_path / "source.py"
     source_file.write_text(f"import {module_name}\n", encoding="utf-8")
 
-    # The parameter has no annotation until
-    # https://github.com/pytest-dev/pytest/pull/14988 is released.
-    monkeypatch.syspath_prepend(  # pyright: ignore[reportUnknownMemberType]
-        str(other_spelling),
-    )
+    syspath_prepend(monkeypatch=monkeypatch, path=str(other_spelling))
     common.get_packages_info.cache_clear()
     try:
         imported = common.find_imported_modules(
@@ -1232,11 +1229,7 @@ def test_editable_source_directories(
         direct_url=None,
     )
 
-    # The parameter has no annotation until
-    # https://github.com/pytest-dev/pytest/pull/14988 is released.
-    monkeypatch.syspath_prepend(  # pyright: ignore[reportUnknownMemberType]
-        str(site_packages),
-    )
+    syspath_prepend(monkeypatch=monkeypatch, path=str(site_packages))
     common.editable_source_directories.cache_clear()
 
     try:

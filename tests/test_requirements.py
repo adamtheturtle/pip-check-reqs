@@ -9,6 +9,7 @@ import pytest
 from packaging.requirements import Requirement
 
 from pip_check_reqs import common, requirements
+from tests._monkeypatch import syspath_prepend
 
 from .conftest import write_dist_info
 
@@ -337,11 +338,7 @@ def test_requirements_file_specs_installed_url_requirement(
         distribution_name=distribution_name,
         direct_url=direct_url,
     )
-    # The parameter has no annotation until
-    # https://github.com/pytest-dev/pytest/pull/14988 is released.
-    monkeypatch.syspath_prepend(  # pyright: ignore[reportUnknownMemberType]
-        str(site_packages),
-    )
+    syspath_prepend(monkeypatch=monkeypatch, path=str(site_packages))
     requirements.direct_url_distribution_names.cache_clear()
 
     fake_requirements_file = tmp_path / "requirements.txt"
