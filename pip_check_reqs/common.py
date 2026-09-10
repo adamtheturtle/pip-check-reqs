@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from functools import cache
 from importlib.util import find_spec
 from pathlib import Path
-from typing import TYPE_CHECKING, NotRequired, TypedDict, TypeGuard
+from typing import TYPE_CHECKING, TypedDict, TypeGuard
 
 from packaging.requirements import Requirement
 from packaging.utils import NormalizedName, canonicalize_name
@@ -48,10 +48,10 @@ class _InstalledPackage:
     files: list[str] | None
 
 
-class _DirectoryInfo(TypedDict):
+class _DirectoryInfo(TypedDict, total=False):
     """PEP 610 directory-install fields used by this module."""
 
-    editable: NotRequired[bool]
+    editable: bool
 
 
 class _VCSInfo(TypedDict):
@@ -60,13 +60,18 @@ class _VCSInfo(TypedDict):
     vcs: str
 
 
-class _DirectURL(TypedDict):
+class _DirectURLOptional(TypedDict, total=False):
+    """Optional PEP 610 direct-URL fields used by this module."""
+
+    dir_info: _DirectoryInfo
+    vcs_info: _VCSInfo
+    subdirectory: str
+
+
+class _DirectURL(_DirectURLOptional):
     """PEP 610 direct-URL fields used by this module."""
 
     url: str
-    dir_info: NotRequired[_DirectoryInfo]
-    vcs_info: NotRequired[_VCSInfo]
-    subdirectory: NotRequired[str]
 
 
 def _is_string_object_dict(
