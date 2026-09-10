@@ -1252,3 +1252,42 @@ def test_editable_source_directories(
     assert written_directories == {
         editable_source_directory.resolve(): "editable-package-12345",
     }
+
+
+@pytest.mark.parametrize(
+    "direct_url",
+    [
+        {"url": 1},
+        {"url": "file:///tmp/project", "dir_info": []},
+        {
+            "url": "file:///tmp/project",
+            "dir_info": {"editable": "yes"},
+        },
+        {"url": "https://example.com/project", "vcs_info": []},
+        {
+            "url": "https://example.com/project",
+            "vcs_info": {"vcs": 1},
+        },
+        {"url": "https://example.com/project", "subdirectory": 1},
+    ],
+)
+def test_direct_urls_rejects_invalid_pep_610_data(
+    *,
+    direct_url: dict[str, object],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Malformed direct URL metadata is rejected at the file boundary."""
+    site_packages = tmp_path / "site-packages"
+    write_dist_info(
+        site_packages=site_packages,
+        distribution_name="invalid-direct-url-package-12345",
+        direct_url=direct_url,
+    )
+    syspath_prepend(monkeypatch=monkeypatch, path=str(site_packages))
+
+    with pytest.raises(
+        expected_exception=ValueError,
+        match=r"Invalid direct_url\.json",
+    ):
+        list(common.direct_urls())

@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from functools import cache
 from importlib.util import find_spec
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NotRequired, TypedDict, TypeGuard
 
 from packaging.requirements import Requirement
 from packaging.utils import NormalizedName, canonicalize_name
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
         Iterator,
         Sequence,
     )
-    from typing import Any, NoReturn, TextIO
+    from typing import NoReturn, TextIO
 
 
 log = logging.getLogger(__name__)
@@ -46,6 +46,60 @@ class _InstalledPackage:
     name: str
     location: str
     files: list[str] | None
+
+
+class _DirectoryInfo(TypedDict):
+    """PEP 610 directory-install fields used by this module."""
+
+    editable: NotRequired[bool]
+
+
+class _VCSInfo(TypedDict):
+    """PEP 610 version-control fields used by this project."""
+
+    vcs: str
+
+
+class _DirectURL(TypedDict):
+    """PEP 610 direct-URL fields used by this module."""
+
+    url: str
+    dir_info: NotRequired[_DirectoryInfo]
+    vcs_info: NotRequired[_VCSInfo]
+    subdirectory: NotRequired[str]
+
+
+def _is_string_object_dict(
+    value: object,
+    /,
+) -> TypeGuard[dict[str, object]]:
+    """Return whether a decoded JSON value is an object."""
+    # JSON object keys are strings by definition.
+    return isinstance(value, dict)
+
+
+def _is_direct_url(value: object, /) -> TypeGuard[_DirectURL]:
+    """Return whether decoded data has the PEP 610 fields we consume."""
+    if not _is_string_object_dict(value) or not isinstance(
+        value.get("url"),
+        str,
+    ):
+        return False
+    directory_info = value.get("dir_info")
+    if directory_info is not None:
+        if not _is_string_object_dict(directory_info):
+            return False
+        editable = directory_info.get("editable")
+        if editable is not None and not isinstance(editable, bool):
+            return False
+    vcs_info = value.get("vcs_info")
+    if vcs_info is not None and (
+        not _is_string_object_dict(vcs_info)
+        or not isinstance(vcs_info.get("vcs"), str)
+    ):
+        return False
+    subdirectory = value.get("subdirectory")
+    return subdirectory is None or isinstance(subdirectory, str)
 
 
 @cache
@@ -627,7 +681,7 @@ def _installed_files() -> dict[Path, str]:
     return installed_files
 
 
-def direct_urls() -> Iterator[tuple[str, dict[str, Any]]]:
+def direct_urls() -> Iterator[tuple[str, _DirectURL]]:
     """Yield the name and direct URL of each distribution installed from one.
 
     A distribution installed from a URL, a local directory or a version
@@ -640,7 +694,10 @@ def direct_urls() -> Iterator[tuple[str, dict[str, Any]]]:
             continue
 
         name: str = distribution.metadata["Name"]
-        direct_url: dict[str, Any] = json.loads(direct_url_text)
+        direct_url: object = json.loads(direct_url_text)
+        if not _is_direct_url(direct_url):
+            message = f"Invalid direct_url.json for distribution {name!r}"
+            raise ValueError(message)
         yield name, direct_url
 
 
