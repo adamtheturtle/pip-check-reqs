@@ -833,17 +833,11 @@ def _normalized(*, path: Path) -> Path:
     return normalized
 
 
-def _null_ignorer(_: object) -> bool:
-    return False
-
-
 def ignorer(*, ignore_cfg: list[str]) -> Callable[[str], bool]:
     """Return a function which tells whether a name matches an ignore glob.
 
     The name is a module or distribution name.
     """
-    if not ignore_cfg:
-        return _null_ignorer
 
     def ignorer_function(candidate: str) -> bool:
         return any(fnmatch.fnmatch(candidate, ignore) for ignore in ignore_cfg)
@@ -857,8 +851,6 @@ def file_ignorer(*, ignore_cfg: list[str]) -> Callable[[Path], bool]:
     A glob is matched against the path as given, and against the path
     relative to the working directory.
     """
-    if not ignore_cfg:
-        return _null_ignorer
 
     def ignorer_function(candidate_path: Path) -> bool:
         working_directory = Path.cwd()
