@@ -15,5 +15,5 @@ ruff==0.16.6
 # installed means that ``actionlint-py`` will use it to lint shell commands in
 # GitHub workflow files.
 shellcheck-py==0.11.0.1
-shfmt-py==4.1.0
+shfmt-py==4.2.0
 vale==3.20.0.0
