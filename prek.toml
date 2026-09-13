@@ -158,6 +158,16 @@ hooks = [
     stages = ["pre-commit"]
   },
   {
+    id = "check-manifest",
+    name = "check-manifest",
+    entry = "uv run --extra=dev -m check_manifest",
+    language = "python",
+    pass_filenames = false,
+    always_run = true,
+    additional_dependencies = ["uv==0.12.10"],
+    stages = ["pre-push"]
+  },
+  {
     id = "pyroma",
     name = "pyroma",
     entry = "uv run --extra=dev -m pyroma --min 10 .",
