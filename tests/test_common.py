@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 import logging
 import os
 import platform
@@ -372,25 +373,13 @@ def test_find_imported_modules_frozen(
     tmp_path: Path,
 ) -> None:
     """Frozen modules are not included in the result."""
-    frozen_item_names: list[str] = []
-    sys_module_items = list(sys.modules.items())
-    for name, value in sys_module_items:
-        try:
-            spec = value.__spec__
-        # No coverage as this does not occur on Python 3.13
-        # with our current requirements.
-        except AttributeError:  # pragma: no cover
-            continue
-
-        if spec is not None and spec.origin == "frozen":
-            frozen_item_names.append(name)
-
-    assert frozen_item_names, (
-        "This test is only valid if there are frozen modules in sys.modules"
-    )
+    module_name = "_frozen_importlib"
+    spec = importlib.util.find_spec(name=module_name)
+    assert spec is not None
+    assert spec.origin == "frozen"
 
     spam = tmp_path / "spam.py"
-    statement = f"import {frozen_item_names[0]}"
+    statement = f"import {module_name}"
     spam.write_text(data=statement)
 
     result = common.find_imported_modules(
