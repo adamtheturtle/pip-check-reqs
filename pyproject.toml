@@ -171,6 +171,16 @@ SPELLING.spelling-private-dict-file = "spelling_private_dict.txt"
 # --spelling-private-dict-file option instead of raising a message.
 SPELLING.spelling-store-unknown-words = "no"
 
+[tool.check-manifest]
+ignore = [
+  ".vale.ini",
+  "CONTRIBUTING.rst",
+  "prek.toml",
+  "release.sh",
+  "spelling_private_dict.txt",
+  "styles/snapper/*.yml",
+]
+
 [tool.pyproject-fmt]
 keep_full_version = true
 max_supported_python = "3.14"
