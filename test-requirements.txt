@@ -11,7 +11,7 @@ pyroma==5.0.1
 pytest==9.1.1
 pytest-cov==7.1.0
 ruamel.yaml==0.19.1
-ruff==0.16.6
+ruff==0.16.7
 # We add shellcheck-py not only for shell scripts, but also because having it
 # installed means that ``actionlint-py`` will use it to lint shell commands in
 # GitHub workflow files.
