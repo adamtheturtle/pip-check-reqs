@@ -178,14 +178,15 @@ def _catches_import_error(*, handler: ast.ExceptHandler) -> bool:
         else [handler.type]
     )
     for exception in caught:
-        if isinstance(exception, ast.Name):
-            name = exception.id
-        elif isinstance(exception, ast.Attribute):
-            # An exception may be given by a dotted path, as
-            # ``builtins.ImportError`` is.
-            name = exception.attr
-        else:
-            continue
+        match exception:
+            case ast.Name(id=name):
+                pass
+            case ast.Attribute(attr=name):
+                # An exception may be given by a dotted path, as
+                # ``builtins.ImportError`` is.
+                pass
+            case _:
+                continue
         if name in _IMPORT_ERROR_NAMES:
             return True
     return False
