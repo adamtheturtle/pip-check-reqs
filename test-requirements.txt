@@ -1,4 +1,4 @@
-actionlint-py==1.7.12.24
+actionlint-py==1.7.12.25
 check-manifest==0.51
 docutils==0.23
 mypy==2.3.1
