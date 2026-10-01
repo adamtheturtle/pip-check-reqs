@@ -1,7 +1,7 @@
 actionlint-py==1.7.12.25
 check-manifest==0.51
 docutils==0.23
-mypy==2.3.1
+mypy==2.4.0
 prek==0.5.3
 pyenchant==3.3.0
 pylint==4.0.9
