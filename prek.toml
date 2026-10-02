@@ -245,7 +245,7 @@ hooks = [
     id = "mypy",
     name = "mypy",
     stages = ["pre-push"],
-    entry = "uv run --extra=dev -m mypy --num-workers=auto .",
+    entry = "uv run --extra=dev -m mypy .",
     language = "python",
     types_or = [
       "python",

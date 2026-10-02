@@ -188,6 +188,7 @@ max_supported_python = "3.14"
 [tool.mypy]
 exclude_gitignore = true
 strict = true
+num_workers = "auto"
 
 [tool.pyright]
 typeCheckingMode = "strict"
