@@ -45,7 +45,7 @@ _CASE_INSENSITIVE_FILESYSTEM = (
         (Path("/ham/spam/__init__.py"), Path("/ham/spam")),
     ],
 )
-def test_package_path(*, path: Path, result: Path) -> None:
+def test_package_path(*, path: Path, result: Path | None) -> None:
     assert common.package_path(path=path) == result, path
 
 
