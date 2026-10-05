@@ -197,7 +197,9 @@ enableTypeIgnoreComments = false
 reportUnnecessaryTypeIgnoreComment = true
 
 [tool.coverage]
+run.source = [ "pip_check_reqs/", "tests" ]
 run.branch = true
+report.fail_under = 100
 report.exclude_also = [
   "if TYPE_CHECKING:",
 ]
