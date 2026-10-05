@@ -3,7 +3,7 @@ check-manifest==0.51
 docutils==0.23
 mypy==2.4.0
 prek==0.5.4
-pylint[spelling]==4.0.9
+pylint[spelling]==4.1.1
 pyproject-fmt==2.29.4
 pyright==1.1.414
 pyroma==5.0.1
