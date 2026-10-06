@@ -4,7 +4,7 @@ docutils==0.23
 mypy==2.4.0
 mypy-pytest-parametrize==2026.10.5; python_version>='3.11'
 prek==0.5.4
-pylint[spelling]==4.1.1
+pylint[spelling]==4.1.2
 pyproject-fmt==2.30.0
 pyright==1.1.414
 pyroma==5.0.1
