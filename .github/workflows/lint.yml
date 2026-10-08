@@ -36,7 +36,7 @@ jobs:
           cache-dependency-glob: "**/*requirements.txt"
 
       - name: "Lint"
-        uses: j178/prek-action@v3.0.0
+        uses: j178/prek-action@v3.0.1
         with:
           prek-version: 0.5.2
           cache: false
