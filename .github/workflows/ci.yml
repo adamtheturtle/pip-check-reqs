@@ -36,7 +36,7 @@ jobs:
   completion-ci:
     needs: build
     runs-on: ubuntu-latest
-    if: always()
+    if: ${{ !cancelled() }}
     steps:
       - name: Check matrix job status
         run: |
