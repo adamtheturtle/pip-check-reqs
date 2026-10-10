@@ -189,6 +189,7 @@ max_supported_python = "3.14"
 exclude_gitignore = true
 strict = true
 plugins = [ "mypy_pytest_parametrize" ]
+show_traceback = true
 num_workers = "auto"
 
 [tool.pyright]
