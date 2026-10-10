@@ -4,8 +4,7 @@ name: Lint
 on:
   push:
     branches: [master]
-  pull_request:
-    branches: [master]
+  pull_request: {}
   schedule:
     # * is a special character in YAML so you have to quote this string
     # Run at 1:00 every day
