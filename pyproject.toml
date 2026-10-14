@@ -49,7 +49,7 @@ scripts.pip-missing-reqs = "pip_check_reqs.find_missing_reqs:main"
 
 [dependency-groups]
 dev = [
-  "snapper-fmt==0.11.9",
+  "snapper-fmt==0.11.10",
 ]
 
 [tool.setuptools]
