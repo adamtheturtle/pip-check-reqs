@@ -1,6 +1,8 @@
 version: 2
 updates:
 - package-ecosystem: pip
+  allow:
+    - dependency-type: all
   directory: "/"
   schedule:
     interval: daily
