@@ -23,7 +23,7 @@ jobs:
         uses: astral-sh/setup-uv@v10.3.0
 
       - name: Run fixers
-        uses: j178/prek-action@v3.0.1
+        uses: j178/prek-action@v3.0.2
         with:
           prek-version: 0.5.2
           cache: false
