@@ -17,4 +17,4 @@ ruff==0.17.2
 # GitHub workflow files.
 shellcheck-py==0.11.0.1
 shfmt-py==4.2.0
-vale==3.24.0.0
+vale==3.25.1.0

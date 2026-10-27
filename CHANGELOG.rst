@@ -19,7 +19,7 @@ Release History
   Both commands previously scanned every installed distribution in such an environment as if it were project source.
 - ``pip-missing-reqs`` accepts ``--requirements-file`` more than once, so requirements split across several files are checked as one set.
 - A missing requirements file or source path now reports a concise command line error.
-  A missing requirements file previously surfaced an internal pip exception, and a missing source path was silently ignored.
+  Previously, a missing requirements file surfaced an internal pip exception, while a missing source path was silently ignored.
 - A source file which cannot be parsed now reports a command line error naming the file and the line at fault.
   It previously showed a ``SyntaxError`` traceback.
 - An import from a submodule that does not exist is no longer attributed to an installed parent distribution, which removed a class of false positives.
@@ -127,8 +127,7 @@ Release History
 
 2.1.1
 
-- Bug fix: Though Python 2 support was removed from the source code, the published wheel was still universal.
-  The published wheel now explicitly does not support Python 2.
+- Bug fix: The published wheel no longer claims Python 2 support, which had already been removed from the source code.
   Please use version 2.0.4 for Python 2.
 
 2.1.0
