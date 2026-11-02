@@ -1150,6 +1150,7 @@ def test_used_packages_other_case_path(  # pragma: no cover
         site_packages=site_packages,
         distribution_name=distribution_name,
         direct_url=None,
+        requires=(),
     )
     module_file = site_packages / f"{module_name}.py"
     module_file.touch()
@@ -1203,6 +1204,7 @@ def test_editable_source_directories(
             "url": editable_source_directory.as_uri(),
             "dir_info": {"editable": True},
         },
+        requires=(),
     )
     write_dist_info(
         site_packages=site_packages,
@@ -1211,11 +1213,13 @@ def test_editable_source_directories(
             "url": (tmp_path / "copied-project").as_uri(),
             "dir_info": {},
         },
+        requires=(),
     )
     write_dist_info(
         site_packages=site_packages,
         distribution_name="index-package-12345",
         direct_url=None,
+        requires=(),
     )
 
     syspath_prepend(monkeypatch=monkeypatch, path=str(site_packages))
@@ -1272,6 +1276,7 @@ def test_direct_urls_rejects_invalid_pep_610_data(
         site_packages=site_packages,
         distribution_name="invalid-direct-url-package-12345",
         direct_url=direct_url,
+        requires=(),
     )
     syspath_prepend(monkeypatch=monkeypatch, path=str(site_packages))
 

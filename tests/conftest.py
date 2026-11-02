@@ -41,7 +41,7 @@ def write_dist_info(
     site_packages: Path,
     distribution_name: str,
     direct_url: dict[str, object] | None,
-    requires: Iterable[str] = (),
+    requires: Iterable[str],
 ) -> None:
     """Write the ``.dist-info`` directory of an installed distribution.
 
@@ -121,6 +121,7 @@ def editable_install(
             "url": source_directory.as_uri(),
             "dir_info": {"editable": True},
         },
+        requires=(),
     )
 
     syspath_prepend(monkeypatch=monkeypatch, path=str(source_directory))
@@ -173,6 +174,7 @@ def nested_install(
         site_packages=site_packages,
         distribution_name=distribution_name,
         direct_url=None,
+        requires=(),
     )
     module_file = site_packages / f"{module_name}.py"
     module_file.touch()
