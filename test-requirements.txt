@@ -1,7 +1,7 @@
 actionlint-py==1.7.12.25
 check-manifest==0.51
 docutils==0.23
-mypy==2.4.0
+mypy==2.4.1
 mypy-pytest-parametrize==2026.10.5; python_version>='3.11'
 prek==0.5.7
 pylint[spelling]==4.1.3
