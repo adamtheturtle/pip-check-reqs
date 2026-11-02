@@ -102,6 +102,16 @@ hooks = [
 repo = "local"
 hooks = [
   {
+    id = "no-defaults",
+    name = "no-defaults",
+    entry = "uv run --extra=dev no-defaults",
+    language = "python",
+    types_or = ["python"],
+    additional_dependencies = ["uv==0.12.10"],
+    stages = ["pre-commit"],
+    require_serial = true
+  },
+  {
     id = "actionlint",
     name = "actionlint",
     entry = "uv run --extra=dev actionlint",

@@ -337,6 +337,7 @@ def test_requirements_file_specs_installed_url_requirement(
         site_packages=site_packages,
         distribution_name=distribution_name,
         direct_url=direct_url,
+        requires=(),
     )
     syspath_prepend(monkeypatch=monkeypatch, path=str(site_packages))
     requirements.direct_url_distribution_names.cache_clear()

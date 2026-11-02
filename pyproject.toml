@@ -91,6 +91,7 @@ lint.ignore = [
 lint.unfixable = [
   "ERA001",
 ]
+lint.external = [ "NOD" ]
 lint.flake8-tidy-imports.banned-api."operator.attrgetter".msg = "operator.attrgetter is banned: use a lambda instead."
 
 [tool.pylint]
@@ -205,3 +206,7 @@ report.fail_under = 100
 report.exclude_also = [
   "if TYPE_CHECKING:",
 ]
+
+[tool.no_defaults]
+private_only = true
+per_file_enforcement."tests/**" = "all"
