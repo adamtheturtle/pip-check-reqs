@@ -219,6 +219,9 @@ def pyproject_specs(*, path: Path) -> Iterator[RequirementSpec]:
     # string.
     project_table = pyproject.get("project", {})
     for text in project_table.get("dependencies", []):
+        if not isinstance(text, str):
+            msg = f"requirement is not a string: {text!r}"
+            raise ValueError(msg)
         requirement = Requirement(text)
         yield RequirementSpec(
             name=requirement.name,

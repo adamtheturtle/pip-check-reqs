@@ -197,6 +197,20 @@ def test_pyproject_specs_invalid_requirement(tmp_path: Path) -> None:
         list(requirements.pyproject_specs(path=pyproject))
 
 
+def test_pyproject_specs_non_string_dependency(tmp_path: Path) -> None:
+    """A dependency which is not a string gives an error."""
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text(
+        data='[project]\nname = "spam"\ndependencies = [{foo = 1}]\n',
+    )
+
+    with pytest.raises(
+        expected_exception=ValueError,
+        match="requirement is not a string",
+    ):
+        list(requirements.pyproject_specs(path=pyproject))
+
+
 def test_requirement_specs_pyproject(tmp_path: Path) -> None:
     """A file named ``pyproject.toml`` is read as a project file."""
     pyproject = tmp_path / "pyproject.toml"
