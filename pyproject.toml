@@ -51,6 +51,10 @@ scripts.pip-missing-reqs = "pip_check_reqs.find_missing_reqs:main"
 dev = [
   "snapper-fmt==0.11.10",
 ]
+docs-lint = [
+  "doc8==2.0.0",
+  "doc8-inline-markup==2026.11.18.3; python_version>='3.12'",
+]
 
 [tool.setuptools]
 packages = [
@@ -60,6 +64,10 @@ dynamic.dependencies = { file = "requirements.txt" }
 dynamic.optional-dependencies = { dev = { file = "test-requirements.txt" } }
 dynamic.readme = { file = "README.rst", content-type = "text/x-rst" }
 dynamic.version = { attr = "pip_check_reqs.__version__" }
+
+[tool.uv]
+# The development extra uses Docutils 0.23 for Vale. doc8 requires <=0.21.2.
+conflicts = [ [ { extra = "dev" }, { group = "docs-lint" } ] ]
 
 [tool.ruff]
 target-version = "py310"

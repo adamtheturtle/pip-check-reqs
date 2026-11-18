@@ -214,6 +214,15 @@ hooks = [
     stages = ["pre-commit"]
   },
   {
+    id = "doc8",
+    name = "doc8",
+    entry = "uv run --only-group docs-lint -m doc8 --ignore D001",
+    language = "python",
+    types_or = ["rst"],
+    additional_dependencies = ["uv==0.12.10"],
+    stages = ["pre-push"]
+  },
+  {
     id = "vale-sync",
     name = "vale sync",
     entry = "uv run --extra=dev vale sync",
