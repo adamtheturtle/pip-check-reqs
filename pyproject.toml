@@ -52,6 +52,15 @@ dev = [
   "snapper-fmt==0.11.10",
 ]
 
+docs-lint = [
+  "doc8==2.0.0",
+  "doc8-inline-markup==2026.11.18.3; python_version>='3.12'",
+]
+
+[tool.uv]
+# The development extra uses Docutils 0.23 for Vale. doc8 requires <=0.21.2.
+conflicts = [ [ { extra = "dev" }, { group = "docs-lint" } ] ]
+
 [tool.setuptools]
 packages = [
   "pip_check_reqs",
