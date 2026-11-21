@@ -45,8 +45,8 @@ Additionally it is possible to check that there are no dependencies in requireme
 This would find anything that is listed in requirements.txt but that is not imported by sample.
 
 ``pip-missing-reqs`` learns which requirement provides a module from the installed distribution, so an import of a module which is not installed cannot be traced to a requirement.
-It warns about each such import, giving the file and line, rather than passing over it.
-Silence a warning with ``--ignore-module`` if the import is conditional, or if the module comes from a path which you do not give to ``pip-missing-reqs``.
+Each warning includes the file and line of the import.
+Suppress a warning with ``--ignore-module`` if the import is conditional, or if the module comes from a path which you do not give to ``pip-missing-reqs``.
 
 An import in a ``try`` block which catches ``ImportError`` is a soft dependency: the code runs whether or not the module is installed. ``pip-missing-reqs`` does not warn about such an import when the module is not installed::
 
@@ -62,7 +62,7 @@ A requirement installed in editable mode, with ``pip install -e``, imports its m
 Both commands read that directory from the install, so an editable requirement is checked as any other requirement is.
 The source you give to the commands is the project being checked rather than a requirement of it, so a module of that source is not treated as a requirement even when the project itself is installed in editable mode.
 
-A requirement given as a URL or a directory, such as ``-e .`` or ``git+https://github.com/org/repo.git``, does not name a distribution.
+A requirement given as a URL or a directory, such as ``-e .`` or ``git+https://github.com/org/repo.git``, leaves the distribution name implicit.
 When the requirement is installed, both commands take the name from the install, which records where it came from.
 Otherwise, name the distribution with an ``#egg=<name>`` fragment.
 
@@ -191,7 +191,8 @@ Comparison with deptry
 It overlaps with ``pip-check-reqs``, and differs in ways which may decide which one suits a project.
 
 - ``deptry`` reads dependencies from ``pyproject.toml`` directly, whether they follow PEP 621 or the Poetry or PDM format, as well as from requirements files.
-  ``pip-check-reqs`` reads requirements files only, so a project which declares its dependencies in ``pyproject.toml`` must first export them to a requirements file.
+  This requires a requirements file.
+  If your project declares dependencies in ``pyproject.toml``, export them first.
 - ``deptry`` runs more checks.
   As well as missing and unused dependencies, it reports an import of a development dependency from non-development code, an import of a standard library module which is listed as a dependency, and an import of a transitive dependency which is not declared.
   ``pip-check-reqs`` reports missing and extra requirements, and can check that a file lists every transitive dependency with ``--transitive``.
