@@ -5,7 +5,7 @@ Release History
 3.1.0
 
 - Both commands accept a ``pyproject.toml`` file as ``--requirements-file``.
-  The ``dependencies`` list of its ``[project]`` table is then checked in place of a requirements file, so a project which declares its dependencies there no longer needs to export them to a requirements file first.
+  This checks ``[project].dependencies`` directly.
 - Both commands gain a ``--use-gitignore`` option.
   Files and directories which a ``.gitignore`` file ignores are then skipped, as they are by Git.
   Each ``.gitignore`` file from the repository root down applies.
@@ -18,8 +18,8 @@ Release History
   A directory is treated as a virtual environment when it contains a ``pyvenv.cfg`` file.
   Both commands previously scanned every installed distribution in such an environment as if it were project source.
 - ``pip-missing-reqs`` accepts ``--requirements-file`` more than once, so requirements split across several files are checked as one set.
-- A missing requirements file or source path now reports a concise command line error.
-  Previously, a missing requirements file surfaced an internal pip exception, while a missing source path was silently ignored.
+- The CLI now reports a brief error when a requirements file or source path is missing.
+  Previously, a missing requirements file raised an internal pip exception and the CLI ignored missing source paths.
 - A source file which cannot be parsed now reports a command line error naming the file and the line at fault.
   It previously showed a ``SyntaxError`` traceback.
 - An import from a submodule that does not exist is no longer attributed to an installed parent distribution, which removed a class of false positives.
@@ -31,9 +31,9 @@ Release History
   It previously showed a pip traceback.
 - On Windows, an ignore glob no longer crashes with a ``ValueError`` when a source file is on a different drive to the working directory.
 - Both commands now warn when they are run from outside the active virtual environment, as the results then describe the environment the command is installed in rather than the active one.
-- ``pip-missing-reqs`` now warns about an import of a module which is not installed, giving the file and line.
+- ``pip-missing-reqs`` now reports the file and line when an import refers to a module that is missing.
   Such an import was silently ignored, so a package uninstalled by mistake, or an import of the wrong name, gave no output at all.
-  A module which the scanned source provides is not reported, and ``--ignore-module`` silences the warning.
+  A module which the scanned source provides is not reported, and ``--ignore-module`` suppresses the warning.
 - ``pip-missing-reqs`` no longer warns about an import which is not installed when it is made in a ``try`` block which catches ``ImportError``.
   Such an import is a soft dependency which the code tolerates being absent.
 - A requirement installed in editable mode, with ``pip install -e``, is now matched to the modules it provides.
